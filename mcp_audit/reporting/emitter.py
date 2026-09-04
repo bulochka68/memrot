@@ -29,9 +29,13 @@ def build_downstream(doc: AuditDocument) -> Dict[str, Any]:
        doc.summary.get("trifecta", {}).get("legs_present"))
     tm("TM-SHADOW", "Cross-server shadowing", bool(doc.collisions), doc.collisions)
 
-    if any(f.type in ("HIDDEN_UNICODE", "CROSS_TOOL_STEERING", "HIDDEN_INSTRUCTION_MARKER", "INSTRUCTION_OVERRIDE")
+    if any(f.type in ("HIDDEN_UNICODE", "CROSS_TOOL_STEERING", "HIDDEN_INSTRUCTION_MARKER",
+                      "INSTRUCTION_OVERRIDE", "AUTHORIZATION_STEERING")
            for f in doc.definition_findings):
         corpus.append({"campaign": "C4-*", "name": "tool poisoning", "reason": "definition-plane injection signals"})
+    if any(f.type == "AUTHORIZATION_STEERING" for f in doc.definition_findings):
+        corpus.append({"campaign": "C4-IDOR", "name": "broken access control / IDOR via tool params",
+                       "reason": "parameter description steers arbitrary identifier"})
     if any(t.classification == Operation.EXEC for t in tools):
         corpus.append({"campaign": "C4-EXEC", "name": "command execution abuse", "reason": "EXEC tool present"})
     if doc.summary.get("trifecta", {}).get("assembled"):

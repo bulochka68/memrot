@@ -26,7 +26,11 @@ _SINK_NAMES = re.compile(
     r"user_?(data|info|profile|message)|system_?prompt|instructions?|prompt)$", re.I)
 _SECRET_NAMES = re.compile(
     r"(api_?key|secret|token|password|passwd|credential|private_?key|ssh_?key|auth|bearer|cookie|session_?id)", re.I)
-_EXEC_NAMES = re.compile(r"^(command|cmd|script|shell|code|exec|expression|query|sql)$", re.I)
+_EXEC_NAMES = re.compile(r"^(command|cmd|script|shell|code|exec|expression)$", re.I)
+# query/sql are an execution surface only on database servers; on a search tool
+# a "query" parameter is just free-text search input, not command execution.
+_DB_EXEC_NAMES = re.compile(r"^(query|sql|statement)$", re.I)
+_DB_KINDS = {"postgres", "sqlite", "mysql", "mssql", "database", "db"}
 _READ_HINT = re.compile(r"^(read|get|list|search|find|fetch|query|show|describe|cat|view|stat|info)", re.I)
 _URL_NAMES = re.compile(r"(url|uri|endpoint|webhook|callback|href)", re.I)
 _FS_KIND = {"filesystem", "git"}
@@ -73,7 +77,8 @@ def analyze_schema(tool: ToolRecord, server_kind: str = "generic") -> List[Findi
             sev = Risk.HIGH if _READ_HINT.match(name) or server_kind in _FS_KIND else Risk.MEDIUM
             add("SECRET_PARAMETER", sev, "Secret-shaped parameter",
                 f"{name}.{pname} asks the model to supply a credential", parameter=pname)
-        if _EXEC_NAMES.match(pname) and ptype in (None, "string") and not pdef.get("enum") and not pdef.get("pattern"):
+        is_exec_param = _EXEC_NAMES.match(pname) or (_DB_EXEC_NAMES.match(pname) and server_kind in _DB_KINDS)
+        if is_exec_param and ptype in (None, "string") and not pdef.get("enum") and not pdef.get("pattern"):
             add("UNCONSTRAINED_EXEC_PARAMETER", Risk.HIGH, "Unconstrained execution parameter",
                 f"{name}.{pname} is a free string with no enum/pattern - arbitrary execution surface",
                 parameter=pname)

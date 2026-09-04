@@ -121,6 +121,20 @@ Component → JSON field mapping is in the architecture doc, section 7.
   secret-shaped parameters, unconstrained exec parameters, schema/purpose
   mismatch, sensitive default paths, annotation lies (`readOnlyHint` on a
   mutating tool).
+- Authorization steering / IDOR: a parameter description that tells the model
+  to pass an arbitrary or user-named identifier into an access-scoping field
+  (broken access control delegated to the LLM).
+
+Detection is **bilingual (English + Russian)**: injection/override/concealment/
+steering patterns, operation verbs, and sensitive-data markers all have Russian
+variants. The homoglyph check is word-level, so Cyrillic prose with Latin
+technical tokens (ISIN, tickers, product names) is not a false positive — only a
+single token that mixes scripts is flagged.
+
+A worked example against a real, deliberately vulnerable stand
+(`examples/genai_invest_stand.config.json`, an HTTP MCP investment server plus a
+web-search tool) is in `examples/genai_invest_stand.report.md`: it assembles the
+lethal trifecta and catches the IDOR in the `cus` parameter.
 
 ## Tests
 
@@ -129,12 +143,12 @@ pip install pytest
 python -m pytest -q
 ```
 
-46 tests cover config parsing, the definition linter (incl. Unicode
-smuggling), the schema analyzer, classification and effective access,
-collisions and hashing, the trifecta/verdict, JSON/Markdown emission, drift
-(clean, rug pull, new server), the isolation guard, and a full live
-active-probe run against a bundled mock stdio MCP server
-(`tests/mock_mcp_server.py`).
+58 tests cover config parsing, the definition linter (incl. Unicode smuggling
+and Russian-language injection/steering/IDOR), the schema analyzer,
+classification and effective access, collisions and hashing, the
+trifecta/verdict, JSON/Markdown emission, drift (clean, rug pull, new server),
+the isolation guard, and a full live active-probe run against a bundled mock
+stdio MCP server (`tests/mock_mcp_server.py`).
 
 ## Scope
 

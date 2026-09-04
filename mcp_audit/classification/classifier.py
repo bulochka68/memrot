@@ -15,17 +15,28 @@ from typing import List
 
 from ..models import AuditDocument, Operation, ToolRecord
 
-_EXEC = re.compile(r"\b(exec|execute|command|shell|spawn|eval|bash|subprocess|terminal|run_command)\b", re.I)
+_EXEC = re.compile(r"\b(exec|execute|command|shell|spawn|eval|bash|subprocess|terminal|run_command|"
+                   r"выполн\w+|исполн\w+)\b", re.I)
 # stricter than _EXEC: only true shell/code execution phrasing in a description,
 # so "run a SQL query" is not misread as arbitrary execution.
 _EXEC_DESC = re.compile(r"\b(execute|run)\b[^.\n]{0,30}\b(command|shell|script|code|binary|process|program)\b|"
-                        r"\b(shell\s+command|arbitrary\s+(code|command))\b", re.I)
-_DELETE = re.compile(r"\b(delete|remove|rm|unlink|drop|truncate|purge|destroy|erase|rmdir|wipe)\b", re.I)
-_WRITE = re.compile(r"\b(write|create|update|edit|modify|append|put|post|insert|set|save|upload|patch|move|rename|mkdir|chmod|push|commit|merge|send|publish|comment)\b", re.I)
-_READ = re.compile(r"\b(read|get|list|search|find|fetch|query|show|describe|cat|view|stat|info|head|tail|grep|resolve|check|scan|analyze|inspect)\b", re.I)
+                        r"\b(shell\s+command|arbitrary\s+(code|command))\b|"
+                        r"(выполн\w+|запуст\w+|исполн\w+)[^.\n]{0,30}(команд\w+|скрипт\w+|код\b|shell)", re.I)
+_DELETE = re.compile(r"\b(delete|remove|rm|unlink|drop|truncate|purge|destroy|erase|rmdir|wipe)\b|"
+                     r"(удал\w+|стере\w+|очист\w+|сброс\w+|уничтож\w+)", re.I)
+_WRITE = re.compile(r"\b(write|create|update|edit|modify|append|put|post|insert|set|save|upload|patch|move|rename|mkdir|chmod|push|commit|merge|send|publish|comment)\b|"
+                    r"(созда\w+|запис\w+|измен\w+|обнов\w+|добав\w+|сохран\w+|отправ\w+|установ\w+|переимен\w+|перемест\w+|редактир\w+)", re.I)
+_READ = re.compile(r"\b(read|get|list|search|find|fetch|query|show|describe|cat|view|stat|info|head|tail|grep|resolve|check|scan|analyze|inspect)\b|"
+                   r"(получ\w+|прочит\w+|чтен\w+|список|списки|показ\w+|найти|найд\w+|поиск\w*|искать|запрос\w+|провер\w+|узна\w+|верн\w+|отобрази\w+|вывес\w+)", re.I)
 
 # What counts as sensitive to read.
-_SENSITIVE = re.compile(r"\b(secret|credential|token|key|password|env|environment|config|\.ssh|private|billing|payment|customer|user|personal|pii|email|message|dm|inbox)\b", re.I)
+_SENSITIVE = re.compile(
+    r"\b(secret|credential|token|key|password|env|environment|config|\.ssh|private|billing|payment|customer|user|personal|pii|email|message|dm|inbox|"
+    r"portfolio|holdings|positions?|balance|tax|broker|account|dividend|transaction|order|trade|financial)\b|"
+    # RU: client-specific financial data
+    r"(портфел\w+|позици\w+|остат\w+|баланс\w+|налог\w+|брокер\w+|счёт\w*|счет\w*|клиент\w+|"
+    r"дивиденд\w+|операц\w+|истори\w+\s+операц\w+|сдел\w+|владел\w+|персональн\w+)",
+    re.I)
 # What counts as attacker-controllable content coming back.
 _UNTRUSTED = re.compile(r"\b(read|fetch|get|list|search|query|web|http|url|browse|issue|pull|comment|review|message|email|inbox|log|stdout|output|page|content|document|file)\b", re.I)
 # What can move data out.
@@ -34,9 +45,12 @@ _EGRESS = re.compile(r"\b(http|https|url|fetch|request|post|upload|send|email|ma
 
 def _split(s: str) -> str:
     """Turn ``read_file``/``readFile``/``read-file`` into space-separated words so
-    ``\\b`` boundaries work (underscore is a word char, which defeats ``\\bread\\b``)."""
+    ``\\b`` boundaries work (underscore is a word char, which defeats ``\\bread\\b``).
+
+    Unicode letters (e.g. Cyrillic) are preserved - only separators and
+    underscores are turned into spaces - so Russian descriptions survive."""
     s = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", s)      # camelCase
-    return re.sub(r"[^A-Za-z0-9]+", " ", s)
+    return re.sub(r"[_\W]+", " ", s, flags=re.UNICODE)
 
 
 def _text(t: ToolRecord) -> str:

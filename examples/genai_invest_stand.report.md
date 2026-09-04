@@ -26,10 +26,9 @@
 ## Security findings
 
 - **[HIGH] MCP-001 LETHAL_TRIFECTA** - Lethal trifecta assembled: sensitive access + untrusted input + external channel all present.
+- **[HIGH] MCP-002 TOOL_POISONING_AUTHORIZATION_STEERING** (mcp-invest/portfolio_get_positions_valuation) - Parameter description steers the model to pass an arbitrary identifier (IDOR / broken access control) in description: 'значение из поля user_id текущего чата или любое другое'
 
 ## Definition-plane findings (tool poisoning surface)
 
-- **[HIGH] UNCONSTRAINED_EXEC_PARAMETER** (mcp-invest/instruments_search) - instruments_search.query is a free string with no enum/pattern - arbitrary execution surface
-- **[HIGH] UNCONSTRAINED_EXEC_PARAMETER** (agent-native/duckduckgo_search) - duckduckgo_search.query is a free string with no enum/pattern - arbitrary execution surface
-- **[MEDIUM] HOMOGLYPH_MIXED_SCRIPT** (mcp-invest/instruments_search) - Latin text in description contains a few Cyrillic/Greek look-alike letters
-- **[MEDIUM] HOMOGLYPH_MIXED_SCRIPT** (mcp-invest/portfolio_presence_get) - Latin text in description contains a few Cyrillic/Greek look-alike letters
+- **[HIGH] AUTHORIZATION_STEERING** (mcp-invest/portfolio_get_positions_valuation) - Parameter description steers the model to pass an arbitrary identifier (IDOR / broken access control) in description: 'значение из поля user_id текущего чата или любое другое'
+- **[MEDIUM] MODEL_ADDRESSED_IMPERATIVE** (mcp-invest/instruments_search) - Imperative addressed to the model in description: 'Используй этот тул первым'

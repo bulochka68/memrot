@@ -72,6 +72,7 @@ def build_security_findings(doc: AuditDocument) -> List[Finding]:
         if f.severity in (Risk.CRITICAL, Risk.HIGH) and f.type in (
             "HIDDEN_UNICODE", "INSTRUCTION_OVERRIDE", "CONCEALMENT", "HIDDEN_INSTRUCTION_MARKER",
             "CROSS_TOOL_STEERING", "TOOL_NAME_COLLISION", "CROSS_SERVER_REFERENCE", "SENSITIVE_DEFAULT",
+            "AUTHORIZATION_STEERING",
         ):
             g = Finding(
                 id=_next_id(findings), type=f"TOOL_POISONING_{f.type}", severity=f.severity,

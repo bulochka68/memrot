@@ -6,7 +6,7 @@
     "tool": "mcp-audit",
     "version": "1.1.0",
     "schema_version": "1.1",
-    "generated_at": 1788539565.1020598,
+    "generated_at": 1788541068.2432456,
     "mode": "passive",
     "discovery": {
       "live": false,
@@ -139,7 +139,7 @@
             "network_access": true
           },
           "egress": false,
-          "sensitive_source": false,
+          "sensitive_source": true,
           "untrusted_input": true,
           "verified": null,
           "definition_hash": "sha256:6f934bf90d6c9baba1b90a860ce98d30f15be86a74490bed2fb42ce0a08959e7",
@@ -184,7 +184,7 @@
             "network_access": true
           },
           "egress": false,
-          "sensitive_source": false,
+          "sensitive_source": true,
           "untrusted_input": true,
           "verified": null,
           "definition_hash": "sha256:97036a5d881cc230458d5bf18cb51e42a43763e9f07c3773116aee168447bb45",
@@ -225,7 +225,7 @@
             "network_access": true
           },
           "egress": false,
-          "sensitive_source": false,
+          "sensitive_source": true,
           "untrusted_input": true,
           "verified": null,
           "definition_hash": "sha256:fb54bda1001133c01cb155263b1aa2b44dbee85ebccae15d878aa1c3f5d8a6e4",
@@ -262,7 +262,7 @@
             "network_access": true
           },
           "egress": false,
-          "sensitive_source": false,
+          "sensitive_source": true,
           "untrusted_input": true,
           "verified": null,
           "definition_hash": "sha256:15a4776053ca467cece3c9741ad5f5118473279f0f0a72a7c077d0c23afcfba2",
@@ -299,7 +299,7 @@
             "network_access": true
           },
           "egress": false,
-          "sensitive_source": false,
+          "sensitive_source": true,
           "untrusted_input": true,
           "verified": null,
           "definition_hash": "sha256:a63f2276f9c9eab3b472ae2e6bc8f3c8a034aea5e275c72398c9998824267911",
@@ -451,62 +451,38 @@
   "definition_analysis": {
     "findings": [
       {
-        "id": "DEF-HOMOGLYPH",
-        "type": "HOMOGLYPH_MIXED_SCRIPT",
+        "id": "DEF-MODEL_ADDRESSED_IMPERATIVE",
+        "type": "MODEL_ADDRESSED_IMPERATIVE",
         "severity": "MEDIUM",
-        "title": "Mixed-script (homoglyph) text",
-        "description": "Latin text in description contains a few Cyrillic/Greek look-alike letters",
+        "title": "Imperative addressed to the model",
+        "description": "Imperative addressed to the model in description: 'Используй этот тул первым'",
         "plane": "definition",
         "provenance": "effective",
         "server": "mcp-invest",
         "tool": "instruments_search",
         "evidence": {
-          "where": "description"
+          "where": "description",
+          "matches": [
+            "Используй этот тул первым"
+          ]
         },
         "taxonomy": []
       },
       {
-        "id": "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
-        "type": "UNCONSTRAINED_EXEC_PARAMETER",
+        "id": "DEF-AUTHORIZATION_STEERING",
+        "type": "AUTHORIZATION_STEERING",
         "severity": "HIGH",
-        "title": "Unconstrained execution parameter",
-        "description": "instruments_search.query is a free string with no enum/pattern - arbitrary execution surface",
+        "title": "Parameter description steers the model to pass an arbitrary identifier (IDOR / broken access control)",
+        "description": "Parameter description steers the model to pass an arbitrary identifier (IDOR / broken access control) in description: 'значение из поля user_id текущего чата или любое другое'",
         "plane": "definition",
         "provenance": "effective",
         "server": "mcp-invest",
-        "tool": "instruments_search",
+        "tool": "portfolio_get_positions_valuation",
         "evidence": {
-          "parameter": "query"
-        },
-        "taxonomy": []
-      },
-      {
-        "id": "DEF-HOMOGLYPH",
-        "type": "HOMOGLYPH_MIXED_SCRIPT",
-        "severity": "MEDIUM",
-        "title": "Mixed-script (homoglyph) text",
-        "description": "Latin text in description contains a few Cyrillic/Greek look-alike letters",
-        "plane": "definition",
-        "provenance": "effective",
-        "server": "mcp-invest",
-        "tool": "portfolio_presence_get",
-        "evidence": {
-          "where": "description"
-        },
-        "taxonomy": []
-      },
-      {
-        "id": "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
-        "type": "UNCONSTRAINED_EXEC_PARAMETER",
-        "severity": "HIGH",
-        "title": "Unconstrained execution parameter",
-        "description": "duckduckgo_search.query is a free string with no enum/pattern - arbitrary execution surface",
-        "plane": "definition",
-        "provenance": "effective",
-        "server": "agent-native",
-        "tool": "duckduckgo_search",
-        "evidence": {
-          "parameter": "query"
+          "where": "description",
+          "matches": [
+            "значение из поля user_id текущего чата или любое другое"
+          ]
         },
         "taxonomy": []
       }
@@ -565,6 +541,24 @@
         "single_tool_trifecta": []
       },
       "taxonomy": []
+    },
+    {
+      "id": "MCP-002",
+      "type": "TOOL_POISONING_AUTHORIZATION_STEERING",
+      "severity": "HIGH",
+      "title": "Tool poisoning signal: Parameter description steers the model to pass an arbitrary identifier (IDOR / broken access control)",
+      "description": "Parameter description steers the model to pass an arbitrary identifier (IDOR / broken access control) in description: 'значение из поля user_id текущего чата или любое другое'",
+      "plane": "definition",
+      "provenance": "effective",
+      "server": "mcp-invest",
+      "tool": "portfolio_get_positions_valuation",
+      "evidence": {
+        "where": "description",
+        "matches": [
+          "значение из поля user_id текущего чата или любое другое"
+        ]
+      },
+      "taxonomy": []
     }
   ],
   "summary": {
@@ -580,14 +574,19 @@
     "high": 0,
     "medium": 10,
     "low": 0,
-    "definition_findings": 4,
+    "definition_findings": 2,
     "context_findings": 0,
     "overall_risk": "HIGH",
     "trifecta": {
       "assembled": true,
       "legs": {
         "sensitive_access": [
-          "mcp-invest/portfolio_get_positions_valuation"
+          "mcp-invest/client_operation_history_list",
+          "mcp-invest/client_training_list",
+          "mcp-invest/margin_instruments_list",
+          "mcp-invest/portfolio_get_positions_valuation",
+          "mcp-invest/portfolio_presence_get",
+          "mcp-invest/register_tax_get"
         ],
         "untrusted_input": [
           "agent-native/duckduckgo_search",
@@ -659,8 +658,7 @@
         "title": "Tool poisoning via definitions",
         "reachable": true,
         "evidence": [
-          "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
-          "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER"
+          "DEF-AUTHORIZATION_STEERING"
         ]
       },
       {
@@ -681,6 +679,16 @@
       }
     ],
     "P3_corpus": [
+      {
+        "campaign": "C4-*",
+        "name": "tool poisoning",
+        "reason": "definition-plane injection signals"
+      },
+      {
+        "campaign": "C4-IDOR",
+        "name": "broken access control / IDOR via tool params",
+        "reason": "parameter description steers arbitrary identifier"
+      },
       {
         "campaign": "C2-*",
         "name": "memory / context exfil",
