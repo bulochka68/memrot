@@ -1,0 +1,48 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace/my-project"],
+      "x_audit": {
+        "kind": "filesystem",
+        "allowed_paths": ["/workspace/my-project/**"],
+        "denied_paths": ["/etc/**", "/root/**"]
+      },
+      "tools": [
+        {"name": "read_file", "description": "Read a file from the project directory.",
+         "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}},
+        {"name": "write_file", "description": "Write content to a file in the project directory.",
+         "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}, "content": {"type": "string"}}, "required": ["path", "content"]}},
+        {"name": "delete_file", "description": "Delete a file from the project directory.",
+         "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}
+      ]
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/app"],
+      "x_audit": {"kind": "postgres", "operations": ["SELECT", "INSERT", "UPDATE", "DELETE"], "ddl": false},
+      "tools": [
+        {"name": "query", "description": "Run a SQL query against the application database.",
+         "inputSchema": {"type": "object", "properties": {"sql": {"type": "string"}}, "required": ["sql"]}}
+      ]
+    },
+    "shell": {
+      "command": "mcp-server-commands",
+      "args": [],
+      "x_audit": {"kind": "shell", "network_access": true},
+      "tools": [
+        {"name": "execute_command", "description": "Execute a shell command and return stdout/stderr.",
+         "inputSchema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}}
+      ]
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "x_audit": {"kind": "fetch", "network_access": true},
+      "tools": [
+        {"name": "fetch", "description": "Fetch a URL and return its contents.",
+         "inputSchema": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]}}
+      ]
+    }
+  }
+}
