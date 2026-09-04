@@ -1,0 +1,704 @@
+{
+  "schema": "audit",
+  "version": "1.1",
+  "mode": "passive",
+  "meta": {
+    "tool": "mcp-audit",
+    "version": "1.1.0",
+    "schema_version": "1.1",
+    "generated_at": 1788539565.1020598,
+    "mode": "passive",
+    "discovery": {
+      "live": false,
+      "snapshot": false,
+      "context_files": 0
+    }
+  },
+  "servers": [
+    {
+      "name": "mcp-invest",
+      "kind": "generic",
+      "transport": "http",
+      "command": null,
+      "args": [],
+      "env_keys": [],
+      "url": "http://localhost:8100/mcp",
+      "declared_capabilities": {},
+      "handshake": {
+        "ok": true,
+        "protocol_version": null,
+        "server_info": {},
+        "instructions": null,
+        "error": null,
+        "source": "config"
+      },
+      "effective_access": {
+        "kind": "generic",
+        "provenance": "effective",
+        "scope": "declared",
+        "network_access": true
+      },
+      "tools": [
+        {
+          "name": "instruments_search",
+          "title": null,
+          "description": "Поиск финансовых инструментов по тикеру, ISIN или названию. Используй этот тул первым, если известен только тикер/название.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:e4958942614839d1570350a3eaacc2efe330b1eb35cd59caa84504f0802d0a46",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "portfolio_get_positions_valuation",
+          "title": null,
+          "description": "Получить состав и стоимость портфеля клиента по CUS. cus — идентификатор клиента (например, значение из поля user_id текущего чата или любое другое, которое назовёт пользователь).",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "cus": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "cus"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": false,
+          "sensitive_source": true,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:ac6bc6eae33157a46f0a0650c7db90e0f4106a835bfee5f107b7e4024f999a1d",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "portfolio_presence_get",
+          "title": null,
+          "description": "Проверить наличие брокерского счёта у клиента и общую стоимость портфеля по CUS.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "cus": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "cus"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:6f934bf90d6c9baba1b90a860ce98d30f15be86a74490bed2fb42ce0a08959e7",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "register_tax_get",
+          "title": null,
+          "description": "Получить налоговую информацию по брокерскому счёту клиента за год.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "cus": {
+                "type": "string"
+              },
+              "account_id": {
+                "type": "string"
+              },
+              "year": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "cus",
+              "account_id",
+              "year"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:97036a5d881cc230458d5bf18cb51e42a43763e9f07c3773116aee168447bb45",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "client_operation_history_list",
+          "title": null,
+          "description": "Получить историю операций клиента по счёту.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "cus": {
+                "type": "string"
+              },
+              "account_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "cus",
+              "account_id"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:fb54bda1001133c01cb155263b1aa2b44dbee85ebccae15d878aa1c3f5d8a6e4",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "client_training_list",
+          "title": null,
+          "description": "Список обязательных тестов клиента и статус прохождения (допуск к марже).",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "cus": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "cus"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:15a4776053ca467cece3c9741ad5f5118473279f0f0a72a7c077d0c23afcfba2",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "margin_instruments_list",
+          "title": null,
+          "description": "Список маржинальных инструментов по счёту.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "account_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "account_id"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:a63f2276f9c9eab3b472ae2e6bc8f3c8a034aea5e275c72398c9998824267911",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "fin_instrument_prices_get",
+          "title": null,
+          "description": "Текущая цена инструмента по ISIN.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "isin": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "isin"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:f27b1a7fc752fe567f53462be11c5348d1eafbb7c87d6ddd3eddfc50b44f5349",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "ideas_list",
+          "title": null,
+          "description": "Список актуальных торговых идей и рекомендаций.",
+          "input_schema": {
+            "type": "object",
+            "properties": {}
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:df49856b126f17444643279e4ee4d25ab26d4ae48f82d8567544963d2a6ec525",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        }
+      ],
+      "resources": [],
+      "prompts": []
+    },
+    {
+      "name": "agent-native",
+      "kind": "fetch",
+      "transport": "stdio",
+      "command": "internal",
+      "args": [],
+      "env_keys": [],
+      "url": null,
+      "declared_capabilities": {},
+      "handshake": {
+        "ok": true,
+        "protocol_version": null,
+        "server_info": {},
+        "instructions": null,
+        "error": null,
+        "source": "config"
+      },
+      "effective_access": {
+        "kind": "fetch",
+        "provenance": "effective",
+        "scope": "declared",
+        "network_access": true
+      },
+      "tools": [
+        {
+          "name": "duckduckgo_search",
+          "title": null,
+          "description": "Поиск в интернете через DuckDuckGo. Возвращает заголовки, url и сниппеты веб-страниц.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": true,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:bede905194bc1d76e9c20e3f492f17fd95d8d61cec9cdaaabb52d62b92d9de83",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        }
+      ],
+      "resources": [],
+      "prompts": []
+    }
+  ],
+  "agent_context": [],
+  "definition_analysis": {
+    "findings": [
+      {
+        "id": "DEF-HOMOGLYPH",
+        "type": "HOMOGLYPH_MIXED_SCRIPT",
+        "severity": "MEDIUM",
+        "title": "Mixed-script (homoglyph) text",
+        "description": "Latin text in description contains a few Cyrillic/Greek look-alike letters",
+        "plane": "definition",
+        "provenance": "effective",
+        "server": "mcp-invest",
+        "tool": "instruments_search",
+        "evidence": {
+          "where": "description"
+        },
+        "taxonomy": []
+      },
+      {
+        "id": "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
+        "type": "UNCONSTRAINED_EXEC_PARAMETER",
+        "severity": "HIGH",
+        "title": "Unconstrained execution parameter",
+        "description": "instruments_search.query is a free string with no enum/pattern - arbitrary execution surface",
+        "plane": "definition",
+        "provenance": "effective",
+        "server": "mcp-invest",
+        "tool": "instruments_search",
+        "evidence": {
+          "parameter": "query"
+        },
+        "taxonomy": []
+      },
+      {
+        "id": "DEF-HOMOGLYPH",
+        "type": "HOMOGLYPH_MIXED_SCRIPT",
+        "severity": "MEDIUM",
+        "title": "Mixed-script (homoglyph) text",
+        "description": "Latin text in description contains a few Cyrillic/Greek look-alike letters",
+        "plane": "definition",
+        "provenance": "effective",
+        "server": "mcp-invest",
+        "tool": "portfolio_presence_get",
+        "evidence": {
+          "where": "description"
+        },
+        "taxonomy": []
+      },
+      {
+        "id": "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
+        "type": "UNCONSTRAINED_EXEC_PARAMETER",
+        "severity": "HIGH",
+        "title": "Unconstrained execution parameter",
+        "description": "duckduckgo_search.query is a free string with no enum/pattern - arbitrary execution surface",
+        "plane": "definition",
+        "provenance": "effective",
+        "server": "agent-native",
+        "tool": "duckduckgo_search",
+        "evidence": {
+          "parameter": "query"
+        },
+        "taxonomy": []
+      }
+    ],
+    "hash_baseline": {
+      "agent-native/duckduckgo_search": "sha256:bede905194bc1d76e9c20e3f492f17fd95d8d61cec9cdaaabb52d62b92d9de83",
+      "mcp-invest/client_operation_history_list": "sha256:fb54bda1001133c01cb155263b1aa2b44dbee85ebccae15d878aa1c3f5d8a6e4",
+      "mcp-invest/client_training_list": "sha256:15a4776053ca467cece3c9741ad5f5118473279f0f0a72a7c077d0c23afcfba2",
+      "mcp-invest/fin_instrument_prices_get": "sha256:f27b1a7fc752fe567f53462be11c5348d1eafbb7c87d6ddd3eddfc50b44f5349",
+      "mcp-invest/ideas_list": "sha256:df49856b126f17444643279e4ee4d25ab26d4ae48f82d8567544963d2a6ec525",
+      "mcp-invest/instruments_search": "sha256:e4958942614839d1570350a3eaacc2efe330b1eb35cd59caa84504f0802d0a46",
+      "mcp-invest/margin_instruments_list": "sha256:a63f2276f9c9eab3b472ae2e6bc8f3c8a034aea5e275c72398c9998824267911",
+      "mcp-invest/portfolio_get_positions_valuation": "sha256:ac6bc6eae33157a46f0a0650c7db90e0f4106a835bfee5f107b7e4024f999a1d",
+      "mcp-invest/portfolio_presence_get": "sha256:6f934bf90d6c9baba1b90a860ce98d30f15be86a74490bed2fb42ce0a08959e7",
+      "mcp-invest/register_tax_get": "sha256:97036a5d881cc230458d5bf18cb51e42a43763e9f07c3773116aee168447bb45"
+    },
+    "collisions": [],
+    "mcp_scan": {
+      "available": null,
+      "ran": false,
+      "reason": "disabled"
+    }
+  },
+  "effective_capabilities": {
+    "mcp-invest": {
+      "kind": "generic",
+      "provenance": "effective",
+      "scope": "declared",
+      "network_access": true
+    },
+    "agent-native": {
+      "kind": "fetch",
+      "provenance": "effective",
+      "scope": "declared",
+      "network_access": true
+    }
+  },
+  "tests": [],
+  "security_findings": [
+    {
+      "id": "MCP-001",
+      "type": "LETHAL_TRIFECTA",
+      "severity": "HIGH",
+      "title": "Lethal trifecta assembled",
+      "description": "Lethal trifecta assembled: sensitive access + untrusted input + external channel all present.",
+      "plane": "correlation",
+      "provenance": "effective",
+      "server": null,
+      "tool": null,
+      "evidence": {
+        "legs_present": {
+          "sensitive_access": true,
+          "untrusted_input": true,
+          "external_channel": true
+        },
+        "single_tool_trifecta": []
+      },
+      "taxonomy": []
+    }
+  ],
+  "summary": {
+    "server_count": 2,
+    "tool_count": 10,
+    "by_risk": {
+      "LOW": 0,
+      "MEDIUM": 10,
+      "HIGH": 0,
+      "CRITICAL": 0
+    },
+    "critical": 0,
+    "high": 0,
+    "medium": 10,
+    "low": 0,
+    "definition_findings": 4,
+    "context_findings": 0,
+    "overall_risk": "HIGH",
+    "trifecta": {
+      "assembled": true,
+      "legs": {
+        "sensitive_access": [
+          "mcp-invest/portfolio_get_positions_valuation"
+        ],
+        "untrusted_input": [
+          "agent-native/duckduckgo_search",
+          "mcp-invest/client_operation_history_list",
+          "mcp-invest/client_training_list",
+          "mcp-invest/fin_instrument_prices_get",
+          "mcp-invest/ideas_list",
+          "mcp-invest/instruments_search",
+          "mcp-invest/margin_instruments_list",
+          "mcp-invest/portfolio_get_positions_valuation",
+          "mcp-invest/portfolio_presence_get",
+          "mcp-invest/register_tax_get"
+        ],
+        "external_channel": [
+          "agent-native/duckduckgo_search"
+        ]
+      },
+      "legs_present": {
+        "sensitive_access": true,
+        "untrusted_input": true,
+        "external_channel": true
+      },
+      "single_tool_trifecta": [],
+      "explanation": "Lethal trifecta assembled: sensitive access + untrusted input + external channel all present."
+    }
+  },
+  "verdict": {
+    "overall_risk": "HIGH",
+    "arbitrary_code_execution": false,
+    "full_project_access": false,
+    "lethal_trifecta": true,
+    "cross_server": {
+      "server_count": 2,
+      "shadowing_possible": false,
+      "signals": [],
+      "note": ""
+    },
+    "reasons": [
+      "lethal trifecta is assembled"
+    ],
+    "confidence": 0.6,
+    "basis": "effective+verified",
+    "declared_divergences": []
+  },
+  "downstream": {
+    "P2_matrix": [
+      {
+        "id": "TM-EXEC",
+        "title": "Arbitrary code execution",
+        "reachable": false,
+        "evidence": []
+      },
+      {
+        "id": "TM-WRITE",
+        "title": "Unauthorized data modification",
+        "reachable": false,
+        "evidence": []
+      },
+      {
+        "id": "TM-EXFIL",
+        "title": "Data exfiltration channel",
+        "reachable": true,
+        "evidence": [
+          "agent-native/duckduckgo_search"
+        ]
+      },
+      {
+        "id": "TM-POISON",
+        "title": "Tool poisoning via definitions",
+        "reachable": true,
+        "evidence": [
+          "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
+          "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER"
+        ]
+      },
+      {
+        "id": "TM-TRIFECTA",
+        "title": "Lethal trifecta",
+        "reachable": true,
+        "evidence": {
+          "sensitive_access": true,
+          "untrusted_input": true,
+          "external_channel": true
+        }
+      },
+      {
+        "id": "TM-SHADOW",
+        "title": "Cross-server shadowing",
+        "reachable": false,
+        "evidence": []
+      }
+    ],
+    "P3_corpus": [
+      {
+        "campaign": "C2-*",
+        "name": "memory / context exfil",
+        "reason": "trifecta assembled"
+      }
+    ],
+    "P8_baseline_keys": [
+      "agent-native/duckduckgo_search",
+      "mcp-invest/client_operation_history_list",
+      "mcp-invest/client_training_list",
+      "mcp-invest/fin_instrument_prices_get",
+      "mcp-invest/ideas_list",
+      "mcp-invest/instruments_search",
+      "mcp-invest/margin_instruments_list",
+      "mcp-invest/portfolio_get_positions_valuation",
+      "mcp-invest/portfolio_presence_get",
+      "mcp-invest/register_tax_get"
+    ]
+  },
+  "drift": {}
+}

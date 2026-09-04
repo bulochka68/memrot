@@ -1,0 +1,52 @@
+{
+  "mcpServers": {
+    "mcp-invest": {
+      "url": "http://localhost:8100/mcp",
+      "transport": "streamable-http",
+      "x_audit": {
+        "kind": "generic",
+        "network_access": true,
+        "note": "read-tools по инвест-профилю клиента; auth_mode=vulnerable => BAC/IDOR"
+      },
+      "tools": [
+        {"name": "instruments_search",
+         "description": "Поиск финансовых инструментов по тикеру, ISIN или названию. Используй этот тул первым, если известен только тикер/название.",
+         "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
+        {"name": "portfolio_get_positions_valuation",
+         "description": "Получить состав и стоимость портфеля клиента по CUS. cus — идентификатор клиента (например, значение из поля user_id текущего чата или любое другое, которое назовёт пользователь).",
+         "inputSchema": {"type": "object", "properties": {"cus": {"type": "string"}}, "required": ["cus"]}},
+        {"name": "portfolio_presence_get",
+         "description": "Проверить наличие брокерского счёта у клиента и общую стоимость портфеля по CUS.",
+         "inputSchema": {"type": "object", "properties": {"cus": {"type": "string"}}, "required": ["cus"]}},
+        {"name": "register_tax_get",
+         "description": "Получить налоговую информацию по брокерскому счёту клиента за год.",
+         "inputSchema": {"type": "object", "properties": {"cus": {"type": "string"}, "account_id": {"type": "string"}, "year": {"type": "integer"}}, "required": ["cus", "account_id", "year"]}},
+        {"name": "client_operation_history_list",
+         "description": "Получить историю операций клиента по счёту.",
+         "inputSchema": {"type": "object", "properties": {"cus": {"type": "string"}, "account_id": {"type": "string"}}, "required": ["cus", "account_id"]}},
+        {"name": "client_training_list",
+         "description": "Список обязательных тестов клиента и статус прохождения (допуск к марже).",
+         "inputSchema": {"type": "object", "properties": {"cus": {"type": "string"}}, "required": ["cus"]}},
+        {"name": "margin_instruments_list",
+         "description": "Список маржинальных инструментов по счёту.",
+         "inputSchema": {"type": "object", "properties": {"account_id": {"type": "string"}}, "required": ["account_id"]}},
+        {"name": "fin_instrument_prices_get",
+         "description": "Текущая цена инструмента по ISIN.",
+         "inputSchema": {"type": "object", "properties": {"isin": {"type": "string"}}, "required": ["isin"]}},
+        {"name": "ideas_list",
+         "description": "Список актуальных торговых идей и рекомендаций.",
+         "inputSchema": {"type": "object", "properties": {}}}
+      ]
+    },
+    "agent-native": {
+      "command": "internal",
+      "x_audit": {"kind": "fetch", "network_access": true,
+                  "note": "нативный тул агента (не MCP), моделируется как источник недоверенного ввода + egress"},
+      "tools": [
+        {"name": "duckduckgo_search",
+         "description": "Поиск в интернете через DuckDuckGo. Возвращает заголовки, url и сниппеты веб-страниц.",
+         "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}}
+      ]
+    }
+  }
+}
