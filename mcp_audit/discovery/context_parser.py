@@ -2,9 +2,9 @@
 
 Context files (CLAUDE.md, .cursorrules, copilot-instructions.md, AGENTS.md ...)
 are not tools, but they are instructions the agent obeys, so they are part of
-the attack surface (axes 2/3).  They get the same definition-plane lint as tool
-descriptions: hidden Unicode, injected imperatives, references to secrets or
-exfil channels.
+the attack surface.  They get the same definition-plane lint as tool
+descriptions.  Their content is *data under audit*: it never becomes auditor
+policy, never changes scope, settings or the baseline (TZ §14.6, §19).
 """
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ CONTEXT_FILE_KINDS = {
     "copilot-instructions.md": "copilot_instructions",
     ".mcp.json": "mcp_config",
 }
+SOURCE_ROLES = {"mcp_config": "mcp_config"}
 CONTEXT_DIRS = (".cursor/rules", ".claude", ".github", ".claude/commands", ".claude/agents", ".claude/skills")
 MAX_CONTEXT_BYTES = 512 * 1024
 
@@ -48,7 +49,6 @@ def discover_context_files(root: str, max_depth: int = 3, extra: Iterable[str] =
     base_depth = root.rstrip(os.sep).count(os.sep)
     for dirpath, dirnames, filenames in os.walk(root):
         depth = dirpath.count(os.sep) - base_depth
-        # prune noisy trees
         dirnames[:] = [d for d in dirnames if d not in ("node_modules", ".git", "venv", ".venv", "__pycache__", "dist", "build")]
         if depth >= max_depth:
             dirnames[:] = [d for d in dirnames if d in (".claude", ".cursor", ".github")]
@@ -67,12 +67,10 @@ def parse_context_file(path: str) -> ContextFile:
         data = fh.read(MAX_CONTEXT_BYTES + 1)
     truncated = len(data) > MAX_CONTEXT_BYTES
     data = data[:MAX_CONTEXT_BYTES]
+    kind = _kind_for(path) or "unknown"
     cf = ContextFile(
-        path=path,
-        kind=_kind_for(path) or "unknown",
-        size=os.path.getsize(path),
-        sha256=hashlib.sha256(data).hexdigest(),
+        path=path, kind=kind, size=os.path.getsize(path), sha256=hashlib.sha256(data).hexdigest(),
+        source_role=SOURCE_ROLES.get(kind, "agent_instructions"), truncated=truncated,
     )
-    cf.text = data.decode("utf-8", "replace")  # type: ignore[attr-defined]
-    cf.truncated = truncated                   # type: ignore[attr-defined]
+    cf.text = data.decode("utf-8", "replace")
     return cf

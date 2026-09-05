@@ -1,0 +1,2203 @@
+{
+  "schema": "source-facts",
+  "version": "1.0",
+  "captured_from": {
+    "root": "<stand checkout>",
+    "captured_at": 1788610859.1262364,
+    "method": "mcp_audit source-snapshot (ast + regex; no code executed)",
+    "commit": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+    "repository": "bulochka68/aith_redteaming",
+    "branch": "bulochka68-with-stand"
+  },
+  "files": {
+    "mcp-invest/server.py": {
+      "present": true,
+      "sha256": "sha256:1c9fa97d3d06ee36c71cec22410ab1965c55d35a2010fa47f25e30e9dfe5d0d9"
+    },
+    "app/agent/tools.py": {
+      "present": true,
+      "sha256": "sha256:cd5357dee3cfbe37ffc2f9906feb4b6195fb099f7a6cacc758ab3c89163edee5"
+    },
+    "app/orchestrator/graph.py": {
+      "present": true,
+      "sha256": "sha256:8189e3374197e9ddde1f8b85ff60395db2c13112414125b7ad5193fe1f117160"
+    },
+    "app/memory/store.py": {
+      "present": true,
+      "sha256": "sha256:20b3a08a49a29f7109fa11d0b06ef5f1fd2b8135de2436022d94f8f89925b64e"
+    },
+    "app/memory/mongo.py": {
+      "present": true,
+      "sha256": "sha256:64ffa070e30597529e180db4683cb969c9ddbc079a31c3ff7e93cc350b7a2d46"
+    },
+    "app/agent/runner.py": {
+      "present": true,
+      "sha256": "sha256:14934acd424de17d7941a6ae38bf47870f57d717d2627bf3d5addb147dbc727c"
+    },
+    "app/api_server.py": {
+      "present": true,
+      "sha256": "sha256:5e93a4e26656203fafb60ea089ec7d931e6269119241033445b0a81bf2a6863c"
+    },
+    "app/memory/working.py": {
+      "present": true,
+      "sha256": "sha256:e6174a54e89d219e68032e8cb04af7209fdf8bbac101107c4894cb0e9a9e743a"
+    },
+    "invest-server/main.py": {
+      "present": true,
+      "sha256": "sha256:d94818db66571e19d8cbac90d31ba028502ba0d3d9b59fa8dd9136b56936091c"
+    },
+    "mcp-invest/auth.py": {
+      "present": true,
+      "sha256": "sha256:ffffe7e89de18ef4d14559e8a155a09e2c2ba9ab68fba24670f28ede1377afcc"
+    },
+    "invest-server/auth.py": {
+      "present": true,
+      "sha256": "sha256:40ad02a684887dc85d3a5afa1269ab9db1349116f9352f43d37cc1f1dee0d80f"
+    }
+  },
+  "tool_declarations": [
+    {
+      "name": "instruments_search",
+      "function": "instruments_search",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 60,
+      "end_lineno": 77,
+      "description": "Поиск финансовых инструментов по тикеру, ISIN или названию компании.\n\nИспользуй этот тул первым, если известен только тикер/название, а не ISIN —\nбольшинству остальных тулов нужен именно ISIN.",
+      "docstring": "Поиск финансовых инструментов по тикеру, ISIN или названию компании.\n\nИспользуй этот тул первым, если известен только тикер/название, а не ISIN —\nбольшинству остальных тулов нужен именно ISIN.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "digest": "sha256:d8f6599be6fa69e17aae67f2b1c5ed17020429dd5314aa279895ab8e6987344f",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "portfolio_get_positions_valuation",
+      "function": "portfolio_get_positions_valuation",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 81,
+      "end_lineno": 129,
+      "description": "Получить состав и стоимость инвестиционного портфеля клиента по CUS.\n\nВозвращает деньги и бумаги по всем брокерским счетам клиента. cus — идентификатор\nклиента (например, значение из поля user_id текущего чата или любое другое, которое\nназовёт пользователь).",
+      "docstring": "Получить состав и стоимость инвестиционного портфеля клиента по CUS.\n\nВозвращает деньги и бумаги по всем брокерским счетам клиента. cus — идентификатор\nклиента (например, значение из поля user_id текущего чата или любое другое, которое\nназовёт пользователь).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cus": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "cus"
+        ]
+      },
+      "digest": "sha256:259672a2441ea068beccca0d52c0a05bf27e25015d7954083d63394727e83ea5",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "portfolio_presence_get",
+      "function": "portfolio_presence_get",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 133,
+      "end_lineno": 154,
+      "description": "Проверить наличие брокерского счёта у клиента и общую стоимость портфеля в рублях.",
+      "docstring": "Проверить наличие брокерского счёта у клиента и общую стоимость портфеля в рублях.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cus": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "cus"
+        ]
+      },
+      "digest": "sha256:6ead9ba1ef66768d09e8dedea34c0e4bc06f5c6183091f0549fcdca455558dcc",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "register_tax_get",
+      "function": "register_tax_get",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 158,
+      "end_lineno": 174,
+      "description": "Получить налоговую информацию по брокерскому счёту клиента за указанный год.\n\ncus и account_id должны относиться к одному и тому же клиенту.",
+      "docstring": "Получить налоговую информацию по брокерскому счёту клиента за указанный год.\n\ncus и account_id должны относиться к одному и тому же клиенту.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cus": {
+            "type": "string",
+            "python_annotation": "str"
+          },
+          "account_id": {
+            "type": "string",
+            "python_annotation": "str"
+          },
+          "year": {
+            "type": "integer",
+            "python_annotation": "int"
+          }
+        },
+        "required": [
+          "cus",
+          "account_id",
+          "year"
+        ]
+      },
+      "digest": "sha256:36e782217e302bfd29107515e2aa31037a506a21ab2f761fdc852d39c5b10f20",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "client_operation_history_list",
+      "function": "client_operation_history_list",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 178,
+      "end_lineno": 198,
+      "description": "Получить историю операций по брокерскому счёту клиента (покупки, продажи, выплаты).",
+      "docstring": "Получить историю операций по брокерскому счёту клиента (покупки, продажи, выплаты).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cus": {
+            "type": "string",
+            "python_annotation": "str"
+          },
+          "account_id": {
+            "type": "string",
+            "python_annotation": "str"
+          },
+          "date_from": {
+            "type": "string",
+            "python_annotation": "str | None"
+          },
+          "date_to": {
+            "type": "string",
+            "python_annotation": "str | None"
+          },
+          "max_elements": {
+            "type": "integer",
+            "python_annotation": "int"
+          }
+        },
+        "required": [
+          "cus",
+          "account_id"
+        ]
+      },
+      "digest": "sha256:5a6fa250f7a246da5d87bee4024cc42af578b0122d73a4d7a3cb81a4f9303208",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "margin_instruments_list",
+      "function": "margin_instruments_list",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 202,
+      "end_lineno": 229,
+      "description": "Получить список маржинальных инструментов, доступных по брокерскому счёту.",
+      "docstring": "Получить список маржинальных инструментов, доступных по брокерскому счёту.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "account_id"
+        ]
+      },
+      "digest": "sha256:ca0fbe49d955e07a74449bfb8ab9d19f635a80756c5424c1fdc20dffdce14729",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "margin_instrument_get_info",
+      "function": "margin_instrument_get_info",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 233,
+      "end_lineno": 247,
+      "description": "Получить ставки риска (long/short) для конкретного инструмента по брокерскому счёту.",
+      "docstring": "Получить ставки риска (long/short) для конкретного инструмента по брокерскому счёту.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "python_annotation": "str"
+          },
+          "isin": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "account_id",
+          "isin"
+        ]
+      },
+      "digest": "sha256:73cdd570b4594ce2e18d624d1ee937abd6a4179409dd8708c1e5fab4567427f0",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "client_training_list",
+      "function": "client_training_list",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 251,
+      "end_lineno": 261,
+      "description": "Получить список обязательных тестов клиента и статус их прохождения (допуск к марже/сложным инструментам).",
+      "docstring": "Получить список обязательных тестов клиента и статус их прохождения (допуск к марже/сложным инструментам).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cus": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "cus"
+        ]
+      },
+      "digest": "sha256:0118af95e309a7aa65abd9fec35d62c82abdc980d7b0f8d11ccb323cc8e6e12a",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "dividend_calendar_list",
+      "function": "dividend_calendar_list",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 265,
+      "end_lineno": 283,
+      "description": "Календарь выплат по дивидендам. Без isin возвращает общий календарь по всем инструментам.",
+      "docstring": "Календарь выплат по дивидендам. Без isin возвращает общий календарь по всем инструментам.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "isin": {
+            "type": "string",
+            "python_annotation": "str | None"
+          },
+          "date_from": {
+            "type": "string",
+            "python_annotation": "str | None"
+          },
+          "date_to": {
+            "type": "string",
+            "python_annotation": "str | None"
+          }
+        },
+        "required": []
+      },
+      "digest": "sha256:25190c4056f3781996838d55fac9ef13d5d0e0a0b1eee1bffddda35448b78ea8",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "coupon_calendar_list",
+      "function": "coupon_calendar_list",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 287,
+      "end_lineno": 293,
+      "description": "Календарь прошедших и будущих купонных выплат по облигации. isin, date_from, date_to обязательны.",
+      "docstring": "Календарь прошедших и будущих купонных выплат по облигации. isin, date_from, date_to обязательны.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "isin": {
+            "type": "string",
+            "python_annotation": "str"
+          },
+          "date_from": {
+            "type": "string",
+            "python_annotation": "str"
+          },
+          "date_to": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "isin",
+          "date_from",
+          "date_to"
+        ]
+      },
+      "digest": "sha256:549e95d3e65f8222390d08ebf941b896e4855af13a9c758db4cd31756b091651",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "bond_get_info",
+      "function": "bond_get_info",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 297,
+      "end_lineno": 310,
+      "description": "Описание облигации по ISIN: номинал, купон, доходность, дата погашения.",
+      "docstring": "Описание облигации по ISIN: номинал, купон, доходность, дата погашения.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "isin": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "isin"
+        ]
+      },
+      "digest": "sha256:9b2d54ccdded2bcac9f0f1a9733e671ebb593cc985c80856250096057a215211",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "emitent_get_static_info",
+      "function": "emitent_get_static_info",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 314,
+      "end_lineno": 322,
+      "description": "Статическая информация об эмитенте по ISIN: профиль компании, сектор, ключевые показатели.",
+      "docstring": "Статическая информация об эмитенте по ISIN: профиль компании, сектор, ключевые показатели.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "isin": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "isin"
+        ]
+      },
+      "digest": "sha256:6d1b475000d3b09ad39d41bb5d459a38dc67bf907bb7e22b541bce8f8ac8bcd1",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "fin_instrument_prices_get",
+      "function": "fin_instrument_prices_get",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 326,
+      "end_lineno": 334,
+      "description": "Получить текущую цену финансового инструмента по ISIN.",
+      "docstring": "Получить текущую цену финансового инструмента по ISIN.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "isin": {
+            "type": "string",
+            "python_annotation": "str"
+          }
+        },
+        "required": [
+          "isin"
+        ]
+      },
+      "digest": "sha256:1834e750561d2332aeba50beed00fe5c4afdb815532d5ef1b95738de180324ae",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "ideas_list",
+      "function": "ideas_list",
+      "decorator": "mcp.tool",
+      "path": "mcp-invest/server.py",
+      "lineno": 338,
+      "end_lineno": 343,
+      "description": "Получить список актуальных торговых идей и рекомендаций (не привязаны к конкретному клиенту).",
+      "docstring": "Получить список актуальных торговых идей и рекомендаций (не привязаны к конкретному клиенту).",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "digest": "sha256:77f02e712fd6660646b72750d0c3b633782f0d810fb5383c2f1de2746b9e1091",
+      "is_async": false,
+      "component": "mcp-invest",
+      "kind": "mcp",
+      "status": "static_supported"
+    },
+    {
+      "name": "duckduckgo_search",
+      "function": "duckduckgo_search",
+      "decorator": "tool",
+      "path": "app/agent/tools.py",
+      "lineno": 19,
+      "end_lineno": 46,
+      "description": "Search the web using DuckDuckGo. Useful for current events and factual research.",
+      "docstring": "Perform web searches via DuckDuckGo and return formatted results.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "queries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "python_annotation": "List[str]"
+          }
+        },
+        "required": [
+          "queries"
+        ]
+      },
+      "digest": "sha256:26a75bc0f0af5820dcb44d51f0ee7bcb6a187c593e67459e8d8fd2c7f3b2cdcc",
+      "is_async": true,
+      "component": "agent-native",
+      "kind": "native",
+      "status": "static_supported"
+    }
+  ],
+  "flows": [
+    {
+      "id": "F-persist-policy",
+      "kind": "publish",
+      "from": "session-finalizer",
+      "to": "mongo:agent_policy_memories",
+      "path": "app/orchestrator/graph.py",
+      "symbol": "persist_all",
+      "patterns": [
+        "scope == \"global\"",
+        "AgentPolicyMemory\\(",
+        "save_agent_policy"
+      ],
+      "writer_principal": "session-finalizer",
+      "writer_role": "background_worker",
+      "memory_type": "shared_policy",
+      "audience": "shared",
+      "authority": "policy",
+      "approval_required": false,
+      "boundary": "B-mem-publish",
+      "conditions": [
+        "LLM extraction marks a fact as scope=global"
+      ],
+      "statement": "Обработка извлечённых фактов пользовательской сессии содержит ветвь записи общей политики (AgentPolicyMemory).",
+      "rule_refs": [
+        "MEM-02",
+        "MEM-06"
+      ],
+      "limitations": [
+        "права БД работающего deployment не проверены",
+        "прохождение конкретного пользовательского текста через извлечение фактов не проверено"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "scope == \"global\"",
+            "fragment": "scope == \"global\""
+          },
+          {
+            "pattern": "AgentPolicyMemory\\(",
+            "fragment": "AgentPolicyMemory("
+          },
+          {
+            "pattern": "save_agent_policy",
+            "fragment": "save_agent_policy"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/orchestrator/graph.py",
+          "symbol": "persist_all",
+          "lines": [
+            91,
+            143
+          ]
+        },
+        "digest": "sha256:409288bbd7c52a517cf34da12317dec545129ac8e53cec52a53b9058fdd96b01",
+        "fragment": "async def persist_all(state: OrchestratorState) -> dict:\n    store = MemoryStore()\n    user_id = state[\"user_id\"]\n    session_id = state[\"session_id\"]\n\n    wm = store.get_working(user_id, session_id)\n    if wm.messages:\n        store.persist_dialog(user_id, session_id, wm.messages)\n\n    episodes = [\n        EpisodicMemory(\n            user_id=user_id,\n            session_id=session_id,\n            summary=e[\"summary\"],\n            source_session=session_id,\n        )\n        for e in state[\"episodes\"]\n    ]\n    if episodes:\n        store.save_episodes(episodes)\n\n    facts = []\n    policies = [… [+1003 chars truncated]",
+        "summary": "Обработка извлечённых фактов пользовательской сессии содержит ветвь записи общей политики (AgentPolicyMemory)."
+      }
+    },
+    {
+      "id": "F-scope-from-llm",
+      "kind": "scope_decision",
+      "from": "session-finalizer",
+      "to": "mongo:agent_policy_memories",
+      "path": "app/orchestrator/graph.py",
+      "symbol": "persist_all",
+      "patterns": [
+        "scope = f.get\\(\"scope\", \"user\"\\)",
+        "if scope not in \\(\"user\", \"global\"\\)"
+      ],
+      "decision_source": "llm_output",
+      "validation": "range check (user|global) only",
+      "memory_type": "shared_policy",
+      "statement": "Область (user/global) берётся из структурированного вывода LLM; сервер лишь ограничивает множество значений.",
+      "rule_refs": [
+        "MEM-03"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "scope = f.get\\(\"scope\", \"user\"\\)",
+            "fragment": "scope = f.get(\"scope\", \"user\")"
+          },
+          {
+            "pattern": "if scope not in \\(\"user\", \"global\"\\)",
+            "fragment": "if scope not in (\"user\", \"global\")"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/orchestrator/graph.py",
+          "symbol": "persist_all",
+          "lines": [
+            91,
+            143
+          ]
+        },
+        "digest": "sha256:409288bbd7c52a517cf34da12317dec545129ac8e53cec52a53b9058fdd96b01",
+        "fragment": "async def persist_all(state: OrchestratorState) -> dict:\n    store = MemoryStore()\n    user_id = state[\"user_id\"]\n    session_id = state[\"session_id\"]\n\n    wm = store.get_working(user_id, session_id)\n    if wm.messages:\n        store.persist_dialog(user_id, session_id, wm.messages)\n\n    episodes = [\n        EpisodicMemory(\n            user_id=user_id,\n            session_id=session_id,\n            summary=e[\"summary\"],\n            source_session=session_id,\n        )\n        for e in state[\"episodes\"]\n    ]\n    if episodes:\n        store.save_episodes(episodes)\n\n    facts = []\n    policies = [… [+1003 chars truncated]",
+        "summary": "Область (user/global) берётся из структурированного вывода LLM; сервер лишь ограничивает множество значений."
+      }
+    },
+    {
+      "id": "F-context-policy-as-rules",
+      "kind": "context_include",
+      "from": "memory-store",
+      "to": "agent",
+      "path": "app/memory/store.py",
+      "symbol": "MemoryStore.build_context",
+      "patterns": [
+        "agent_policy\\.list_all",
+        "которых агент должен придерживаться"
+      ],
+      "memory_type": "shared_policy",
+      "presented_as": "rules",
+      "context_role": "system",
+      "publisher_trusted": false,
+      "subject_bound": false,
+      "statement": "Общая политика собирается как правила («которых агент должен придерживаться») и попадает в системное сообщение без привязки к текущему пользователю.",
+      "rule_refs": [
+        "MEM-04"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "agent_policy\\.list_all",
+            "fragment": "agent_policy.list_all"
+          },
+          {
+            "pattern": "которых агент должен придерживаться",
+            "fragment": "которых агент должен придерживаться"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/store.py",
+          "symbol": "MemoryStore.build_context",
+          "lines": [
+            22,
+            76
+          ]
+        },
+        "digest": "sha256:4671410ad7695b681814ba0344eabdfbde35329599975d445a788732359500e4",
+        "fragment": "    def build_context(self, user_id: str, session_id: str) -> str:\n        \"\"\"Собрать текстовый блок памяти для промпта агента.\"\"\"\n        parts: list[str] = []\n\n        wm = self.working.get(user_id, session_id)\n        if wm.messages or wm.summary:\n            parts.append(\"## Рабочая память (текущая сессия)\")\n            if wm.summary:\n                parts.append(f\"Суммаризация: {wm.summary}\")\n            for m in wm.messages[-10:]:\n                parts.append(f\"- [{m.role}] {m.content[:500]}\")\n\n        dialogs = self.mongo.dialog.list_for_user(\n            user_id, limit=self._settings.m… [+1648 chars truncated]",
+        "summary": "Общая политика собирается как правила («которых агент должен придерживаться») и попадает в системное сообщение без привязки к текущему пользователю."
+      }
+    },
+    {
+      "id": "F-user-facts-read",
+      "kind": "memory_read",
+      "from": "memory-store",
+      "to": "mongo:semantic_memories",
+      "path": "app/memory/mongo.py",
+      "symbol": "SemanticRepo.list_for_context",
+      "patterns": [
+        "\"user_id\": user_id",
+        "\"scope\": \"user\""
+      ],
+      "memory_type": "user_fact",
+      "audience": "user",
+      "filter_by": [
+        "user_id",
+        "scope"
+      ],
+      "subject_bound": true,
+      "audience_filter_before_context": true,
+      "statement": "Личные факты читаются с фильтром user_id+scope до сборки контекста.",
+      "rule_refs": [
+        "MEM-01",
+        "MEM-07"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "\"user_id\": user_id",
+            "fragment": "\"user_id\": user_id"
+          },
+          {
+            "pattern": "\"scope\": \"user\"",
+            "fragment": "\"scope\": \"user\""
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/mongo.py",
+          "symbol": "SemanticRepo.list_for_context",
+          "lines": [
+            103,
+            114
+          ]
+        },
+        "digest": "sha256:0f09b6a6a4309ee3d2e245de1b4759e6bd34d0d5d5f27d808747d9322d191fed",
+        "fragment": "    def list_for_context(\n        self, user_id: str, limit: int = 20, *, trusted_only: bool = True\n    ) -> list[SemanticMemory]:\n        query = {\"$or\": [{\"scope\": \"global\"}, {\"user_id\": user_id, \"scope\": \"user\"}]}\n        cursor = self.col.find(query).sort(\"created_at\", DESCENDING).limit(limit)\n        out = []\n        for doc in cursor:\n            if trusted_only and not _doc_trusted(doc, user_id, allow_global=True):\n                continue\n            doc.pop(\"_id\", None)\n            out.append(SemanticMemory.model_validate(doc))\n        return out",
+        "summary": "Личные факты читаются с фильтром user_id+scope до сборки контекста."
+      }
+    },
+    {
+      "id": "F-dialog-read",
+      "kind": "memory_read",
+      "from": "memory-store",
+      "to": "mongo",
+      "path": "app/memory/mongo.py",
+      "symbol": "DialogRepo.list_for_user",
+      "patterns": [
+        "find\\(\\{\"user_id\": user_id\\}\\)"
+      ],
+      "memory_type": "dialog",
+      "audience": "user",
+      "filter_by": [
+        "user_id"
+      ],
+      "subject_bound": true,
+      "audience_filter_before_context": true,
+      "rule_refs": [
+        "MEM-01",
+        "MEM-07"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "find\\(\\{\"user_id\": user_id\\}\\)",
+            "fragment": "find({\"user_id\": user_id})"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/mongo.py",
+          "symbol": "DialogRepo.list_for_user",
+          "lines": [
+            59,
+            69
+          ]
+        },
+        "digest": "sha256:b2dac2f35811dd292b839d7ca483d76629a0e057824c1d91f2e992affda7c909",
+        "fragment": "    def list_for_user(\n        self, user_id: str, limit: int = 5, *, trusted_only: bool = True\n    ) -> list[DialogSession]:\n        cursor = self.col.find({\"user_id\": user_id}).sort(\"ended_at\", DESCENDING).limit(limit)\n        out = []\n        for doc in cursor:\n            if trusted_only and not _doc_trusted(doc, user_id):\n                continue\n            doc.pop(\"_id\", None)\n            out.append(DialogSession.model_validate(doc))\n        return out",
+        "summary": "F-dialog-read"
+      }
+    },
+    {
+      "id": "F-episodic-read",
+      "kind": "memory_read",
+      "from": "memory-store",
+      "to": "mongo",
+      "path": "app/memory/mongo.py",
+      "symbol": "EpisodicRepo.list_for_user",
+      "patterns": [
+        "find\\(\\{\"user_id\": user_id\\}\\)"
+      ],
+      "memory_type": "episode",
+      "audience": "user",
+      "filter_by": [
+        "user_id"
+      ],
+      "subject_bound": true,
+      "audience_filter_before_context": true,
+      "rule_refs": [
+        "MEM-01",
+        "MEM-07"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "find\\(\\{\"user_id\": user_id\\}\\)",
+            "fragment": "find({\"user_id\": user_id})"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/mongo.py",
+          "symbol": "EpisodicRepo.list_for_user",
+          "lines": [
+            81,
+            91
+          ]
+        },
+        "digest": "sha256:629888acce2758a98a79f28f80683709236f9e6b7e316cc64b55519bfe0333fb",
+        "fragment": "    def list_for_user(\n        self, user_id: str, limit: int = 10, *, trusted_only: bool = True\n    ) -> list[EpisodicMemory]:\n        cursor = self.col.find({\"user_id\": user_id}).sort(\"created_at\", DESCENDING).limit(limit)\n        out = []\n        for doc in cursor:\n            if trusted_only and not _doc_trusted(doc, user_id):\n                continue\n            doc.pop(\"_id\", None)\n            out.append(EpisodicMemory.model_validate(doc))\n        return out",
+        "summary": "F-episodic-read"
+      }
+    },
+    {
+      "id": "F-policy-read-unscoped",
+      "kind": "memory_read",
+      "from": "memory-store",
+      "to": "mongo:agent_policy_memories",
+      "path": "app/memory/mongo.py",
+      "symbol": "AgentPolicyRepo.list_all",
+      "patterns": [
+        "find\\(\\{\\}\\)"
+      ],
+      "memory_type": "shared_policy",
+      "audience": "shared",
+      "filter_by": [],
+      "subject_bound": false,
+      "audience_filter_before_context": true,
+      "statement": "Общая политика читается без какой-либо привязки (по дизайну: аудитория — все клиенты).",
+      "rule_refs": [
+        "MEM-04"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "find\\(\\{\\}\\)",
+            "fragment": "find({})"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/mongo.py",
+          "symbol": "AgentPolicyRepo.list_all",
+          "lines": [
+            130,
+            136
+          ]
+        },
+        "digest": "sha256:9b6853b362f65c77c946a3c29a81321a4817872c320d5e1b052406a1498f585e",
+        "fragment": "    def list_all(self, limit: int = 20) -> list[AgentPolicyMemory]:\n        cursor = self.col.find({}).sort(\"created_at\", DESCENDING).limit(limit)\n        out = []\n        for doc in cursor:\n            doc.pop(\"_id\", None)\n            out.append(AgentPolicyMemory.model_validate(doc))\n        return out",
+        "summary": "Общая политика читается без какой-либо привязки (по дизайну: аудитория — все клиенты)."
+      }
+    },
+    {
+      "id": "F-derive-facts",
+      "kind": "derivation",
+      "from": "session-finalizer",
+      "to": "mongo:semantic_memories",
+      "path": "app/orchestrator/graph.py",
+      "symbol": "persist_all",
+      "patterns": [
+        "source_episode_id=episodes\\[0\\]\\.episode_id if episodes else None",
+        "source_session_id=session_id"
+      ],
+      "from_types": [
+        "dialog",
+        "episode"
+      ],
+      "provenance_kept": false,
+      "provenance_fields": [
+        "source_episode_id (first episode only)",
+        "source_session_id (policy, audit only)"
+      ],
+      "statement": "Производные факты хранят только ссылку на сессию/первый эпизод; связь с сообщениями и результатами инструментов теряется.",
+      "rule_refs": [
+        "MEM-05"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "source_episode_id=episodes\\[0\\]\\.episode_id if episodes else None",
+            "fragment": "source_episode_id=episodes[0].episode_id if episodes else None"
+          },
+          {
+            "pattern": "source_session_id=session_id",
+            "fragment": "source_session_id=session_id"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/orchestrator/graph.py",
+          "symbol": "persist_all",
+          "lines": [
+            91,
+            143
+          ]
+        },
+        "digest": "sha256:409288bbd7c52a517cf34da12317dec545129ac8e53cec52a53b9058fdd96b01",
+        "fragment": "async def persist_all(state: OrchestratorState) -> dict:\n    store = MemoryStore()\n    user_id = state[\"user_id\"]\n    session_id = state[\"session_id\"]\n\n    wm = store.get_working(user_id, session_id)\n    if wm.messages:\n        store.persist_dialog(user_id, session_id, wm.messages)\n\n    episodes = [\n        EpisodicMemory(\n            user_id=user_id,\n            session_id=session_id,\n            summary=e[\"summary\"],\n            source_session=session_id,\n        )\n        for e in state[\"episodes\"]\n    ]\n    if episodes:\n        store.save_episodes(episodes)\n\n    facts = []\n    policies = [… [+1003 chars truncated]",
+        "summary": "Производные факты хранят только ссылку на сессию/первый эпизод; связь с сообщениями и результатами инструментов теряется."
+      }
+    },
+    {
+      "id": "F-answer-to-working",
+      "kind": "memory_write",
+      "from": "agent",
+      "to": "redis:working",
+      "path": "app/agent/runner.py",
+      "symbol": "run_research",
+      "patterns": [
+        "store\\.append_turn\\(user_id, session_id, query, final_text\\)"
+      ],
+      "memory_type": "working",
+      "audience": "session",
+      "writer_principal": "agent",
+      "provenance_kept": false,
+      "provenance_fields": [],
+      "statement": "В рабочую память пишутся запрос и финальный ответ, а не сырые результаты инструментов: для связи tool result → memory нужна прослеживаемость производного ответа.",
+      "rule_refs": [
+        "MEM-05",
+        "TOOL-04"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "store\\.append_turn\\(user_id, session_id, query, final_text\\)",
+            "fragment": "store.append_turn(user_id, session_id, query, final_text)"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/agent/runner.py",
+          "symbol": "run_research",
+          "lines": [
+            163,
+            230
+          ]
+        },
+        "digest": "sha256:5f5f65e211323c8525ecb8412ccb3416bfc0e62fc1e9ffa985a34f82ec255621",
+        "fragment": "async def run_research(\n    user_id: str,\n    session_id: str,\n    query: str,\n    auth_mode: str = \"vulnerable\",\n    user_access_token: str | None = None,\n) -> dict[str, Any]:\n    \"\"\"Ответить на вопрос, при необходимости вызывая тулы MCP Инвеста / веб-поиск.\n\n    auth_mode: \"vulnerable\" — агент ходит в MCP по сырому токену технической УЗ (видит\n    любого клиента); \"protected\" — агент обменивает токен пользователя user_id на\n    cus-ограниченный токен через OAuth2 Token Exchange перед каждым вызовом.\n    user_access_token: [REDACTED] access-токен вошедшего через Keycloak/oauth2-proxy\n    поль… [+2425 chars truncated]",
+        "summary": "В рабочую память пишутся запрос и финальный ответ, а не сырые результаты инструментов: для связи tool result → memory нужна прослеживаемость производного ответа."
+      }
+    },
+    {
+      "id": "F-load-working",
+      "kind": "data_flow",
+      "from": "redis:working",
+      "to": "session-finalizer",
+      "path": "app/orchestrator/graph.py",
+      "symbol": "load_working",
+      "patterns": [
+        "store\\.get_working\\("
+      ],
+      "statement": "Финализация читает рабочую память сессии как текст диалога.",
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "store\\.get_working\\(",
+            "fragment": "store.get_working("
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/orchestrator/graph.py",
+          "symbol": "load_working",
+          "lines": [
+            55,
+            59
+          ]
+        },
+        "digest": "sha256:8739a663f7fb88153a6958f328b485440da38e684de72d91c9bc67d8d892cf6c",
+        "fragment": "async def load_working(state: OrchestratorState) -> dict:\n    store = MemoryStore()\n    wm = store.get_working(state[\"user_id\"], state[\"session_id\"])\n    lines = [f\"[{m.role}] {m.content}\" for m in wm.messages]\n    return {\"dialog_text\": \"\\n\".join(lines) if lines else \"(пустая сессия)\"}",
+        "summary": "Финализация читает рабочую память сессии как текст диалога."
+      }
+    },
+    {
+      "id": "F-search-results-to-model",
+      "kind": "data_flow",
+      "from": "duckduckgo",
+      "to": "agent",
+      "path": "app/agent/runner.py",
+      "symbol": "run_research",
+      "patterns": [
+        "ToolMessage\\(content=str\\(result\\)"
+      ],
+      "statement": "Результаты инструментов (в т.ч. веб-поиска) передаются модели как сообщения.",
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "ToolMessage\\(content=str\\(result\\)",
+            "fragment": "ToolMessage(content=str(result)"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/agent/runner.py",
+          "symbol": "run_research",
+          "lines": [
+            163,
+            230
+          ]
+        },
+        "digest": "sha256:5f5f65e211323c8525ecb8412ccb3416bfc0e62fc1e9ffa985a34f82ec255621",
+        "fragment": "async def run_research(\n    user_id: str,\n    session_id: str,\n    query: str,\n    auth_mode: str = \"vulnerable\",\n    user_access_token: str | None = None,\n) -> dict[str, Any]:\n    \"\"\"Ответить на вопрос, при необходимости вызывая тулы MCP Инвеста / веб-поиск.\n\n    auth_mode: \"vulnerable\" — агент ходит в MCP по сырому токену технической УЗ (видит\n    любого клиента); \"protected\" — агент обменивает токен пользователя user_id на\n    cus-ограниченный токен через OAuth2 Token Exchange перед каждым вызовом.\n    user_access_token: [REDACTED] access-токен вошедшего через Keycloak/oauth2-proxy\n    поль… [+2425 chars truncated]",
+        "summary": "Результаты инструментов (в т.ч. веб-поиска) передаются модели как сообщения."
+      }
+    },
+    {
+      "id": "F-mcp-results-to-model",
+      "kind": "data_flow",
+      "from": "mcp-invest",
+      "to": "agent",
+      "path": "app/agent/runner.py",
+      "symbol": "run_research",
+      "patterns": [
+        "ToolMessage\\(content=str\\(result\\)"
+      ],
+      "statement": "Результаты MCP-инструментов передаются модели как сообщения.",
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "ToolMessage\\(content=str\\(result\\)",
+            "fragment": "ToolMessage(content=str(result)"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/agent/runner.py",
+          "symbol": "run_research",
+          "lines": [
+            163,
+            230
+          ]
+        },
+        "digest": "sha256:5f5f65e211323c8525ecb8412ccb3416bfc0e62fc1e9ffa985a34f82ec255621",
+        "fragment": "async def run_research(\n    user_id: str,\n    session_id: str,\n    query: str,\n    auth_mode: str = \"vulnerable\",\n    user_access_token: str | None = None,\n) -> dict[str, Any]:\n    \"\"\"Ответить на вопрос, при необходимости вызывая тулы MCP Инвеста / веб-поиск.\n\n    auth_mode: \"vulnerable\" — агент ходит в MCP по сырому токену технической УЗ (видит\n    любого клиента); \"protected\" — агент обменивает токен пользователя user_id на\n    cus-ограниченный токен через OAuth2 Token Exchange перед каждым вызовом.\n    user_access_token: [REDACTED] access-токен вошедшего через Keycloak/oauth2-proxy\n    поль… [+2425 chars truncated]",
+        "summary": "Результаты MCP-инструментов передаются модели как сообщения."
+      }
+    },
+    {
+      "id": "F-agent-calls-mcp",
+      "kind": "control_flow",
+      "from": "agent",
+      "to": "mcp-invest",
+      "path": "app/agent/runner.py",
+      "symbol": "_load_tools",
+      "patterns": [
+        "MultiServerMCPClient\\("
+      ],
+      "statement": "Агент подключает MCP-инструменты Инвеста.",
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "MultiServerMCPClient\\(",
+            "fragment": "MultiServerMCPClient("
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/agent/runner.py",
+          "symbol": "_load_tools",
+          "lines": [
+            129,
+            148
+          ]
+        },
+        "digest": "sha256:5ef76d40bf0fbe060dd833bb7ad0cff2b5d1472583d1d793f697731885b7ca81",
+        "fragment": "async def _load_tools(\n    settings: Settings, user_id: str, auth_mode: str, user_access_token: str | None\n) -> list:\n    tools = [duckduckgo_search]\n    if not settings.mcp_invest_url:\n        return tools\n    headers = await _mcp_headers(settings, user_id, auth_mode, user_access_token)\n    client = MultiServerMCPClient({\n        \"invest\": {\n            \"url\": settings.mcp_invest_url.rstrip(\"/\") + \"/mcp\",\n            \"transport\": \"streamable_http\",\n            \"headers\": headers,\n        },\n    })\n    try:\n        mcp_tools = await client.get_tools()\n    except Exception:\n        return tools… [+83 chars truncated]",
+        "summary": "Агент подключает MCP-инструменты Инвеста."
+      }
+    },
+    {
+      "id": "F-search-transmit",
+      "kind": "transmit",
+      "from": "agent",
+      "to": "duckduckgo",
+      "path": "app/agent/tools.py",
+      "symbol": "duckduckgo_search",
+      "patterns": [
+        "ddgs\\.text\\(query"
+      ],
+      "destination": "duckduckgo",
+      "data_categories_possible": [
+        "public_query",
+        "client_identifier",
+        "portfolio_data"
+      ],
+      "category_filter": false,
+      "composed_by": "model",
+      "statement": "Query веб-поиска — данные, передаваемые внешнему провайдеру; текст составляет модель без фильтра категорий.",
+      "rule_refs": [
+        "EGRESS-01"
+      ],
+      "limitations": [
+        "фактическая передача клиентских данных не наблюдалась"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "ddgs\\.text\\(query",
+            "fragment": "ddgs.text(query"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/agent/tools.py",
+          "symbol": "duckduckgo_search",
+          "lines": [
+            19,
+            46
+          ]
+        },
+        "digest": "sha256:26a75bc0f0af5820dcb44d51f0ee7bcb6a187c593e67459e8d8fd2c7f3b2cdcc",
+        "fragment": "async def duckduckgo_search(queries: List[str]) -> str:\n    \"\"\"Perform web searches via DuckDuckGo and return formatted results.\"\"\"\n\n    async def _search_one(query: str) -> dict:\n        loop = asyncio.get_event_loop()\n\n        def _sync_search() -> dict:\n            results = []\n            with DDGS() as ddgs:\n                for i, item in enumerate(ddgs.text(query, max_results=5)):\n                    results.append({\n                        \"title\": item.get(\"title\", \"\"),\n                        \"url\": item.get(\"href\", \"\"),\n                        \"content\": item.get(\"body\", \"\"),\n       … [+620 chars truncated]",
+        "summary": "Query веб-поиска — данные, передаваемые внешнему провайдеру; текст составляет модель без фильтра категорий."
+      }
+    },
+    {
+      "id": "F-trust-elevation-confidence",
+      "kind": "trust_elevation",
+      "from": "session-finalizer",
+      "to": "mongo:agent_policy_memories",
+      "path": "app/orchestrator/graph.py",
+      "symbol": "persist_all",
+      "patterns": [
+        "confidence=float\\(f\\.get\\(\"confidence\", 0\\.8\\)\\)"
+      ],
+      "mechanism": "LLM-reported confidence is stored as the record's confidence; no review/approval transition before shared publication",
+      "memory_type": "shared_policy",
+      "statement": "Пересказ модели и её confidence становятся общей политикой без отдельного разрешённого перехода.",
+      "rule_refs": [
+        "MEM-06"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "confidence=float\\(f\\.get\\(\"confidence\", 0\\.8\\)\\)",
+            "fragment": "confidence=float(f.get(\"confidence\", 0.8))"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/orchestrator/graph.py",
+          "symbol": "persist_all",
+          "lines": [
+            91,
+            143
+          ]
+        },
+        "digest": "sha256:409288bbd7c52a517cf34da12317dec545129ac8e53cec52a53b9058fdd96b01",
+        "fragment": "async def persist_all(state: OrchestratorState) -> dict:\n    store = MemoryStore()\n    user_id = state[\"user_id\"]\n    session_id = state[\"session_id\"]\n\n    wm = store.get_working(user_id, session_id)\n    if wm.messages:\n        store.persist_dialog(user_id, session_id, wm.messages)\n\n    episodes = [\n        EpisodicMemory(\n            user_id=user_id,\n            session_id=session_id,\n            summary=e[\"summary\"],\n            source_session=session_id,\n        )\n        for e in state[\"episodes\"]\n    ]\n    if episodes:\n        store.save_episodes(episodes)\n\n    facts = []\n    policies = [… [+1003 chars truncated]",
+        "summary": "Пересказ модели и её confidence становятся общей политикой без отдельного разрешённого перехода."
+      }
+    },
+    {
+      "id": "F-identity-apikey",
+      "kind": "identity_binding",
+      "from": "agent-api",
+      "to": "agent",
+      "path": "app/api_server.py",
+      "symbol": "_resolve_user",
+      "patterns": [
+        "find_by_hash\\(hash_key\\(raw_key\\)\\)",
+        "return record\\.user_id"
+      ],
+      "identity_source": "authentication",
+      "principal": "end_user",
+      "statement": "user_id берётся строго из привязки API-ключа; тело запроса не может его переопределить.",
+      "rule_refs": [
+        "AUTH-01"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "find_by_hash\\(hash_key\\(raw_key\\)\\)",
+            "fragment": "find_by_hash(hash_key(raw_key))"
+          },
+          {
+            "pattern": "return record\\.user_id",
+            "fragment": "return record.user_id"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/api_server.py",
+          "symbol": "_resolve_user",
+          "lines": [
+            228,
+            235
+          ]
+        },
+        "digest": "sha256:cbd9206528932d802df34958a604e737e92d2e9047d67e0405c63813afab90c1",
+        "fragment": "def _resolve_user(authorization: str | None) -> str:\n    if not authorization or not authorization.lower().startswith(\"bearer \"):\n        raise HTTPException(status_code=401, detail=\"Требуется заголовок Authorization: [REDACTED] <api-key>\")\n    raw_key = authorization.split(\" \", 1)[1].strip()\n    record = _mongo.api_keys.find_by_hash(hash_key(raw_key))\n    if not record:\n        raise HTTPException(status_code=401, detail=\"Неизвестный или отозванный API-ключ\")\n    return record.user_id",
+        "summary": "user_id берётся строго из привязки API-ключа; тело запроса не может его переопределить."
+      }
+    },
+    {
+      "id": "F-identity-oidc",
+      "kind": "identity_binding",
+      "from": "agent-api",
+      "to": "agent",
+      "path": "app/api_server.py",
+      "symbol": "_current_identity",
+      "patterns": [
+        "x-forwarded-access-token",
+        "jwt\\.decode\\("
+      ],
+      "identity_source": "authentication",
+      "principal": "end_user",
+      "statement": "Личность SSO берётся из токена, проброшенного oauth2-proxy.",
+      "rule_refs": [
+        "AUTH-01"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "x-forwarded-access-token",
+            "fragment": "x-forwarded-access-token"
+          },
+          {
+            "pattern": "jwt\\.decode\\(",
+            "fragment": "jwt.decode("
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/api_server.py",
+          "symbol": "_current_identity",
+          "lines": [
+            48,
+            69
+          ]
+        },
+        "digest": "sha256:d289b1516c23cd30f20091f40e74f320b270c1c1bf8bff80f9accd41655b0c31",
+        "fragment": "def _current_identity(request: Request) -> dict | None:\n    \"\"\"Личность залогиненного через Keycloak пользователя — из токена, который\n    прокинул oauth2-proxy заголовком X-Forwarded-Access-Token. None, если запрос пришёл\n    не через прокси (например, напрямую на порт 8600 — так ходят /v1/* с Bearer-ключом).\n    \"\"\"\n    token = [REDACTED]\"x-forwarded-access-token\")\n    jwk_client = _get_jwk_client()\n    if not token or jwk_client is None:\n        return None\n    try:\n        signing_key = jwk_client.get_signing_key_from_jwt(token)\n        claims = jwt.decode(\n            token, signing_key.k… [+333 chars truncated]",
+        "summary": "Личность SSO берётся из токена, проброшенного oauth2-proxy."
+      }
+    },
+    {
+      "id": "F-security-mode-body",
+      "kind": "security_mode",
+      "from": "agent-api",
+      "to": "agent",
+      "path": "app/api_server.py",
+      "symbol": "ChatCompletionRequest",
+      "patterns": [
+        "auth_mode: str = \"vulnerable\""
+      ],
+      "client_can_weaken": true,
+      "weakening_parameters": [
+        "body.auth_mode (default vulnerable)"
+      ],
+      "statement": "Режим защиты выбирается полем тела запроса; значение по умолчанию — vulnerable.",
+      "rule_refs": [
+        "AUTH-03"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "auth_mode: str = \"vulnerable\"",
+            "fragment": "auth_mode: str = \"vulnerable\""
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/api_server.py",
+          "symbol": "ChatCompletionRequest",
+          "lines": [
+            219,
+            225
+          ]
+        },
+        "digest": "sha256:0425d12fcee0f1aa6d99a1d855f35de70d56fe3be76c867b3c1e9e5e6aa9a98a",
+        "fragment": "class ChatCompletionRequest(BaseModel):\n    model: str = \"genai-invest-assistant\"\n    messages: list[ChatMessage]\n    # Расширения поверх стандартной OpenAI-формы — необязательны, promptfoo может их не знать.\n    session_id: str | None = None\n    auth_mode: str = \"vulnerable\"  # \"vulnerable\" | \"protected\" — какой режим стенда тестируем\n    stream: bool = False",
+        "summary": "Режим защиты выбирается полем тела запроса; значение по умолчанию — vulnerable."
+      }
+    },
+    {
+      "id": "F-security-mode-header",
+      "kind": "security_mode",
+      "from": "mcp-invest",
+      "to": "invest-server",
+      "path": "mcp-invest/server.py",
+      "symbol": "_demo_mode",
+      "patterns": [
+        "x-demo-auth-mode"
+      ],
+      "client_can_weaken": true,
+      "weakening_parameters": [
+        "header X-Demo-Auth-Mode"
+      ],
+      "statement": "Заголовок клиента переопределяет режим проверки на mcp-invest и форвардится в invest-server.",
+      "rule_refs": [
+        "AUTH-03"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "x-demo-auth-mode",
+            "fragment": "x-demo-auth-mode"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "mcp-invest/server.py",
+          "symbol": "_demo_mode",
+          "lines": [
+            37,
+            40
+          ]
+        },
+        "digest": "sha256:f1e258c81d3c31e83f220d5f0d741c8ef5e54ae8e4924cfa5f79239863075f65",
+        "fragment": "def _demo_mode(ctx: Context) -> str | None:\n    \"\"\"Режим (vulnerable/protected), выбранный в UI стенда для этого запроса, если есть.\"\"\"\n    request = ctx.request_context.request\n    return request.headers.get(\"x-demo-auth-mode\") if request is not None else None",
+        "summary": "Заголовок клиента переопределяет режим проверки на mcp-invest и форвардится в invest-server."
+      }
+    },
+    {
+      "id": "F-store-access-policy",
+      "kind": "store_access",
+      "from": "agent-api",
+      "to": "mongo:agent_policy_memories",
+      "path": "app/memory/store.py",
+      "symbol": "MemoryStore.save_agent_policy",
+      "patterns": [
+        "agent_policy\\.insert_many"
+      ],
+      "rights": [
+        "read",
+        "write",
+        "publish"
+      ],
+      "authority": "policy",
+      "statement": "Процесс agent-api (и оркестратор внутри него) пишет в коллекцию общей политики через общий клиент Mongo.",
+      "rule_refs": [
+        "INFRA-01",
+        "MEM-02"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "agent_policy\\.insert_many",
+            "fragment": "agent_policy.insert_many"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/store.py",
+          "symbol": "MemoryStore.save_agent_policy",
+          "lines": [
+            111,
+            112
+          ]
+        },
+        "digest": "sha256:d95a5f61180cb3e34596954d2586f83c03c99a58db9d77bdebbec5349e5d13c2",
+        "fragment": "    def save_agent_policy(self, policies: list[AgentPolicyMemory]) -> None:\n        self.mongo.agent_policy.insert_many(policies)",
+        "summary": "Процесс agent-api (и оркестратор внутри него) пишет в коллекцию общей политики через общий клиент Mongo."
+      }
+    },
+    {
+      "id": "F-revocation-apikey",
+      "kind": "revocation_check",
+      "from": "agent-api",
+      "to": "mongo",
+      "path": "app/memory/mongo.py",
+      "symbol": "ApiKeyRepo.find_by_hash",
+      "patterns": [
+        "\"revoked\": False"
+      ],
+      "checked_per_request": true,
+      "scheme": "api_key",
+      "statement": "Отзыв API-ключа проверяется при каждом запросе.",
+      "rule_refs": [
+        "AUTH-06"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "\"revoked\": False",
+            "fragment": "\"revoked\": False"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/mongo.py",
+          "symbol": "ApiKeyRepo.find_by_hash",
+          "lines": [
+            148,
+            153
+          ]
+        },
+        "digest": "sha256:d69be16d18a5ce5d355af651bd2ea1034a79adf348c88549095fe39a6246f28b",
+        "fragment": "    def find_by_hash(self, key_hash: str) -> ApiKey | None:\n        doc = self.col.find_one({\"key_hash\": key_hash, \"revoked\": False})\n        if not doc:\n            return None\n        doc.pop(\"_id\", None)\n        return ApiKey.model_validate(doc)",
+        "summary": "Отзыв API-ключа проверяется при каждом запросе."
+      }
+    },
+    {
+      "id": "F-retention-working",
+      "kind": "retention",
+      "from": "memory-store",
+      "to": "redis:working",
+      "path": "app/memory/working.py",
+      "symbol": "WorkingMemoryStore.save",
+      "patterns": [
+        "setex\\("
+      ],
+      "memory_type": "working",
+      "ttl_seconds": 86400,
+      "mechanism": "redis setex (WORKING_MEMORY_TTL)",
+      "statement": "Рабочая память ограничена TTL.",
+      "rule_refs": [
+        "MEM-10"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "setex\\(",
+            "fragment": "setex("
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/working.py",
+          "symbol": "WorkingMemoryStore.save",
+          "lines": [
+            31,
+            41
+          ]
+        },
+        "digest": "sha256:6b8c66e95b6d1cd37fd7b51cd2daf1426488db3fdcb760553721a84aa64d9fb0",
+        "fragment": "    def save(self, user_id: str, session_id: str, memory: WorkingMemory) -> None:\n        payload = {\n            \"messages\": [m.model_dump(mode=\"json\") for m in memory.messages],\n            \"summary\": memory.summary,\n            \"metadata\": memory.metadata,\n        }\n        self._client.setex(\n            self._key(user_id, session_id),\n            self._ttl,\n            json.dumps(payload, default=str),\n        )",
+        "summary": "Рабочая память ограничена TTL."
+      }
+    },
+    {
+      "id": "F-retention-policy",
+      "kind": "retention",
+      "from": "memory-store",
+      "to": "mongo:agent_policy_memories",
+      "path": "app/memory/mongo.py",
+      "symbol": "AgentPolicyRepo",
+      "patterns": [
+        "insert_one\\("
+      ],
+      "negate_patterns": [
+        "expireAfterSeconds",
+        "ttl"
+      ],
+      "memory_type": "shared_policy",
+      "ttl_seconds": null,
+      "mechanism": "none",
+      "statement": "Для общей политики нет TTL/очистки.",
+      "rule_refs": [
+        "MEM-10"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "insert_one\\(",
+            "fragment": "insert_one("
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/mongo.py",
+          "symbol": "AgentPolicyRepo",
+          "lines": [
+            117,
+            136
+          ]
+        },
+        "digest": "sha256:8b50774a385019b6da1f121b898deb1b0df3f0983a47fa012410285ee40e4232",
+        "fragment": "class AgentPolicyRepo:\n    \"\"\"Уровень памяти \"политика агента\" — структурно не привязан ни к одному пользователю.\n\n    Любая запись здесь читается и влияет на ответы ВСЕМ клиентам — по дизайну, без scoping.\n    \"\"\"\n\n    def __init__(self, col: Collection):\n        self.col = col\n\n    def insert_many(self, policies: list[AgentPolicyMemory]) -> None:\n        for policy in policies:\n            self.col.insert_one(policy.model_dump(mode=\"json\"))\n\n    def list_all(self, limit: int = 20) -> list[AgentPolicyMemory]:\n        cursor = self.col.find({}).sort(\"created_at\", DESCENDING).limit(limit)\n     … [+152 chars truncated]",
+        "summary": "Для общей политики нет TTL/очистки."
+      }
+    },
+    {
+      "id": "F-retention-user-fact",
+      "kind": "retention",
+      "from": "memory-store",
+      "to": "mongo:semantic_memories",
+      "path": "app/memory/mongo.py",
+      "symbol": "SemanticRepo",
+      "patterns": [
+        "insert_one\\("
+      ],
+      "negate_patterns": [
+        "expireAfterSeconds",
+        "ttl"
+      ],
+      "memory_type": "user_fact",
+      "ttl_seconds": null,
+      "mechanism": "none",
+      "statement": "Для семантической памяти нет TTL/очистки.",
+      "rule_refs": [
+        "MEM-10"
+      ],
+      "group": "flow",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "insert_one\\(",
+            "fragment": "insert_one("
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/mongo.py",
+          "symbol": "SemanticRepo",
+          "lines": [
+            94,
+            114
+          ]
+        },
+        "digest": "sha256:aa78b500f19c91f366fb65868ba7b389a308c30b866caff77df4af9a5a27779a",
+        "fragment": "class SemanticRepo:\n    def __init__(self, col: Collection):\n        self.col = col\n\n    def insert_many(self, facts: list[SemanticMemory]) -> None:\n        for fact in facts:\n            doc = fact.model_dump(mode=\"json\")\n            self.col.insert_one(doc)\n\n    def list_for_context(\n        self, user_id: str, limit: int = 20, *, trusted_only: bool = True\n    ) -> list[SemanticMemory]:\n        query = {\"$or\": [{\"scope\": \"global\"}, {\"user_id\": user_id, \"scope\": \"user\"}]}\n        cursor = self.col.find(query).sort(\"created_at\", DESCENDING).limit(limit)\n        out = []\n        for doc in curs… [+222 chars truncated]",
+        "summary": "Для семантической памяти нет TTL/очистки."
+      }
+    }
+  ],
+  "auth_transitions": [
+    {
+      "id": "T1-user-api",
+      "input_principal": "end_user",
+      "executing_component": "agent-api",
+      "operation": "READ",
+      "resource": "chat/agent",
+      "next_component": "agent",
+      "auth_scheme": "api_key",
+      "boundary": "B-user-api",
+      "enforcement_point": "agent-api",
+      "path": "app/api_server.py",
+      "symbol": "chat_completions",
+      "patterns": [
+        "user_id = _resolve_user\\(authorization\\)"
+      ],
+      "policy_decision": "enforced",
+      "client_can_weaken": true,
+      "statement": "Личность устанавливается по API-ключу; но поле auth_mode тела запроса выбирает режим защиты последующих переходов.",
+      "group": "auth_transition",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "user_id = _resolve_user\\(authorization\\)",
+            "fragment": "user_id = _resolve_user(authorization)"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/api_server.py",
+          "symbol": "chat_completions",
+          "lines": [
+            330,
+            383
+          ]
+        },
+        "digest": "sha256:53d63d2c87c58fe6f4d553b69de04f990d1f49ba51b63273ce706b5a2593556e",
+        "fragment": "async def chat_completions(\n    body: ChatCompletionRequest,\n    authorization: str | None = Header(default=None),\n    x_conversation_id: str | None = Header(default=None),\n):\n    user_id = _resolve_user(authorization)\n    if body.auth_mode not in (\"vulnerable\", \"protected\"):\n        raise HTTPException(status_code=400, detail=\"auth_mode должен быть 'vulnerable' или 'protected'\")\n\n    user_messages = [m for m in body.messages if m.role == \"user\"]\n    if not user_messages:\n        raise HTTPException(status_code=400, detail=\"В messages нужен хотя бы один message с role=user\")\n    query = user_m… [+1924 chars truncated]",
+        "summary": "Личность устанавливается по API-ключу; но поле auth_mode тела запроса выбирает режим защиты последующих переходов."
+      }
+    },
+    {
+      "id": "T2-agent-mcp",
+      "input_principal": "end_user",
+      "executing_component": "mcp-invest",
+      "operation": "READ",
+      "resource": "client_data(cus)",
+      "next_component": "invest-server",
+      "auth_scheme": "jwt",
+      "boundary": "B-agent-mcp",
+      "enforcement_point": "mcp-invest",
+      "path": "mcp-invest/server.py",
+      "symbol": "_check_cus",
+      "patterns": [
+        "auth\\.check_cus_access\\(claims, cus, mode=_demo_mode\\(ctx\\)\\)"
+      ],
+      "policy_decision": "conditional",
+      "default_condition": "not_enforced",
+      "client_can_weaken": true,
+      "conditions": [
+        "MCP_INVEST_AUTH_MODE=vulnerable (compose default): check_cus_access returns without checking",
+        "X-Demo-Auth-Mode selects the mode per request"
+      ],
+      "statement": "Проверка принадлежности cus выполняется только в режиме protected; по умолчанию любой валидный токен даёт доступ к данным любого клиента.",
+      "group": "auth_transition",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "auth\\.check_cus_access\\(claims, cus, mode=_demo_mode\\(ctx\\)\\)",
+            "fragment": "auth.check_cus_access(claims, cus, mode=_demo_mode(ctx))"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "mcp-invest/server.py",
+          "symbol": "_check_cus",
+          "lines": [
+            51,
+            56
+          ]
+        },
+        "digest": "sha256:9b887ff8b0e5b959cfc468ab5a470b8d45d5e18a4d98d01b43d9328dc45b702a",
+        "fragment": "def _check_cus(claims: dict, cus: str, ctx: Context) -> dict | None:\n    try:\n        auth.check_cus_access(claims, cus, mode=_demo_mode(ctx))\n    except auth.AuthError as exc:\n        return {\"error\": str(exc)}\n    return None",
+        "summary": "Проверка принадлежности cus выполняется только в режиме protected; по умолчанию любой валидный токен даёт доступ к данным любого клиента."
+      }
+    },
+    {
+      "id": "T3-mcp-backend",
+      "input_principal": "end_user",
+      "executing_component": "invest-server",
+      "operation": "READ",
+      "resource": "client_data(cus)",
+      "next_component": "postgres",
+      "auth_scheme": "jwt",
+      "boundary": "B-mcp-backend",
+      "enforcement_point": "invest-server",
+      "path": "invest-server/main.py",
+      "symbol": "get_client",
+      "patterns": [
+        "_check_access\\(claims, cus, x_demo_auth_mode\\)"
+      ],
+      "policy_decision": "conditional",
+      "default_condition": "not_enforced",
+      "client_can_weaken": true,
+      "conditions": [
+        "INVEST_SERVER_AUTH_MODE=vulnerable (compose default)",
+        "X-Demo-Auth-Mode forwarded by mcp-invest"
+      ],
+      "statement": "Бэкенд доверяет сервисному токену mcp-invest-service вслепую в режиме vulnerable.",
+      "group": "auth_transition",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "_check_access\\(claims, cus, x_demo_auth_mode\\)",
+            "fragment": "_check_access(claims, cus, x_demo_auth_mode)"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "invest-server/main.py",
+          "symbol": "get_client",
+          "lines": [
+            43,
+            53
+          ]
+        },
+        "digest": "sha256:ddd4d0ddec88c5728122f8f27ba9c717d07305d1ea848165cc69da03c5a430f7",
+        "fragment": "def get_client(\n    cus: str,\n    authorization: str | None = Header(default=None),\n    x_demo_auth_mode: str | None = Header(default=None),\n) -> dict:\n    claims = _authenticate(authorization)\n    _check_access(claims, cus, x_demo_auth_mode)\n    client = db.get_client_with_accounts(cus)\n    if not client:\n        raise HTTPException(status_code=404, detail=f\"Клиент с cus={cus} не найден\")\n    return client",
+        "summary": "Бэкенд доверяет сервисному токену mcp-invest-service вслепую в режиме vulnerable."
+      }
+    },
+    {
+      "id": "T3b-account-owner",
+      "input_principal": "end_user",
+      "executing_component": "invest-server",
+      "operation": "READ",
+      "resource": "account_data(account_id)",
+      "next_component": "postgres",
+      "auth_scheme": "jwt",
+      "boundary": "B-mcp-backend",
+      "enforcement_point": "invest-server",
+      "path": "invest-server/main.py",
+      "symbol": "get_tax",
+      "patterns": [
+        "owner_cus = db\\.get_account_owner\\(account_id\\) or account_id",
+        "_check_access\\(claims, owner_cus, x_demo_auth_mode\\)"
+      ],
+      "policy_decision": "conditional",
+      "default_condition": "not_enforced",
+      "client_can_weaken": true,
+      "conditions": [
+        "INVEST_SERVER_AUTH_MODE=vulnerable (compose default)"
+      ],
+      "statement": "Требование принадлежности распространяется на связанные объекты (счёт → владелец), но действует только в protected.",
+      "group": "auth_transition",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "owner_cus = db\\.get_account_owner\\(account_id\\) or account_id",
+            "fragment": "owner_cus = db.get_account_owner(account_id) or account_id"
+          },
+          {
+            "pattern": "_check_access\\(claims, owner_cus, x_demo_auth_mode\\)",
+            "fragment": "_check_access(claims, owner_cus, x_demo_auth_mode)"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "invest-server/main.py",
+          "symbol": "get_tax",
+          "lines": [
+            72,
+            84
+          ]
+        },
+        "digest": "sha256:9e7519aa6bc1a363609f00ad6936da5271b7091e94d5645309b7df04e66694c3",
+        "fragment": "def get_tax(\n    account_id: str,\n    year: int,\n    authorization: str | None = Header(default=None),\n    x_demo_auth_mode: str | None = Header(default=None),\n) -> dict:\n    claims = _authenticate(authorization)\n    owner_cus = db.get_account_owner(account_id) or account_id\n    _check_access(claims, owner_cus, x_demo_auth_mode)\n    record = db.get_tax_record(account_id, year)\n    if not record:\n        raise HTTPException(status_code=404, detail=f\"Налоговых данных за {year} год по счёту {account_id} не найдено\")\n    return record",
+        "summary": "Требование принадлежности распространяется на связанные объекты (счёт → владелец), но действует только в protected."
+      }
+    },
+    {
+      "id": "T4-agent-token",
+      "input_principal": "agent-service",
+      "executing_component": "agent",
+      "operation": "READ",
+      "resource": "client_data(cus)",
+      "next_component": "mcp-invest",
+      "auth_scheme": "jwt",
+      "boundary": "B-agent-mcp",
+      "path": "app/agent/runner.py",
+      "symbol": "_mcp_headers",
+      "patterns": [
+        "_get_agent_token\\(settings\\)"
+      ],
+      "policy_decision": "n/a",
+      "delegation": "service_account_unrestricted",
+      "subject_bound": false,
+      "conditions": [
+        "auth_mode=vulnerable (default)"
+      ],
+      "statement": "В режиме vulnerable агент ходит в MCP по токену технической УЗ без привязки к пользователю.",
+      "group": "auth_transition",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "_get_agent_token\\(settings\\)",
+            "fragment": "_get_agent_token(settings)"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/agent/runner.py",
+          "symbol": "_mcp_headers",
+          "lines": [
+            109,
+            126
+          ]
+        },
+        "digest": "sha256:011076492f6eb6b486d9f171a3dd0cbe04feafd202d6d3bf3f2a3b1d0df82b19",
+        "fragment": "async def _mcp_headers(\n    settings: Settings, user_id: str, auth_mode: str, user_access_token: str | None\n) -> dict[str, str] | None:\n    \"\"\"Заголовки для похода в MCP Инвеста: Bearer-токен + желаемый режим стенда.\"\"\"\n    if not settings.keycloak_url:\n        return None\n    try:\n        if auth_mode == \"protected\":\n            token = (\n                await _exchange_token(settings, user_access_token)\n                if user_access_token\n                else await _get_user_scoped_token(settings, user_id)\n            )\n        else:\n            token = [REDACTED] _get_agent_token(settings)… [+121 chars truncated]",
+        "summary": "В режиме vulnerable агент ходит в MCP по токену технической УЗ без привязки к пользователю."
+      }
+    },
+    {
+      "id": "T5-token-exchange",
+      "input_principal": "end_user",
+      "executing_component": "agent",
+      "operation": "READ",
+      "resource": "client_data(cus)",
+      "next_component": "mcp-invest",
+      "auth_scheme": "jwt",
+      "boundary": "B-agent-mcp",
+      "path": "app/agent/runner.py",
+      "symbol": "_exchange_token",
+      "patterns": [
+        "urn:ietf:params:oauth:grant-type:token-exchange"
+      ],
+      "policy_decision": "enforced",
+      "delegation": "token_exchange",
+      "subject_bound": true,
+      "conditions": [
+        "auth_mode=protected"
+      ],
+      "statement": "В режиме protected используется Token Exchange с сохранением claim cus.",
+      "group": "auth_transition",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "urn:ietf:params:oauth:grant-type:token-exchange",
+            "fragment": "urn:ietf:params:oauth:grant-type:token-exchange"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/agent/runner.py",
+          "symbol": "_exchange_token",
+          "lines": [
+            73,
+            87
+          ]
+        },
+        "digest": "sha256:0b06652a0c31214257f2950eb520714827eac08a6e220ad1ad776199a478ca39",
+        "fragment": "async def _exchange_token(settings: Settings, subject_token: [REDACTED] -> str:\n    \"\"\"OAuth2 Token Exchange (RFC 8693): меняет токен пользователя на токен, выданный\n    для agent-service, но несущий исходный claim cus — именно его проверяет mcp-invest\n    в защищённом режиме.\n    \"\"\"\n    async with httpx.AsyncClient(timeout=10) as client:\n        exchange_resp = await client.post(_token_endpoint(settings), data={\n            \"grant_type\": \"urn:ietf:params:oauth:grant-type:token-exchange\",\n            \"client_id\": settings.agent_client_id,\n            \"client_secret\": settings.agent_client_sec… [+235 chars truncated]",
+        "summary": "В режиме protected используется Token Exchange с сохранением claim cus."
+      }
+    }
+  ],
+  "token_validation": [
+    {
+      "component": "mcp-invest",
+      "path": "mcp-invest/auth.py",
+      "symbol": "validate_token",
+      "scheme": "jwt",
+      "group": "token_validation",
+      "status": "static_supported",
+      "matched": {
+        "present": [],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "mcp-invest/auth.py",
+          "symbol": "validate_token",
+          "lines": [
+            32,
+            50
+          ]
+        },
+        "digest": "sha256:f70ce9c1a9b65443b6d97d673dc0da1154de639f5cb495b63d3e01a907c34479",
+        "fragment": "def validate_token(authorization_header: str | None) -> dict:\n    \"\"\"Проверить Bearer-токен и вернуть его claims. Кидает AuthError, если что-то не так.\"\"\"\n    if not authorization_header or not authorization_header.lower().startswith(\"bearer \"):\n        raise AuthError(\"Отсутствует Bearer-токен в заголовке Authorization\")\n    token = [REDACTED]\" \", 1)[1].strip()\n\n    try:\n        signing_key = _get_jwk_client().get_signing_key_from_jwt(token)\n        claims = jwt.decode(\n            token,\n            signing_key.key,\n            algorithms=[\"RS256\"],\n            issuer=ISSUER,\n            opt… [+151 chars truncated]",
+        "summary": "mcp-invest/auth.py:validate_token"
+      },
+      "observed": {
+        "signature": true,
+        "issuer": true,
+        "audience": false,
+        "expiry": true,
+        "algorithm": true
+      }
+    },
+    {
+      "component": "invest-server",
+      "path": "invest-server/auth.py",
+      "symbol": "validate_token",
+      "scheme": "jwt",
+      "group": "token_validation",
+      "status": "static_supported",
+      "matched": {
+        "present": [],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "invest-server/auth.py",
+          "symbol": "validate_token",
+          "lines": [
+            35,
+            53
+          ]
+        },
+        "digest": "sha256:f70ce9c1a9b65443b6d97d673dc0da1154de639f5cb495b63d3e01a907c34479",
+        "fragment": "def validate_token(authorization_header: str | None) -> dict:\n    \"\"\"Проверить Bearer-токен и вернуть его claims. Кидает AuthError, если что-то не так.\"\"\"\n    if not authorization_header or not authorization_header.lower().startswith(\"bearer \"):\n        raise AuthError(\"Отсутствует Bearer-токен в заголовке Authorization\")\n    token = [REDACTED]\" \", 1)[1].strip()\n\n    try:\n        signing_key = _get_jwk_client().get_signing_key_from_jwt(token)\n        claims = jwt.decode(\n            token,\n            signing_key.key,\n            algorithms=[\"RS256\"],\n            issuer=ISSUER,\n            opt… [+151 chars truncated]",
+        "summary": "invest-server/auth.py:validate_token"
+      },
+      "observed": {
+        "signature": true,
+        "issuer": true,
+        "audience": false,
+        "expiry": true,
+        "algorithm": true
+      }
+    },
+    {
+      "component": "agent-api",
+      "path": "app/api_server.py",
+      "symbol": "_current_identity",
+      "scheme": "jwt",
+      "group": "token_validation",
+      "status": "static_supported",
+      "matched": {
+        "present": [],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/api_server.py",
+          "symbol": "_current_identity",
+          "lines": [
+            48,
+            69
+          ]
+        },
+        "digest": "sha256:d289b1516c23cd30f20091f40e74f320b270c1c1bf8bff80f9accd41655b0c31",
+        "fragment": "def _current_identity(request: Request) -> dict | None:\n    \"\"\"Личность залогиненного через Keycloak пользователя — из токена, который\n    прокинул oauth2-proxy заголовком X-Forwarded-Access-Token. None, если запрос пришёл\n    не через прокси (например, напрямую на порт 8600 — так ходят /v1/* с Bearer-ключом).\n    \"\"\"\n    token = [REDACTED]\"x-forwarded-access-token\")\n    jwk_client = _get_jwk_client()\n    if not token or jwk_client is None:\n        return None\n    try:\n        signing_key = jwk_client.get_signing_key_from_jwt(token)\n        claims = jwt.decode(\n            token, signing_key.k… [+333 chars truncated]",
+        "summary": "app/api_server.py:_current_identity"
+      },
+      "observed": {
+        "signature": true,
+        "issuer": false,
+        "audience": false,
+        "expiry": true,
+        "algorithm": true
+      }
+    }
+  ],
+  "background_jobs": [
+    {
+      "id": "J-finalize",
+      "component": "session-finalizer",
+      "path": "app/orchestrator/graph.py",
+      "symbol": "finalize_session",
+      "patterns": [
+        "_orchestrator\\.ainvoke"
+      ],
+      "trigger": "POST /v1/sessions/{id}/finalize or the 'finalize' chat command",
+      "effects": [
+        "persist dialog",
+        "insert episodes",
+        "insert semantic facts",
+        "publish shared policy",
+        "clear working memory"
+      ],
+      "carries_identity": true,
+      "idempotent": false,
+      "checks_policy_revision": false,
+      "statement": "Финализация сессии вставляет эпизоды/факты/политику заново при каждом запуске и не знает о ревизии политики.",
+      "group": "background_job",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "_orchestrator\\.ainvoke",
+            "fragment": "_orchestrator.ainvoke"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/orchestrator/graph.py",
+          "symbol": "finalize_session",
+          "lines": [
+            170,
+            174
+          ]
+        },
+        "digest": "sha256:6a2bbf93efcc7fdb597f33c186958c97a64af8848170cfdc46a06f9cef4b8478",
+        "fragment": "async def finalize_session(user_id: str, session_id: str) -> dict:\n    \"\"\"Запустить оркестратор и вернуть итоговое состояние.\"\"\"\n    return await _orchestrator.ainvoke(\n        {\"user_id\": user_id, \"session_id\": session_id}\n    )",
+        "summary": "Финализация сессии вставляет эпизоды/факты/политику заново при каждом запуске и не знает о ревизии политики."
+      }
+    }
+  ],
+  "break_points": [
+    {
+      "id": "BP-truncation-3000",
+      "kind": "truncation",
+      "path": "app/agent/runner.py",
+      "symbol": "run_research",
+      "patterns": [
+        "memory_context\\[:3000\\]"
+      ],
+      "durable_control": false,
+      "note": "Память обрезается до 3000 символов при формировании системного сообщения: ограничивает наблюдаемый путь в конкретном запуске, но не является устойчивым контролем.",
+      "group": "break_point",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "memory_context\\[:3000\\]",
+            "fragment": "memory_context[:3000]"
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/agent/runner.py",
+          "symbol": "run_research",
+          "lines": [
+            163,
+            230
+          ]
+        },
+        "digest": "sha256:5f5f65e211323c8525ecb8412ccb3416bfc0e62fc1e9ffa985a34f82ec255621",
+        "fragment": "async def run_research(\n    user_id: str,\n    session_id: str,\n    query: str,\n    auth_mode: str = \"vulnerable\",\n    user_access_token: str | None = None,\n) -> dict[str, Any]:\n    \"\"\"Ответить на вопрос, при необходимости вызывая тулы MCP Инвеста / веб-поиск.\n\n    auth_mode: \"vulnerable\" — агент ходит в MCP по сырому токену технической УЗ (видит\n    любого клиента); \"protected\" — агент обменивает токен пользователя user_id на\n    cus-ограниченный токен через OAuth2 Token Exchange перед каждым вызовом.\n    user_access_token: [REDACTED] access-токен вошедшего через Keycloak/oauth2-proxy\n    поль… [+2425 chars truncated]",
+        "summary": "BP-truncation-3000"
+      }
+    },
+    {
+      "id": "BP-trusted-filter",
+      "kind": "filter",
+      "path": "app/memory/mongo.py",
+      "symbol": "_doc_trusted",
+      "patterns": [
+        "allow_global and doc\\.get\\(\"scope\"\\) == \"global\""
+      ],
+      "durable_control": true,
+      "note": "Фильтр отбрасывает чужие user_id, но пропускает любую запись scope=global.",
+      "group": "break_point",
+      "status": "static_supported",
+      "matched": {
+        "present": [
+          {
+            "pattern": "allow_global and doc\\.get\\(\"scope\"\\) == \"global\"",
+            "fragment": "allow_global and doc.get(\"scope\") == \"global\""
+          }
+        ],
+        "missing": [],
+        "unexpected": []
+      },
+      "evidence": {
+        "source_type": "source_code",
+        "method": "static_analysis",
+        "locator": {
+          "path": "app/memory/mongo.py",
+          "symbol": "_doc_trusted",
+          "lines": [
+            167,
+            172
+          ]
+        },
+        "digest": "sha256:1656039d893b9707e91825c74b3710d932819a62d878a94742f058e5b97c7d1b",
+        "fragment": "def _doc_trusted(doc: dict, user_id: str, *, allow_global: bool = False) -> bool:\n    if allow_global and doc.get(\"scope\") == \"global\":\n        return True\n    if doc.get(\"user_id\") and doc.get(\"user_id\") != user_id:\n        return False\n    return True",
+        "summary": "BP-trusted-filter"
+      }
+    }
+  ],
+  "components": []
+}

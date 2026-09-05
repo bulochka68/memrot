@@ -1,47 +1,52 @@
-"""Risk scorer: LOW/MEDIUM/HIGH/CRITICAL from operation x scope x destructiveness."""
+"""Capability risk scorer.
+
+``capability_risk`` is the *potential damage* of a capability (operation x
+scope x destructiveness x secret-grade source x egress).  It is not a finding
+severity and not a confidence: findings appear only when a requirement is
+violated (TZ §7, §13.3).  A WRITE by itself never creates a "full project
+access" conclusion.
+"""
 from __future__ import annotations
 
 import re
 
-from ..models import Operation, Risk, ToolRecord
+from ..models import Operation, Severity, ToolRecord
 
-_SECRET_TEXT = re.compile(r"secret|credential|token|api[_ -]?key|password|\\.ssh|private[_ -]?key|\\.env\\b|environment", re.I)
+_SECRET_TEXT = re.compile(r"secret|credential|token|api[_ -]?key|password|\.ssh|private[_ -]?key|\.env\b|environment", re.I)
 _SECRET_KINDS = {"filesystem", "git", "memory", "email", "slack"}
 
 _BASE = {
-    Operation.EXEC: Risk.CRITICAL,
-    Operation.DELETE: Risk.CRITICAL,
-    Operation.WRITE: Risk.HIGH,
-    Operation.READ: Risk.MEDIUM,
-    Operation.UNKNOWN: Risk.MEDIUM,
+    Operation.EXEC: Severity.CRITICAL,
+    Operation.DELETE: Severity.CRITICAL,
+    Operation.WRITE: Severity.HIGH,
+    Operation.READ: Severity.MEDIUM,
+    Operation.UNKNOWN: Severity.MEDIUM,
 }
 
 
 def score_tool(tool: ToolRecord, server_kind: str = "generic") -> ToolRecord:
     risk = _BASE[tool.classification]
     reasons = [f"operation={tool.classification.value}"]
+    if tool.classification == Operation.UNKNOWN:
+        reasons.append("class unknown: potential damage not lowered by assumption")
 
-    if tool.destructive and risk.rank < Risk.CRITICAL.rank:
-        risk = Risk.CRITICAL
+    if tool.destructive and risk.rank < Severity.CRITICAL.rank:
+        risk = Severity.CRITICAL
         reasons.append("destructive")
-    # A READ that reaches secret-grade data (filesystem, env, credentials) is
-    # worse than a plain READ; a bare DB SELECT stays MEDIUM (per the risk model).
     if tool.classification == Operation.READ and tool.sensitive_source:
         text = f"{tool.name} {tool.definition.description}"
         if server_kind in _SECRET_KINDS or _SECRET_TEXT.search(text):
-            risk = Risk.max(risk, Risk.HIGH)
+            risk = Severity.max(risk, Severity.HIGH)
             reasons.append("secret_grade_source")
-    # Anything that can move data off-host is at least HIGH.
     if tool.egress and tool.classification != Operation.READ:
-        risk = Risk.max(risk, Risk.HIGH)
+        risk = Severity.max(risk, Severity.HIGH)
         reasons.append("egress")
-    # Broad / unbounded scope bumps risk.
     scope = tool.effective_access or {}
-    if scope.get("unbounded") or scope.get("scope") == "all":
-        risk = Risk.max(risk, Risk.HIGH)
-        reasons.append("unbounded_scope")
+    if scope.get("unbounded"):
+        risk = Severity.max(risk, Severity.HIGH)
+        reasons.append("unbounded_scope(inferred)")
 
-    tool.risk = risk
+    tool.capability_risk = risk
     tool.risk_reasons = reasons
-    tool.provenance["risk"] = "effective"
+    tool.provenance["capability_risk"] = "definition+inferred scope; potential damage, not a finding severity"
     return tool

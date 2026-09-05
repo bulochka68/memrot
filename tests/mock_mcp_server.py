@@ -37,6 +37,9 @@ def handle(msg):
         name = p.get("name")
         args = p.get("arguments", {})
         path = args.get("path", "")
+        if path.endswith("slow.txt"):
+            import time
+            time.sleep(4)
         if not _inside(path):
             return {"content": [{"type": "text", "text": "denied: path outside root"}], "isError": True}
         if name == "write_file":
@@ -44,6 +47,8 @@ def handle(msg):
             with open(path, "w") as fh:
                 fh.write(args.get("content", ""))
             return {"content": [{"type": "text", "text": "ok"}]}
+        if name not in ("write_file", "read_file"):
+            return {"content": [{"type": "text", "text": f"unknown tool {name}"}], "isError": True}
         if name == "read_file":
             try:
                 with open(path) as fh:

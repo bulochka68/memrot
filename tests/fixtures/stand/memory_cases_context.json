@@ -1,0 +1,7 @@
+{
+  "schema": "control-fixtures",
+  "cases": [],
+  "memory_cases": [
+    {"case_id": "MC-truncated", "memory_id": "policy-2", "subject": "client1002", "prepared_by": "user_session", "effect_ref": "EFF-x"}
+  ]
+}

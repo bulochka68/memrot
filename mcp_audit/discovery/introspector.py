@@ -6,7 +6,16 @@ Stdlib-only JSON-RPC 2.0 client for two transports:
 
 Only ``initialize``, ``notifications/initialized``, ``tools/list``,
 ``resources/list`` and ``prompts/list`` are used in discovery.  ``tools/call``
-is exposed for the active layer and must only be used inside the sandbox.
+is exposed for the controlled-validation layer only.
+
+Execution rules (TZ §14):
+  * offline mode never reaches this module - the orchestrator only calls it in
+    ``live_inventory`` / ``controlled_validation`` modes;
+  * a spawned stdio server receives a *minimal* environment (an allow-list plus
+    the env explicitly given in the config), not the auditor's full environment;
+  * a live inventory is "not without impact": stdio spawns a process and a
+    network handshake reveals itself; the handshake records identity, time and
+    completeness so the snapshot context is comparable later.
 """
 from __future__ import annotations
 
@@ -24,7 +33,23 @@ from typing import Any, Dict, List, Optional
 from ..models import ServerRecord, ToolDefinition, ToolRecord, Handshake
 
 PROTOCOL_VERSION = "2025-06-18"
-CLIENT_INFO = {"name": "mcp-audit", "version": "1.1.0"}
+CLIENT_INFO = {"name": "mcp-audit", "version": "2.0.0"}
+
+# Minimal environment handed to spawned stdio servers.
+ENV_ALLOWLIST = ("PATH", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "TMPDIR", "TEMP", "TMP", "SYSTEMROOT",
+                 "SystemRoot", "COMSPEC", "PATHEXT", "USERPROFILE", "TERM", "PYTHONIOENCODING")
+MAX_PAGES = 100
+MAX_RESPONSE_BYTES = 8 * 1024 * 1024
+
+
+def minimal_env(explicit: Optional[Dict[str, str]] = None, extra_allow: Optional[List[str]] = None) -> Dict[str, str]:
+    env: Dict[str, str] = {}
+    allow = set(ENV_ALLOWLIST) | set(extra_allow or [])
+    for k in allow:
+        if k in os.environ:
+            env[k] = os.environ[k]
+    env.update(explicit or {})
+    return env
 
 
 class MCPError(RuntimeError):
@@ -35,16 +60,15 @@ class MCPError(RuntimeError):
 
 
 class _StdioTransport:
-    def __init__(self, command: str, args: List[str], env: Dict[str, str], cwd: Optional[str] = None):
+    def __init__(self, command: str, args: List[str], env: Dict[str, str], cwd: Optional[str] = None,
+                 env_allow: Optional[List[str]] = None):
         exe = shutil.which(command) or command
-        full_env = dict(os.environ)
-        full_env.update(env or {})
         self.proc = subprocess.Popen(
             [exe, *args],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            env=full_env,
+            env=minimal_env(env, env_allow),
             cwd=cwd,
             text=True,
             encoding="utf-8",
@@ -52,6 +76,7 @@ class _StdioTransport:
         )
         self._q: "queue.Queue[Optional[Dict[str, Any]]]" = queue.Queue()
         self._stderr: List[str] = []
+        self._bytes = 0
         self._reader = threading.Thread(target=self._pump_stdout, daemon=True)
         self._reader.start()
         self._err_reader = threading.Thread(target=self._pump_stderr, daemon=True)
@@ -60,6 +85,10 @@ class _StdioTransport:
     def _pump_stdout(self) -> None:
         assert self.proc.stdout is not None
         for line in self.proc.stdout:
+            self._bytes += len(line)
+            if self._bytes > MAX_RESPONSE_BYTES:
+                self._stderr.append("[audit] response size limit exceeded; stopping reader")
+                break
             line = line.strip()
             if not line:
                 continue
@@ -114,6 +143,8 @@ class _HttpTransport:
         self.session_id: Optional[str] = None
         self._pending: "queue.Queue[Dict[str, Any]]" = queue.Queue()
 
+    _timeout = 20.0
+
     def send(self, msg: Dict[str, Any]) -> None:
         body = json.dumps(msg).encode("utf-8")
         headers = {
@@ -130,9 +161,11 @@ class _HttpTransport:
                 if sid:
                     self.session_id = sid
                 ctype = resp.headers.get("Content-Type", "")
-                raw = resp.read().decode("utf-8", "replace")
+                raw = resp.read(MAX_RESPONSE_BYTES + 1).decode("utf-8", "replace")
         except urllib.error.HTTPError as e:
-            raise MCPError(f"HTTP {e.code} from {self.url}: {e.read()[:200]!r}")
+            raise MCPError(f"HTTP {e.code} from {self.url}", code=e.code)
+        if len(raw) > MAX_RESPONSE_BYTES:
+            raise MCPError("response size limit exceeded")
         if not raw.strip():
             return  # notification accepted (202)
         if "text/event-stream" in ctype:
@@ -140,8 +173,6 @@ class _HttpTransport:
                 self._pending.put(evt)
         else:
             self._pending.put(json.loads(raw))
-
-    _timeout = 20.0
 
     def recv(self, timeout: float) -> Optional[Dict[str, Any]]:
         try:
@@ -174,25 +205,32 @@ def _parse_sse(raw: str) -> List[Dict[str, Any]]:
 class Introspector:
     """A minimal MCP client.  Use as a context manager."""
 
-    def __init__(self, server: ServerRecord, timeout: float = 20.0, cwd: Optional[str] = None):
+    def __init__(self, server: ServerRecord, timeout: float = 20.0, cwd: Optional[str] = None,
+                 headers: Optional[Dict[str, str]] = None, env_allow: Optional[List[str]] = None,
+                 max_operations: int = 500):
         self.server = server
         self.timeout = timeout
         self.cwd = cwd
+        self.headers = headers
+        self.env_allow = env_allow
+        self.max_operations = max_operations
+        self._ops = 0
         self._id = 0
         self._transport: Any = None
         self.initialize_result: Dict[str, Any] = {}
+        self.pagination_notes: List[str] = []
 
-    # -- lifecycle ---------------------------------------------------------- #
     def __enter__(self) -> "Introspector":
         s = self.server
         if s.transport == "stdio":
             if not s.command:
                 raise MCPError("stdio server without a command")
-            self._transport = _StdioTransport(s.command, s.args, s.env, cwd=self.cwd)
+            self._transport = _StdioTransport(s.command, s.args, s.env, cwd=self.cwd, env_allow=self.env_allow)
         else:
             if not s.url:
                 raise MCPError(f"{s.transport} server without a url")
             headers = {k[len("header:"):]: v for k, v in s.env.items() if k.lower().startswith("header:")}
+            headers.update(self.headers or {})
             self._transport = _HttpTransport(s.url, headers)
             self._transport._timeout = self.timeout
         return self
@@ -201,8 +239,10 @@ class Introspector:
         if self._transport:
             self._transport.close()
 
-    # -- rpc ---------------------------------------------------------------- #
     def request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Any:
+        self._ops += 1
+        if self._ops > self.max_operations:
+            raise MCPError("operation budget exceeded")
         self._id += 1
         rid = self._id
         msg: Dict[str, Any] = {"jsonrpc": "2.0", "id": rid, "method": method}
@@ -218,7 +258,7 @@ class Introspector:
             if resp is None:
                 raise MCPError(f"server closed the connection during {method}; stderr: {self._transport.stderr_tail}")
             if resp.get("id") != rid:
-                continue  # notifications / other ids are ignored during discovery
+                continue
             if "error" in resp:
                 err = resp["error"] or {}
                 raise MCPError(str(err.get("message", "rpc error")), err.get("code"), err.get("data"))
@@ -243,13 +283,22 @@ class Introspector:
     def _list_all(self, method: str, key: str) -> List[Dict[str, Any]]:
         items: List[Dict[str, Any]] = []
         cursor: Optional[str] = None
-        for _ in range(100):  # pagination guard
+        seen_names: Dict[str, int] = {}
+        for page in range(MAX_PAGES):
             params = {"cursor": cursor} if cursor else None
             res = self.request(method, params) or {}
-            items.extend(res.get(key) or [])
+            batch = res.get(key) or []
+            for it in batch:
+                n = it.get("name") or it.get("uri")
+                if n in seen_names:
+                    self.pagination_notes.append(f"{method}: '{n}' repeated across pages (catalog changed during traversal?)")
+                seen_names[n] = seen_names.get(n, 0) + 1
+            items.extend(batch)
             cursor = res.get("nextCursor")
             if not cursor:
                 break
+        else:
+            self.pagination_notes.append(f"{method}: pagination stopped after {MAX_PAGES} pages; listing may be partial")
         return items
 
     def list_tools(self) -> List[Dict[str, Any]]:
@@ -262,14 +311,21 @@ class Introspector:
         return self._list_all("prompts/list", "prompts")
 
     def call_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """ACTIVE PLANE ONLY.  Callers must go through the isolation guard."""
+        """CONTROLLED VALIDATION ONLY.  Callers must go through the isolation guard."""
         return self.request("tools/call", {"name": name, "arguments": arguments}) or {}
 
 
-def introspect_server(server: ServerRecord, timeout: float = 20.0, cwd: Optional[str] = None) -> ServerRecord:
-    """Run the live handshake and fill declared capabilities, tools, resources, prompts."""
+def introspect_server(server: ServerRecord, timeout: float = 20.0, cwd: Optional[str] = None,
+                      identity: Optional[str] = None, headers: Optional[Dict[str, str]] = None,
+                      env_allow: Optional[List[str]] = None) -> ServerRecord:
+    """Run the live handshake and fill declared capabilities, tools, resources, prompts.
+
+    The result is the catalogue *advertised to this identity at this moment*;
+    absence of a tool here does not prove its absence for another role.
+    """
+    started = time.time()
     try:
-        with Introspector(server, timeout=timeout, cwd=cwd) as client:
+        with Introspector(server, timeout=timeout, cwd=cwd, headers=headers, env_allow=env_allow) as client:
             init = client.initialize()
             caps = init.get("capabilities") or {}
             server.declared_capabilities = {
@@ -279,37 +335,52 @@ def introspect_server(server: ServerRecord, timeout: float = 20.0, cwd: Optional
                 "logging": "logging" in caps,
                 "raw": caps,
             }
-            server.handshake = Handshake(
-                ok=True,
+            hs = Handshake(
+                performed=True, ok=True,
                 protocol_version=init.get("protocolVersion"),
                 server_info=init.get("serverInfo") or {},
                 instructions=init.get("instructions"),
-                source="live",
+                source="live", captured_at=started, identity=identity, completeness="complete",
             )
             tools: List[Dict[str, Any]] = []
+            partial = False
             if "tools" in caps or not caps:
                 try:
                     tools = client.list_tools()
                 except MCPError as e:
-                    server.handshake.error = f"tools/list: {e}"
+                    hs.error = f"tools/list: {e}"
+                    partial = True
             server.tools = [ToolRecord(server=server.name, definition=ToolDefinition.from_mcp(t)) for t in tools]
             if "resources" in caps:
                 try:
                     server.resources = client.list_resources()
-                except MCPError:
-                    pass
+                except MCPError as e:
+                    hs.notes.append(f"resources/list failed: {e}")
+                    partial = True
             if "prompts" in caps:
                 try:
                     server.prompts = client.list_prompts()
-                except MCPError:
-                    pass
+                except MCPError as e:
+                    hs.notes.append(f"prompts/list failed: {e}")
+                    partial = True
+            hs.notes.extend(client.pagination_notes)
+            if partial or client.pagination_notes:
+                hs.completeness = "partial"
+            server.handshake = hs
+            server.inventory_sources["live_advertised"] = {
+                "count": len(server.tools), "identity": identity, "captured_at": started,
+                "completeness": hs.completeness, "protocol_version": hs.protocol_version,
+            }
     except (MCPError, TimeoutError, OSError, ValueError) as e:
-        server.handshake = Handshake(ok=False, error=f"{type(e).__name__}: {e}", source="live")
+        server.handshake = Handshake(performed=True, ok=False, error=f"{type(e).__name__}: {e}", source="live",
+                                     captured_at=started, identity=identity, completeness="unavailable")
+        server.inventory_sources["live_advertised"] = {"count": None, "completeness": "unavailable",
+                                                       "error": f"{type(e).__name__}: {e}"}
     return server
 
 
 def apply_snapshot(server: ServerRecord, snap: Dict[str, Any]) -> ServerRecord:
-    """Fill a server from an offline snapshot instead of a live handshake."""
+    """Fill a server from an offline snapshot of an earlier handshake (not a live one)."""
     server.tools = [ToolRecord(server=server.name, definition=ToolDefinition.from_mcp(t)) for t in snap.get("tools", [])]
     server.resources = list(snap.get("resources", []))
     server.prompts = list(snap.get("prompts", []))
@@ -318,6 +389,14 @@ def apply_snapshot(server: ServerRecord, snap: Dict[str, Any]) -> ServerRecord:
     else:
         server.declared_capabilities = {"tools": bool(server.tools), "resources": bool(server.resources),
                                         "prompts": bool(server.prompts)}
-    server.handshake = Handshake(ok=True, source="snapshot", instructions=snap.get("instructions"),
-                                 server_info=snap.get("server_info") or {})
+    captured_at = snap.get("captured_at")
+    stale = "unknown"
+    if isinstance(captured_at, (int, float)):
+        stale = "stale" if time.time() - captured_at > 30 * 86400 else "complete"
+    server.handshake = Handshake(performed=False, ok=None, source="snapshot", instructions=snap.get("instructions"),
+                                 server_info=snap.get("server_info") or {}, captured_at=captured_at,
+                                 identity=snap.get("identity"), completeness=stale,
+                                 notes=[f"inventory replayed from snapshot ({snap.get('origin', 'snapshot file')})"])
+    server.inventory_sources["snapshot"] = {"count": len(server.tools), "captured_at": captured_at,
+                                            "identity": snap.get("identity"), "completeness": stale}
     return server

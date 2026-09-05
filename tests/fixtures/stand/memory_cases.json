@@ -1,0 +1,8 @@
+{
+  "schema": "control-fixtures",
+  "cases": [],
+  "memory_cases": [
+    {"case_id": "MC-policy-written", "memory_id": "policy-1", "subject": "client1002", "prepared_by": "user_session", "effect_ref": "EFF-recommend-x"},
+    {"case_id": "MC-admin-prepared", "memory_id": "fact-A1", "subject": "client1002", "prepared_by": "fixture_admin"}
+  ]
+}

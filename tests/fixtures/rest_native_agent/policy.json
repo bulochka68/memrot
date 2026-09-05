@@ -1,0 +1,10 @@
+{
+  "schema": "access-policy", "policy_id": "rest-native-expected", "version": "1.0.0", "owner": "test",
+  "principals": [{"id": "end_user", "type": "end_user", "identity_source": "authentication"}, {"id": "rule-publisher", "type": "policy_publisher", "identity_source": "authentication"}],
+  "access_rules": [{"subject": "end_user", "operation": "READ", "resource": "document(doc_id)", "condition": "doc.owner == subject", "enforcement": ["assistant-api"]}],
+  "memory_policy": {"scope_decision_authority": "server",
+    "memory_types": [{"type": "note", "audience": "user", "authority": "data", "derived": true, "allowed_writers": ["assistant-api"]},
+                     {"type": "shared_rule", "audience": "shared", "authority": "policy", "trusted_publishers": ["rule-publisher"], "allowed_writers": ["rule-publisher"], "review_required": true}]},
+  "authentication": {"assistant-api": {"scheme": "jwt", "expected_issuer": "https://idp.example/realms/agents", "expected_audience": "assistant-api"}},
+  "egress": {"allowed_destinations": [{"id": "mail-provider", "categories_allowed": ["summary"], "categories_forbidden": ["document_content"]}], "controls_required": ["category_filter"]}
+}

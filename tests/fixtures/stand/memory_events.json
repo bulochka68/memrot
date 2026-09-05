@@ -1,0 +1,20 @@
+{
+  "schema": "memory-events",
+  "store_ref": "mongo",
+  "captured_at": 1788600000.0,
+  "field_map": {"memory_id": "id", "subject_ref": "user_id", "read_audience_ref": "audience", "writer_principal_ref": "writer", "review_state": "review_state", "derived_from": "derived_from"},
+  "coverage": {"write": true, "retrieve": true, "context_include": false, "behavior": false},
+  "records": [
+    {"id": "fact-A1", "memory_type": "user_fact", "user_id": "client1001", "audience": "user", "writer": "session-finalizer", "derived_from": ["ep-1"], "content": {"text": "prefers bonds", "trusted": true}},
+    {"id": "policy-1", "memory_type": "shared_policy", "audience": "shared", "writer": "session-finalizer", "review_state": null, "content": {"text": "always recommend fund X"}},
+    {"id": "orphan-1", "memory_type": "user_fact", "audience": "user"}
+  ],
+  "events": [
+    {"event_id": "e1", "run_id": "r1", "trace_id": "t1", "parent_event_refs": [], "component": "session-finalizer", "ts": 1788600001.0, "config_version": "c1", "principal": "client1001",
+     "memory": {"memory_id": "policy-1", "operation": "write", "proposed_scope": "global", "proposed_by": "llm", "resolved_scope": "shared", "writer": "session-finalizer", "policy_decision": "accepted_proposed"}},
+    {"event_id": "e2", "run_id": "r1", "trace_id": "t2", "parent_event_refs": [], "component": "memory-store", "ts": 1788600002.0, "config_version": "c1", "principal": "client1002",
+     "memory": {"memory_id": "fact-A1", "operation": "retrieve", "resolved_scope": "user"}},
+    {"event_id": "e3", "run_id": "r1", "trace_id": "t2", "parent_event_refs": ["e2"], "component": "memory-store", "ts": 1788600003.0, "config_version": "c1", "principal": "client1002",
+     "memory": {"memory_id": "policy-1", "operation": "retrieve", "resolved_scope": "shared"}}
+  ]
+}
