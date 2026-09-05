@@ -56,6 +56,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Прогон generic-сценариев атак по целям из отчёта аудита")
     ap.add_argument("report", help="JSON-отчёт agent-security-audit v2.0")
     ap.add_argument("-c", "--category", default="tool-poisoning,memory-poisoning")
+    ap.add_argument("--repeat", type=int, default=1, metavar="N",
+                    help="прогнать каждую цель до N раз, взять сильнейший результат (недетерминизм LLM)")
     ap.add_argument("--dry-run", action="store_true", help="не бить по системе, только план")
     ap.add_argument("--json", action="store_true", help="машинный вывод")
     a = ap.parse_args(argv)
@@ -82,12 +84,16 @@ def main(argv=None) -> int:
         for t in targets:
             cat = next(c for c in t["categories"] if c in cats)
             scenario = CATEGORY_SCENARIOS[cat]
-            res = scenario(target, t["rule_id"], t.get("expected_invariant") or "")
+            res = scenario(target, t["rule_id"], t.get("expected_invariant") or "", attempts=a.repeat)
             results.append(res)
             if not a.json:
                 print(f"{res.rule_id:9} {res.path_state:26} "
-                      f"published={len(res.published)} cross_user={res.cross_user} "
-                      f"{('· '+res.notes) if res.notes else ''}")
+                      f"published={len(res.published)} marker_in_policy={res.marker_in_policy} "
+                      f"cross_user={res.cross_user} attempts={res.attempts}")
+                for txt in res.published_texts:
+                    print(f"           policy<- {txt[:120]}")
+                if res.notes:
+                    print(f"           · {res.notes}")
     finally:
         close = getattr(target, "close", None)
         if callable(close):

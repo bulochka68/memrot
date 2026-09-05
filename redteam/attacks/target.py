@@ -62,6 +62,9 @@ class AttackResult:
     cross_user: bool | None = None
     canary: str | None = None
     notes: str = ""
+    published_texts: list[str] = field(default_factory=list)  # что дословно осело в общей политике
+    marker_in_policy: bool | None = None                      # пережил ли маркер суммаризацию
+    attempts: int = 1                                         # сколько прогонов ушло (при --repeat)
 
     @property
     def path_state(self) -> str:
@@ -72,14 +75,24 @@ class AttackResult:
             return "runtime_path_observed"
         return "static_path_supported"  # вживую не воспроизвелось на этом прогоне
 
+    def better_than(self, other: "AttackResult | None") -> bool:
+        """Упорядочивание результатов по «силе» для выбора лучшего из повторов."""
+        rank = {"control_violation_observed": 3, "runtime_path_observed": 2, "static_path_supported": 1}
+        if other is None:
+            return True
+        return rank[self.path_state] > rank[other.path_state]
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "rule_id": self.rule_id,
             "expected_invariant": self.expected_invariant,
             "path_state": self.path_state,
             "published_count": len(self.published),
+            "published_texts": self.published_texts,
+            "marker_in_policy": self.marker_in_policy,
             "cross_user": self.cross_user,
             "canary": self.canary,
+            "attempts": self.attempts,
             "notes": self.notes,
         }
 
