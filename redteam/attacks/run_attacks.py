@@ -58,6 +58,9 @@ def main(argv=None) -> int:
     ap.add_argument("-c", "--category", default="tool-poisoning,memory-poisoning")
     ap.add_argument("--repeat", type=int, default=1, metavar="N",
                     help="прогнать каждую цель до N раз, взять сильнейший результат (недетерминизм LLM)")
+    ap.add_argument("--style", choices=["fact", "command"], default="fact",
+                    help="стиль инъекции: fact (нейтральный факт, модель принимает; по умолчанию) "
+                         "или command (правило ассистенту, часто отвергается)")
     ap.add_argument("--dry-run", action="store_true", help="не бить по системе, только план")
     ap.add_argument("--json", action="store_true", help="машинный вывод")
     a = ap.parse_args(argv)
@@ -84,7 +87,8 @@ def main(argv=None) -> int:
         for t in targets:
             cat = next(c for c in t["categories"] if c in cats)
             scenario = CATEGORY_SCENARIOS[cat]
-            res = scenario(target, t["rule_id"], t.get("expected_invariant") or "", attempts=a.repeat)
+            res = scenario(target, t["rule_id"], t.get("expected_invariant") or "",
+                           attempts=a.repeat, style=a.style)
             results.append(res)
             if not a.json:
                 print(f"{res.rule_id:9} {res.path_state:26} "
