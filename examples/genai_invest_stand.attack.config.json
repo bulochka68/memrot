@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "target": {
+    "kind": "genai_invest",
+    "binding": {
+      "base_url": "http://localhost:8600/v1",
+      "model": "genai-invest-agent",
+      "auth_mode": "vulnerable",
+      "mongo_url": "mongodb://localhost:27017",
+      "mongo_db": "agent_memory",
+      "redis_url": "redis://localhost:6379/0",
+      "compose_dir": "../genai-invest-agent-memory-stand",
+      "invest_server_container": "invest-server"
+    },
+    "options": {"timeout": 180.0}
+  },
+  "channels": [
+    {"role": "attacker", "principal": {"principal_id": "1001", "credential_ref": "CUS_1001"}},
+    {"role": "attacker", "principal": {"principal_id": "1004", "credential_ref": "CUS_1004"}},
+    {"role": "victim", "principal": {"principal_id": "1002", "credential_ref": "CUS_1002"}},
+    {"role": "victim", "principal": {"principal_id": "1003", "credential_ref": "CUS_1003"}},
+    {"role": "benign_control", "principal": {"principal_id": "1005", "credential_ref": "CUS_1005"}}
+  ],
+  "access_profile": "white_box",
+  "detector": {"kind": "literal", "options": {"case_sensitive": false}},
+  "catalog_paths": [
+    "../mcp_attack/catalog/prompts/mem02_global_policy_poisoning",
+    "../mcp_attack/catalog/prompts/mem01_03_cross_session_semantic_poisoning",
+    "../mcp_attack/catalog/prompts/auth_tool_direct_bac_injection",
+    "../mcp_attack/catalog/prompts/framing_diversity",
+    "../mcp_attack/catalog/prompts/benign_control"
+  ],
+  "generator": {"kind": "static_catalog"},
+  "reset_between_variants": false,
+  "reporting": {"formats": ["json", "markdown"]}
+}
