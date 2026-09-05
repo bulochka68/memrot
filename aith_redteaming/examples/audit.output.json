@@ -1,0 +1,767 @@
+{
+  "schema": "audit",
+  "version": "1.1",
+  "mode": "passive",
+  "meta": {
+    "tool": "mcp-audit",
+    "version": "1.1.0",
+    "schema_version": "1.1",
+    "generated_at": 1788537380.6863801,
+    "mode": "passive",
+    "discovery": {
+      "live": false,
+      "snapshot": false,
+      "context_files": 0
+    }
+  },
+  "servers": [
+    {
+      "name": "filesystem",
+      "kind": "filesystem",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/workspace/my-project"
+      ],
+      "env_keys": [],
+      "url": null,
+      "declared_capabilities": {},
+      "handshake": {
+        "ok": true,
+        "protocol_version": null,
+        "server_info": {},
+        "instructions": null,
+        "error": null,
+        "source": "config"
+      },
+      "effective_access": {
+        "kind": "filesystem",
+        "provenance": "effective",
+        "paths": {
+          "allowed": [
+            "/workspace/my-project/**"
+          ],
+          "denied": [
+            "/etc/**",
+            "/root/**",
+            "~/.ssh/**",
+            "/proc/**",
+            "/sys/**",
+            "**/.env",
+            "**/.git/config"
+          ]
+        },
+        "unbounded": false,
+        "network_access": false
+      },
+      "tools": [
+        {
+          "name": "read_file",
+          "title": null,
+          "description": "Read a file from the project directory.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "HIGH",
+          "risk_reasons": [
+            "operation=READ",
+            "secret_grade_source"
+          ],
+          "effective_access": {
+            "network_access": false,
+            "paths": {
+              "allowed": [
+                "/workspace/my-project/**"
+              ],
+              "denied": [
+                "/etc/**",
+                "/root/**",
+                "~/.ssh/**",
+                "/proc/**",
+                "/sys/**",
+                "**/.env",
+                "**/.git/config"
+              ]
+            },
+            "unbounded": false
+          },
+          "egress": false,
+          "sensitive_source": true,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:456270e5020f2305739ba4210946302798c3d290cdc4454a7f33058c20801a77",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "write_file",
+          "title": null,
+          "description": "Write content to a file in the project directory.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ]
+          },
+          "annotations": {},
+          "classification": "WRITE",
+          "destructive": false,
+          "risk": "HIGH",
+          "risk_reasons": [
+            "operation=WRITE"
+          ],
+          "effective_access": {
+            "network_access": false,
+            "paths": {
+              "allowed": [
+                "/workspace/my-project/**"
+              ],
+              "denied": [
+                "/etc/**",
+                "/root/**",
+                "~/.ssh/**",
+                "/proc/**",
+                "/sys/**",
+                "**/.env",
+                "**/.git/config"
+              ]
+            },
+            "unbounded": false
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": false,
+          "verified": null,
+          "definition_hash": "sha256:96583996747fc58b884b0135e20a56345ad3fcbc60bae0d8adcfe5dd45f043aa",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        },
+        {
+          "name": "delete_file",
+          "title": null,
+          "description": "Delete a file from the project directory.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          },
+          "annotations": {},
+          "classification": "DELETE",
+          "destructive": true,
+          "risk": "CRITICAL",
+          "risk_reasons": [
+            "operation=DELETE"
+          ],
+          "effective_access": {
+            "network_access": false,
+            "paths": {
+              "allowed": [
+                "/workspace/my-project/**"
+              ],
+              "denied": [
+                "/etc/**",
+                "/root/**",
+                "~/.ssh/**",
+                "/proc/**",
+                "/sys/**",
+                "**/.env",
+                "**/.git/config"
+              ]
+            },
+            "unbounded": false
+          },
+          "egress": false,
+          "sensitive_source": false,
+          "untrusted_input": false,
+          "verified": null,
+          "definition_hash": "sha256:4210dcdce78544d77ec64dfd332e289f1e0de82d048c1595a40454c1de55fa97",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        }
+      ],
+      "resources": [],
+      "prompts": []
+    },
+    {
+      "name": "postgres",
+      "kind": "postgres",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://localhost/app"
+      ],
+      "env_keys": [],
+      "url": null,
+      "declared_capabilities": {},
+      "handshake": {
+        "ok": true,
+        "protocol_version": null,
+        "server_info": {},
+        "instructions": null,
+        "error": null,
+        "source": "config"
+      },
+      "effective_access": {
+        "kind": "postgres",
+        "provenance": "effective",
+        "operations": [
+          "SELECT",
+          "INSERT",
+          "UPDATE",
+          "DELETE"
+        ],
+        "ddl": false,
+        "scope": "all",
+        "unbounded": true,
+        "network_access": false
+      },
+      "tools": [
+        {
+          "name": "query",
+          "title": null,
+          "description": "Run a SQL query against the application database.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "sql": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "sql"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "HIGH",
+          "risk_reasons": [
+            "operation=READ",
+            "unbounded_scope"
+          ],
+          "effective_access": {
+            "network_access": false,
+            "operations": [
+              "SELECT",
+              "INSERT",
+              "UPDATE",
+              "DELETE"
+            ],
+            "ddl": false,
+            "unbounded": true
+          },
+          "egress": false,
+          "sensitive_source": true,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:e612bef5dfd0914877a8beeb4891934a0e8e85f6adbe0a90b1fa8ca56ed3301d",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        }
+      ],
+      "resources": [],
+      "prompts": []
+    },
+    {
+      "name": "shell",
+      "kind": "shell",
+      "transport": "stdio",
+      "command": "mcp-server-commands",
+      "args": [],
+      "env_keys": [],
+      "url": null,
+      "declared_capabilities": {},
+      "handshake": {
+        "ok": true,
+        "protocol_version": null,
+        "server_info": {},
+        "instructions": null,
+        "error": null,
+        "source": "config"
+      },
+      "effective_access": {
+        "kind": "shell",
+        "provenance": "effective",
+        "execution": "arbitrary",
+        "unbounded": true,
+        "network_access": true
+      },
+      "tools": [
+        {
+          "name": "execute_command",
+          "title": null,
+          "description": "Execute a shell command and return stdout/stderr.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "command": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "command"
+            ]
+          },
+          "annotations": {},
+          "classification": "EXEC",
+          "destructive": false,
+          "risk": "CRITICAL",
+          "risk_reasons": [
+            "operation=EXEC",
+            "egress",
+            "unbounded_scope"
+          ],
+          "effective_access": {
+            "network_access": true,
+            "execution": "arbitrary",
+            "unbounded": true
+          },
+          "egress": true,
+          "sensitive_source": true,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:1cb357e7508b439d7bd7bb84f70f69e2468271fce903f16eda4994cab1d4cf60",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        }
+      ],
+      "resources": [],
+      "prompts": []
+    },
+    {
+      "name": "fetch",
+      "kind": "fetch",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-fetch"
+      ],
+      "env_keys": [],
+      "url": null,
+      "declared_capabilities": {},
+      "handshake": {
+        "ok": true,
+        "protocol_version": null,
+        "server_info": {},
+        "instructions": null,
+        "error": null,
+        "source": "config"
+      },
+      "effective_access": {
+        "kind": "fetch",
+        "provenance": "effective",
+        "scope": "declared",
+        "network_access": true
+      },
+      "tools": [
+        {
+          "name": "fetch",
+          "title": null,
+          "description": "Fetch a URL and return its contents.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "url"
+            ]
+          },
+          "annotations": {},
+          "classification": "READ",
+          "destructive": false,
+          "risk": "MEDIUM",
+          "risk_reasons": [
+            "operation=READ"
+          ],
+          "effective_access": {
+            "network_access": true
+          },
+          "egress": true,
+          "sensitive_source": false,
+          "untrusted_input": true,
+          "verified": null,
+          "definition_hash": "sha256:e18e4adc6c467949d0d54aa0e15133055b7b255749dfc51410ed0719a768b2d2",
+          "provenance": {
+            "effective_access": "effective",
+            "classification": "effective",
+            "risk": "effective"
+          },
+          "declared_hints": {}
+        }
+      ],
+      "resources": [],
+      "prompts": []
+    }
+  ],
+  "agent_context": [],
+  "definition_analysis": {
+    "findings": [
+      {
+        "id": "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
+        "type": "UNCONSTRAINED_EXEC_PARAMETER",
+        "severity": "HIGH",
+        "title": "Unconstrained execution parameter",
+        "description": "query.sql is a free string with no enum/pattern - arbitrary execution surface",
+        "plane": "definition",
+        "provenance": "effective",
+        "server": "postgres",
+        "tool": "query",
+        "evidence": {
+          "parameter": "sql"
+        },
+        "taxonomy": []
+      },
+      {
+        "id": "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
+        "type": "UNCONSTRAINED_EXEC_PARAMETER",
+        "severity": "HIGH",
+        "title": "Unconstrained execution parameter",
+        "description": "execute_command.command is a free string with no enum/pattern - arbitrary execution surface",
+        "plane": "definition",
+        "provenance": "effective",
+        "server": "shell",
+        "tool": "execute_command",
+        "evidence": {
+          "parameter": "command"
+        },
+        "taxonomy": []
+      }
+    ],
+    "hash_baseline": {
+      "fetch/fetch": "sha256:e18e4adc6c467949d0d54aa0e15133055b7b255749dfc51410ed0719a768b2d2",
+      "filesystem/delete_file": "sha256:4210dcdce78544d77ec64dfd332e289f1e0de82d048c1595a40454c1de55fa97",
+      "filesystem/read_file": "sha256:456270e5020f2305739ba4210946302798c3d290cdc4454a7f33058c20801a77",
+      "filesystem/write_file": "sha256:96583996747fc58b884b0135e20a56345ad3fcbc60bae0d8adcfe5dd45f043aa",
+      "postgres/query": "sha256:e612bef5dfd0914877a8beeb4891934a0e8e85f6adbe0a90b1fa8ca56ed3301d",
+      "shell/execute_command": "sha256:1cb357e7508b439d7bd7bb84f70f69e2468271fce903f16eda4994cab1d4cf60"
+    },
+    "collisions": [],
+    "mcp_scan": {
+      "available": null,
+      "ran": false,
+      "reason": "disabled"
+    }
+  },
+  "effective_capabilities": {
+    "filesystem": {
+      "kind": "filesystem",
+      "provenance": "effective",
+      "paths": {
+        "allowed": [
+          "/workspace/my-project/**"
+        ],
+        "denied": [
+          "/etc/**",
+          "/root/**",
+          "~/.ssh/**",
+          "/proc/**",
+          "/sys/**",
+          "**/.env",
+          "**/.git/config"
+        ]
+      },
+      "unbounded": false,
+      "network_access": false
+    },
+    "postgres": {
+      "kind": "postgres",
+      "provenance": "effective",
+      "operations": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "ddl": false,
+      "scope": "all",
+      "unbounded": true,
+      "network_access": false
+    },
+    "shell": {
+      "kind": "shell",
+      "provenance": "effective",
+      "execution": "arbitrary",
+      "unbounded": true,
+      "network_access": true
+    },
+    "fetch": {
+      "kind": "fetch",
+      "provenance": "effective",
+      "scope": "declared",
+      "network_access": true
+    }
+  },
+  "tests": [],
+  "security_findings": [
+    {
+      "id": "MCP-001",
+      "type": "ARBITRARY_CODE_EXECUTION",
+      "severity": "CRITICAL",
+      "title": "Arbitrary code execution available to the agent",
+      "description": "One or more tools can execute arbitrary commands: shell/execute_command",
+      "plane": "capability",
+      "provenance": "effective",
+      "server": null,
+      "tool": null,
+      "evidence": {
+        "tools": [
+          "shell/execute_command"
+        ]
+      },
+      "taxonomy": []
+    },
+    {
+      "id": "MCP-002",
+      "type": "DESTRUCTIVE_OPERATIONS",
+      "severity": "CRITICAL",
+      "title": "Destructive operations available",
+      "description": "Tools can delete/destroy data: filesystem/delete_file",
+      "plane": "capability",
+      "provenance": "effective",
+      "server": null,
+      "tool": null,
+      "evidence": {
+        "tools": [
+          "filesystem/delete_file"
+        ]
+      },
+      "taxonomy": []
+    },
+    {
+      "id": "MCP-003",
+      "type": "PROJECT_WRITE_ACCESS",
+      "severity": "HIGH",
+      "title": "Write access to project / data",
+      "description": "2 tool(s) can modify data",
+      "plane": "capability",
+      "provenance": "effective",
+      "server": null,
+      "tool": null,
+      "evidence": {
+        "tools": [
+          "filesystem/write_file",
+          "filesystem/delete_file"
+        ]
+      },
+      "taxonomy": []
+    },
+    {
+      "id": "MCP-004",
+      "type": "LETHAL_TRIFECTA",
+      "severity": "CRITICAL",
+      "title": "Lethal trifecta assembled",
+      "description": "Lethal trifecta assembled: sensitive access + untrusted input + external channel all present. A single tool holds all three: ['shell/execute_command'].",
+      "plane": "correlation",
+      "provenance": "effective",
+      "server": null,
+      "tool": null,
+      "evidence": {
+        "legs_present": {
+          "sensitive_access": true,
+          "untrusted_input": true,
+          "external_channel": true
+        },
+        "single_tool_trifecta": [
+          "shell/execute_command"
+        ]
+      },
+      "taxonomy": []
+    }
+  ],
+  "summary": {
+    "server_count": 4,
+    "tool_count": 6,
+    "by_risk": {
+      "LOW": 0,
+      "MEDIUM": 1,
+      "HIGH": 3,
+      "CRITICAL": 2
+    },
+    "critical": 2,
+    "high": 3,
+    "medium": 1,
+    "low": 0,
+    "definition_findings": 2,
+    "context_findings": 0,
+    "overall_risk": "CRITICAL",
+    "trifecta": {
+      "assembled": true,
+      "legs": {
+        "sensitive_access": [
+          "filesystem/read_file",
+          "postgres/query",
+          "shell/execute_command"
+        ],
+        "untrusted_input": [
+          "fetch/fetch",
+          "filesystem/read_file",
+          "postgres/query",
+          "shell/execute_command"
+        ],
+        "external_channel": [
+          "fetch/fetch",
+          "shell/execute_command"
+        ]
+      },
+      "legs_present": {
+        "sensitive_access": true,
+        "untrusted_input": true,
+        "external_channel": true
+      },
+      "single_tool_trifecta": [
+        "shell/execute_command"
+      ],
+      "explanation": "Lethal trifecta assembled: sensitive access + untrusted input + external channel all present. A single tool holds all three: ['shell/execute_command']."
+    }
+  },
+  "verdict": {
+    "overall_risk": "CRITICAL",
+    "arbitrary_code_execution": true,
+    "full_project_access": true,
+    "lethal_trifecta": true,
+    "cross_server": {
+      "server_count": 4,
+      "shadowing_possible": false,
+      "signals": [],
+      "note": "Shadowing risk grows with server count; review collisions and cross-references."
+    },
+    "reasons": [
+      "arbitrary command execution is available",
+      "lethal trifecta is assembled",
+      "write access to project data"
+    ],
+    "confidence": 0.6,
+    "basis": "effective+verified",
+    "declared_divergences": []
+  },
+  "downstream": {
+    "P2_matrix": [
+      {
+        "id": "TM-EXEC",
+        "title": "Arbitrary code execution",
+        "reachable": true,
+        "evidence": [
+          "shell/execute_command"
+        ]
+      },
+      {
+        "id": "TM-WRITE",
+        "title": "Unauthorized data modification",
+        "reachable": true,
+        "evidence": [
+          "filesystem/write_file",
+          "filesystem/delete_file"
+        ]
+      },
+      {
+        "id": "TM-EXFIL",
+        "title": "Data exfiltration channel",
+        "reachable": true,
+        "evidence": [
+          "shell/execute_command",
+          "fetch/fetch"
+        ]
+      },
+      {
+        "id": "TM-POISON",
+        "title": "Tool poisoning via definitions",
+        "reachable": true,
+        "evidence": [
+          "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
+          "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER"
+        ]
+      },
+      {
+        "id": "TM-TRIFECTA",
+        "title": "Lethal trifecta",
+        "reachable": true,
+        "evidence": {
+          "sensitive_access": true,
+          "untrusted_input": true,
+          "external_channel": true
+        }
+      },
+      {
+        "id": "TM-SHADOW",
+        "title": "Cross-server shadowing",
+        "reachable": false,
+        "evidence": []
+      }
+    ],
+    "P3_corpus": [
+      {
+        "campaign": "C4-EXEC",
+        "name": "command execution abuse",
+        "reason": "EXEC tool present"
+      },
+      {
+        "campaign": "C2-*",
+        "name": "memory / context exfil",
+        "reason": "trifecta assembled"
+      }
+    ],
+    "P8_baseline_keys": [
+      "fetch/fetch",
+      "filesystem/delete_file",
+      "filesystem/read_file",
+      "filesystem/write_file",
+      "postgres/query",
+      "shell/execute_command"
+    ]
+  },
+  "drift": {}
+}
