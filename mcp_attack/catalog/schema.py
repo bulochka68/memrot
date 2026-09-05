@@ -7,6 +7,7 @@ import json
 from typing import Any, Dict, List
 
 from ..models import FRAMING_VALUES, LAYER_VALUES, PAYLOAD_VALUES, PROPAGATION_VALUES
+from ..taxonomy import OWASP_AMG_CATEGORY_SLUGS
 
 REQUIRED_FIELDS = ("id", "title", "framing", "payload", "layer", "propagation", "probe", "rule_ids")
 ALLOWED_FRAMING = set(FRAMING_VALUES)
@@ -14,6 +15,7 @@ ALLOWED_PAYLOAD = set(PAYLOAD_VALUES)
 ALLOWED_LAYER = set(LAYER_VALUES)
 ALLOWED_PROPAGATION = set(PROPAGATION_VALUES)
 ALLOWED_ACCESS_PROFILE = {"black_box", "grey_box", "white_box"}
+ALLOWED_OWASP_AMG_CATEGORY = set(OWASP_AMG_CATEGORY_SLUGS)
 
 
 def validate_variant_dict(d: Dict[str, Any], where: str = "") -> List[str]:
@@ -35,6 +37,10 @@ def validate_variant_dict(d: Dict[str, Any], where: str = "") -> List[str]:
     check_enum("layer", ALLOWED_LAYER)
     check_enum("propagation", ALLOWED_PROPAGATION)
     check_enum("access_profile_required", ALLOWED_ACCESS_PROFILE)
+
+    owasp_amg_category = d.get("owasp_amg_category")
+    if owasp_amg_category and owasp_amg_category not in ALLOWED_OWASP_AMG_CATEGORY:
+        errors.append(f"{tag}owasp_amg_category={owasp_amg_category!r} not in {sorted(ALLOWED_OWASP_AMG_CATEGORY)}")
 
     propagation = d.get("propagation")
     inject_turns = d.get("inject_turns") or []

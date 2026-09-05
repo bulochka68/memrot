@@ -133,6 +133,7 @@ class AttackVariant:
     inject_turns: List[str] = field(default_factory=list)
     rule_ids: List[str] = field(default_factory=list)     # loose string-tag link to mcp_audit's rule catalogue
     taxonomy: List[str] = field(default_factory=list)      # MITRE ATLAS ids, e.g. "AML.T0051"
+    owasp_amg_category: str = ""                            # target-agnostic slug, see taxonomy.py; "" = untagged
     access_profile_required: str = "black_box"
     attacker_role: str = "attacker"
     victim_role: str = "victim"
@@ -140,7 +141,8 @@ class AttackVariant:
     victim_principal: Optional[str] = None
     target_ref: Optional[str] = None                 # e.g. a foreign customer id, for ground_truth_check()
     rule_semantic: Optional[str] = None               # phase-2 LLM-judge rubric text
-    source: str = "static_catalog"                     # static_catalog | llm_mutation | imported:<bank>
+    source: str = "static_catalog"                     # static_catalog | mutation:<technique> | imported:<bank>
+    mutation_technique: str = ""                          # slug of the technique that produced this variant, if any
     notes: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
@@ -188,6 +190,8 @@ class AttackResult:
     ground_truth_detection: Optional[DetectionResult] = None
     rule_ids: List[str] = field(default_factory=list)
     taxonomy: List[str] = field(default_factory=list)
+    owasp_amg_category: str = ""
+    mutation_technique: str = ""
     framing: str = ""
     payload: str = ""
     layer: str = ""
@@ -245,6 +249,8 @@ class RunReport:
     overall_asr: Optional[GroupMetric] = None
     asr_by_rule_id: Dict[str, GroupMetric] = field(default_factory=dict)
     asr_by_axis: Dict[str, Dict[str, GroupMetric]] = field(default_factory=dict)
+    asr_by_taxonomy_category: Dict[str, GroupMetric] = field(default_factory=dict)
+    asr_by_mutation_technique: Dict[str, GroupMetric] = field(default_factory=dict)
     counts_by_verdict: Dict[str, int] = field(default_factory=dict)
     limitations: List[str] = field(default_factory=list)
     trace_path: Optional[str] = None
@@ -261,6 +267,8 @@ class RunReport:
             "asr_by_rule_id": {k: v.to_dict() for k, v in self.asr_by_rule_id.items()},
             "asr_by_axis": {axis: {k: v.to_dict() for k, v in groups.items()}
                            for axis, groups in self.asr_by_axis.items()},
+            "asr_by_taxonomy_category": {k: v.to_dict() for k, v in self.asr_by_taxonomy_category.items()},
+            "asr_by_mutation_technique": {k: v.to_dict() for k, v in self.asr_by_mutation_technique.items()},
             "counts_by_verdict": dict(self.counts_by_verdict),
             "limitations": list(self.limitations),
             "trace_path": self.trace_path,

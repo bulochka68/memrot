@@ -1,8 +1,9 @@
 from .base import Detector
 from .ground_truth import GroundTruthDetector
 from .literal import LiteralDetector
+from .llm_judge_stub import LLMJudgeDetector
 
-_REGISTRY = {"literal": LiteralDetector, "ground_truth": GroundTruthDetector}
+_REGISTRY = {"literal": LiteralDetector, "ground_truth": GroundTruthDetector, "llm_judge": LLMJudgeDetector}
 
 
 def build_detector(kind: str, options: dict) -> Detector:
@@ -12,4 +13,4 @@ def build_detector(kind: str, options: dict) -> Detector:
     return cls(**options)
 
 
-__all__ = ["Detector", "LiteralDetector", "GroundTruthDetector", "build_detector"]
+__all__ = ["Detector", "LiteralDetector", "GroundTruthDetector", "LLMJudgeDetector", "build_detector"]

@@ -53,6 +53,22 @@ def emit_markdown(report: RunReport) -> str:
         L.append(f"| {esc(rule_id)} | {metric.display} |")
     L.append("")
 
+    L.append("## ASR by taxonomy category (OWASP Agent Memory Guard)")
+    L.append("")
+    L.append("| Category | ASR |")
+    L.append("|---|---|")
+    for cat, metric in sorted(report.asr_by_taxonomy_category.items()):
+        L.append(f"| {esc(cat)} | {metric.display} |")
+    L.append("")
+
+    L.append("## ASR by mutation technique")
+    L.append("")
+    L.append("| Technique | ASR |")
+    L.append("|---|---|")
+    for technique, metric in sorted(report.asr_by_mutation_technique.items()):
+        L.append(f"| {esc(technique)} | {metric.display} |")
+    L.append("")
+
     L.append("## ASR by diversity axis")
     L.append("")
     for axis, groups in report.asr_by_axis.items():

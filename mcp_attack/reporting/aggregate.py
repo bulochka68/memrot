@@ -30,6 +30,8 @@ def aggregate(report: RunReport) -> RunReport:
     overall = GroupMetric(key="overall")
     by_rule: Dict[str, GroupMetric] = {}
     by_axis: Dict[str, Dict[str, GroupMetric]] = {axis: {} for axis in AXES}
+    by_taxonomy: Dict[str, GroupMetric] = {}
+    by_mutation: Dict[str, GroupMetric] = {}
 
     for r in report.results:
         counts[r.verdict.value] = counts.get(r.verdict.value, 0) + 1
@@ -44,9 +46,13 @@ def aggregate(report: RunReport) -> RunReport:
         for axis in AXES:
             value = getattr(r, axis, "") or "(unset)"
             _bump(by_axis[axis], value, confirmed)
+        _bump(by_taxonomy, r.owasp_amg_category or "(untagged)", confirmed)
+        _bump(by_mutation, r.mutation_technique or "(none)", confirmed)
 
     report.counts_by_verdict = counts
     report.overall_asr = overall
     report.asr_by_rule_id = by_rule
     report.asr_by_axis = by_axis
+    report.asr_by_taxonomy_category = by_taxonomy
+    report.asr_by_mutation_technique = by_mutation
     return report

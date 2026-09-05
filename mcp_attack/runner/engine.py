@@ -53,6 +53,7 @@ def run_variant(variant: AttackVariant, channels: List[Channel], adapter: Target
         return AttackResult(
             variant_id=variant.id, verdict=Verdict.NOT_EVALUATED,
             rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
+            owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
             framing=variant.framing, payload=variant.payload, layer=variant.layer,
             propagation=variant.propagation,
             limitations=[f"adapter access_profile={caps.access_profile} does not meet "
@@ -67,6 +68,7 @@ def run_variant(variant: AttackVariant, channels: List[Channel], adapter: Target
         return AttackResult(
             variant_id=variant.id, verdict=Verdict.ERROR, error=f"{type(exc).__name__}: {exc}",
             rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
+            owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
             framing=variant.framing, payload=variant.payload, layer=variant.layer,
             propagation=variant.propagation,
         )
@@ -100,6 +102,7 @@ def _run_single_turn_control(variant: AttackVariant, channels: List[Channel], ad
     return AttackResult(
         variant_id=variant.id, verdict=verdict, post_detection=text_det, ground_truth_detection=gt_det,
         rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
+        owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
         framing=variant.framing, payload=variant.payload, layer=variant.layer, propagation=variant.propagation,
         channels_used=[channel.channel_id], canary=marker,
     )
@@ -144,6 +147,7 @@ def _run_canary_flow(variant: AttackVariant, channels: List[Channel], adapter: T
         return AttackResult(
             variant_id=variant.id, verdict=Verdict.INVALID, baseline_detection=baseline_text_det,
             rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
+            owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
             framing=variant.framing, payload=variant.payload, layer=variant.layer, propagation=variant.propagation,
             channels_used=channels_used, canary=canary,
             limitations=["canary already present before this variant's own injection ran: "
@@ -203,6 +207,7 @@ def _run_canary_flow(variant: AttackVariant, channels: List[Channel], adapter: T
         variant_id=variant.id, verdict=verdict, baseline_detection=baseline_text_det,
         post_detection=post_text_det, ground_truth_detection=gt_det,
         rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
+        owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
         framing=variant.framing, payload=variant.payload, layer=variant.layer, propagation=variant.propagation,
         channels_used=channels_used, canary=canary,
     )

@@ -58,6 +58,7 @@ def load_catalog(paths: Iterable[str], strict: bool = True) -> List[AttackVarian
                 propagation=v.get("propagation", "single-turn"), probe=v.get("probe", ""),
                 canary_template=v.get("canary_template", ""), inject_turns=list(v.get("inject_turns") or []),
                 rule_ids=list(v.get("rule_ids") or []), taxonomy=list(v.get("taxonomy") or []),
+                owasp_amg_category=v.get("owasp_amg_category", ""),
                 access_profile_required=v.get("access_profile_required", "black_box"),
                 attacker_role=v.get("attacker_role", "attacker"), victim_role=v.get("victim_role", "victim"),
                 attacker_principal=v.get("attacker_principal"), victim_principal=v.get("victim_principal"),
