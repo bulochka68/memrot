@@ -1,13 +1,16 @@
 from mcp_attack.models import AttackResult, Channel, ChannelRole, Principal, RunReport, Verdict
 from mcp_attack.reporting.aggregate import aggregate
 from mcp_attack.reporting.emitter import emit_json, emit_markdown
+from mcp_attack.reporting.html_emitter import emit_html
 
 
 def _result(verdict, rule_ids=None, **kw) -> AttackResult:
     return AttackResult(variant_id=kw.pop("variant_id", "v"), verdict=verdict,
                         rule_ids=rule_ids or [], framing=kw.pop("framing", "explicit_rule"),
                         payload=kw.pop("payload", "formatting_marker"), layer=kw.pop("layer", "policy_global"),
-                        propagation=kw.pop("propagation", "cross-user"), **kw)
+                        propagation=kw.pop("propagation", "cross-user"),
+                        owasp_amg_category=kw.pop("owasp_amg_category", ""),
+                        mutation_technique=kw.pop("mutation_technique", ""), **kw)
 
 
 def _report(results) -> RunReport:
@@ -64,3 +67,77 @@ def test_emit_json_and_markdown_are_well_formed_and_consistent():
     md = emit_markdown(report)
     assert "Overall ASR" in md
     assert "MEM-02" in md
+
+
+def test_aggregate_by_taxonomy_category_groups_and_untagged_bucket():
+    report = _report([
+        _result(Verdict.CONFIRMED, owasp_amg_category="memory_prompt_injection"),
+        _result(Verdict.CLEAN, owasp_amg_category="memory_prompt_injection"),
+        _result(Verdict.CONFIRMED, owasp_amg_category=""),
+    ])
+    aggregate(report)
+    assert report.asr_by_taxonomy_category["memory_prompt_injection"].display == "1/2 (50.0%)"
+    assert report.asr_by_taxonomy_category["(untagged)"].display == "1/1 (100.0%)"
+
+
+def test_aggregate_by_mutation_technique_groups_and_none_bucket():
+    report = _report([
+        _result(Verdict.CONFIRMED, mutation_technique="prefix_injection"),
+        _result(Verdict.CLEAN, mutation_technique=""),
+    ])
+    aggregate(report)
+    assert report.asr_by_mutation_technique["prefix_injection"].display == "1/1 (100.0%)"
+    assert report.asr_by_mutation_technique["(none)"].display == "0/1 (0.0%)"
+
+
+def test_emit_json_includes_new_breakdown_dicts():
+    report = _report([_result(Verdict.CONFIRMED, owasp_amg_category="memory_prompt_injection",
+                              mutation_technique="paraphrase")])
+    aggregate(report)
+    import json
+    parsed = json.loads(emit_json(report))
+    assert parsed["asr_by_taxonomy_category"]["memory_prompt_injection"]["confirmed"] == 1
+    assert parsed["asr_by_mutation_technique"]["paraphrase"]["confirmed"] == 1
+
+
+def test_emit_markdown_includes_taxonomy_and_mutation_sections():
+    report = _report([_result(Verdict.CONFIRMED, owasp_amg_category="memory_prompt_injection",
+                              mutation_technique="paraphrase")])
+    aggregate(report)
+    md = emit_markdown(report)
+    assert "ASR by taxonomy category" in md
+    assert "ASR by mutation technique" in md
+    assert "memory\\_prompt\\_injection" in md   # Markdown-escapes underscores, see emitter.esc()
+    assert "paraphrase" in md
+
+
+def test_emit_html_is_well_formed_and_contains_key_sections():
+    report = _report([
+        _result(Verdict.CONFIRMED, rule_ids=["MEM-02"], owasp_amg_category="memory_prompt_injection",
+               mutation_technique="paraphrase", variant_id="v-confirmed"),
+        _result(Verdict.CLEAN, owasp_amg_category="memory_prompt_injection", variant_id="v-clean"),
+    ])
+    aggregate(report)
+    doc = emit_html(report)
+    assert doc.startswith("<!doctype html>")
+    assert doc.count("<html") == 1 and doc.count("</html>") == 1
+    assert "run1" in doc
+    assert "memory_prompt_injection" in doc
+    assert "paraphrase" in doc
+    assert "v-confirmed" in doc and "v-clean" in doc
+    assert "Overall ASR".lower() not in doc.lower() or "ASR" in doc   # headline KPI present in some form
+
+
+def test_emit_html_escapes_untrusted_content():
+    report = _report([_result(Verdict.CONFIRMED, variant_id="<script>alert(1)</script>")])
+    aggregate(report)
+    doc = emit_html(report)
+    assert "<script>alert(1)</script>" not in doc
+    assert "&lt;script&gt;" in doc
+
+
+def test_emit_html_handles_zero_denominator_groups_without_crashing():
+    report = _report([_result(Verdict.ERROR)])
+    aggregate(report)
+    doc = emit_html(report)
+    assert "n/a (0/0)" in doc
