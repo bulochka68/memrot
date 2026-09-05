@@ -1,0 +1,17 @@
+version: 1.2.1
+
+endpoints:
+  custom:
+    - name: "Ассистент по инвестициям"
+      apiKey: "user_provided"
+      baseURL: "http://agent-api:8600/v1"
+      # LibreChat не передаёт наш кастомный session_id (его нет в OpenAI-форме) — без этого
+      # заголовка agent-api генерировал бы новую сессию памяти на КАЖДОЕ сообщение, и рабочая
+      # память не накапливалась бы в рамках одного диалога LibreChat. apiKey тут user_provided,
+      # но baseURL — фиксированный (не user_provided), поэтому шаблоны в headers применяются.
+      headers:
+        X-Conversation-Id: "{{LIBRECHAT_BODY_CONVERSATIONID}}"
+      models:
+        default: ["genai-invest-assistant"]
+        fetch: false
+      titleConvo: false

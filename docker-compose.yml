@@ -1,0 +1,230 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: invest
+      POSTGRES_USER: invest
+      POSTGRES_PASSWORD: invest
+    volumes:
+      - invest_postgres_data:/var/lib/postgresql/data
+      - ./invest-server/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U invest -d invest"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  invest-server:
+    build: ./invest-server
+    ports:
+      - "8200:8000"
+    environment:
+      DATABASE_URL: postgresql://invest:invest@postgres:5432/invest
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_ISSUER_URL: https://localhost:8443
+      # Дефолт-фолбэк — на практике режим на каждый запрос приходит заголовком
+      # X-Demo-Auth-Mode от mcp-invest (тот же тоггл UI, что и для агент→mcp-invest).
+      INVEST_SERVER_AUTH_MODE: vulnerable
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('localhost', 8000), 2).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mcp-invest:
+    build: ./mcp-invest
+    ports:
+      - "8100:8000"
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      # KC_HOSTNAME на keycloak фиксирует iss=https://localhost:8443 для ВСЕХ токенов
+      # реалма (client_credentials, token exchange, SSO), независимо от того, что
+      # mcp-invest обращается за JWKS по внутреннему HTTP-адресу keycloak:8080 — эти два
+      # адреса теперь намеренно разные (и по хосту, и по схеме).
+      KEYCLOAK_ISSUER_URL: https://localhost:8443
+      MCP_INVEST_AUTH_MODE: vulnerable
+      INVEST_SERVER_URL: http://invest-server:8000
+      MCP_INVEST_SERVICE_CLIENT_ID: mcp-invest-service
+      MCP_INVEST_SERVICE_CLIENT_SECRET: mcp-invest-service-secret
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      invest-server:
+        condition: service_healthy
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    ports:
+      - "8180:8080"
+      - "8443:8443"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+      KC_FEATURES: token-exchange
+      # Без фиксированного hostname Keycloak привязывает claim `iss` к хосту конкретного
+      # запроса — localhost:8443 (браузер) и keycloak:8080 (внутренний docker-трафик) дают
+      # РАЗНЫЙ iss для токенов одной сессии, из-за чего Keycloak сам отклоняет refresh
+      # (invalid_grant: Invalid token issuer). KC_HOSTNAME делает iss константой для всех
+      # токенов независимо от того, с какого хоста реально пришёл запрос.
+      #
+      # HTTPS (не http): LibreChat использует openid-client, который жёстко отклоняет
+      # http-issuer'ы на уровне библиотеки (до похода в сеть) — это не наш host-mismatch
+      # трюк, а отдельное требование конкретно этого клиента. Самоподписанный сертификат
+      # (keycloak/certs/, в .gitignore — содержит приватный ключ) — только для локальной
+      # разработки, браузер спросит доверие один раз. Сгенерировать заново:
+      #   openssl req -x509 -newkey rsa:2048 -nodes -keyout keycloak/certs/tls.key \
+      #     -out keycloak/certs/tls.crt -days 3650 -subj "/CN=localhost" \
+      #     -addext "subjectAltName=DNS:localhost,DNS:keycloak,IP:127.0.0.1"
+      KC_HOSTNAME: https://localhost:8443
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/certs/tls.crt
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/certs/tls.key
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./keycloak/certs:/opt/keycloak/certs:ro
+    # Management-интерфейс (порт 9000, /health/ready) теперь тоже HTTPS вместе с основным —
+    # bash-трюк с /dev/tcp не умеет TLS-handshake. Проверяем вместо этого discovery-эндпоинт
+    # реалма на обычном HTTP-порту 8080 — заодно подтверждает, что импорт реалма завершился.
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /realms/genai-stand/.well-known/openid-configuration HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && head -1 <&3 | grep -q 200"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  agent-api:
+    build: .
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      MONGO_URI: mongodb://mongo:27017
+      MCP_INVEST_URL: http://mcp-invest:8000
+      KEYCLOAK_URL: http://keycloak:8080
+      # Браузерный (не docker-внутренний) адрес Keycloak — нужен для кнопки "Выйти" на
+      # странице аккаунта, которая редиректит браузер напрямую на Keycloak logout endpoint.
+      KEYCLOAK_ISSUER_URL: https://localhost:8443
+      # Браузерный адрес самой ручки — для сниппета promptfoo/LibreChat на странице аккаунта.
+      AGENT_API_URL: http://localhost:8600
+    command: ["uvicorn", "app.api_server:app", "--host", "0.0.0.0", "--port", "8600"]
+    ports:
+      - "8600:8600"
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      mcp-invest:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app:ro
+
+  librechat:
+    image: registry.librechat.ai/danny-avila/librechat-dev:latest
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3080"
+      MONGO_URI: mongodb://mongo:27017/LibreChat
+      # Обязательные — без них не собирается redirect_uri для OIDC-колбэка ("Invalid URL").
+      DOMAIN_CLIENT: http://localhost:3080
+      DOMAIN_SERVER: http://localhost:3080
+      # Один процесс — не гонять внутренний scheduler по нескольким репликам.
+      SCHEDULES_SINGLE_PROCESS: "true"
+      # OIDC против нашего Keycloak (реалм genai-stand, клиент librechat).
+      OPENID_ISSUER: https://localhost:8443/realms/genai-stand
+      OPENID_CLIENT_ID: librechat
+      OPENID_CLIENT_SECRET: librechat-secret
+      OPENID_CALLBACK_URL: /oauth/openid/callback
+      OPENID_SCOPE: "openid profile email"
+      OPENID_SESSION_SECRET: e7f2a4c9b1d6480a9c3e5f7a2b8d4c1e6f9a3b5c7d2e4f8a1b6c9d3e5f7a2b4c
+      OPENID_USE_END_SESSION_ENDPOINT: "true"
+      ALLOW_SOCIAL_LOGIN: "true"
+      # Самоподписанный сертификат Keycloak — для локальной разработки. LibreChat (Node.js)
+      # иначе откажется валидировать TLS-цепочку при discovery/token/jwks-запросах.
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+    # OPENID_ISSUER указывает на browser-facing хост (localhost:8443), потому что KC_HOSTNAME
+    # фиксирует claim iss этой строкой для ВСЕХ токенов реалма независимо от того, откуда
+    # реально пришёл запрос (см. комментарий у сервиса keycloak). LibreChat, в отличие от
+    # oauth2-proxy, не даёт развести discovery-адрес и issuer-строку по отдельности — поэтому
+    # вместо этого делаем "localhost" внутри ЭТОГО контейнера резолвящимся на хост-машину
+    # (тот же приём, что host.docker.internal для Ollama), где Keycloak реально слушает 8443.
+    extra_hosts:
+      - "localhost:host-gateway"
+    volumes:
+      - ./librechat.yaml:/app/librechat.yaml:ro
+    ports:
+      - "3080:3080"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      agent-api:
+        condition: service_started
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    command:
+      - --http-address=0.0.0.0:4180
+      - --upstream=http://agent-api:8600
+      - --provider=oidc
+      - --client-id=streamlit-app
+      - --client-secret=streamlit-app-secret
+      - --redirect-url=http://localhost:8501/oauth2/callback
+      - --oidc-issuer-url=https://localhost:8443/realms/genai-stand
+      - --skip-oidc-discovery=true
+      - --login-url=https://localhost:8443/realms/genai-stand/protocol/openid-connect/auth
+      - --redeem-url=http://keycloak:8080/realms/genai-stand/protocol/openid-connect/token
+      - --oidc-jwks-url=http://keycloak:8080/realms/genai-stand/protocol/openid-connect/certs
+      - --pass-access-token=true
+      - --set-xauthrequest=true
+      - --cookie-refresh=60s
+      # Без этого oauth2-proxy отклонит редирект на Keycloak logout endpoint (другой
+      # хост:порт) как потенциальный open-redirect — нужен для полного логаута кнопкой
+      # "Выйти" (иначе браузер тут же залогинит того же пользователя обратно по SSO-сессии).
+      - --whitelist-domain=localhost:8443
+      - --cookie-secure=false
+      - --cookie-secret=act2gfiKEtNm0vkCegjJbzkP7iFwHYwG4wmBRATIs3E=
+      - --email-domain=*
+      - --skip-provider-button=true
+    ports:
+      - "8501:4180"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      agent-api:
+        condition: service_started
+
+volumes:
+  mongo_data:
+  invest_postgres_data:
