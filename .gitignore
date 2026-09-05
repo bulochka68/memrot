@@ -9,3 +9,5 @@ ATTACK_HARNESS_PROGRESS.md
 .claude/
 .specify/
 .audit/
+.ipynb_checkpoints/
+examples/notebooks/demo_report.html
