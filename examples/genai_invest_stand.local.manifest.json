@@ -1,0 +1,32 @@
+{
+  "schema_version": "2.0",
+  "target": {
+    "id": "genai-invest-stand-local",
+    "build_ref": "HEAD of this checkout",
+    "environment": "local checkout of the stand (this repository)",
+    "boundaries": ["agent-api", "agent", "session-finalizer", "memory-store", "mcp-invest", "invest-server", "redis", "mongo", "postgres", "keycloak"],
+    "snapshot_note": "Источники и compose читаются из этого чекаута; стенд, MCP-процессы и модель не запускаются."
+  },
+  "inspection": {
+    "access_profile": "white_box",
+    "mode": "offline",
+    "profile_ref": "../profiles/genai_invest_stand.json",
+    "business_policy_ref": "policy",
+    "inventory_manifest_ref": "mcp-config"
+  },
+  "adapters": [
+    {"id": "mcp-config", "kind": "mcp_inventory",
+     "binding": {"path": "genai_invest_stand.config.json", "live": false,
+                 "capture": {"method": "client-side MCP config as captured for the example (9 tools)", "identity": "n/a (no handshake)"}}},
+    {"id": "source", "kind": "source_snapshot",
+     "binding": {"root": ".."}},
+    {"id": "policy", "kind": "policy_snapshot",
+     "binding": {"path": "genai_invest_stand.policy.json"}},
+    {"id": "deployment", "kind": "deployment",
+     "binding": {"path": "../docker-compose.yml"}}
+  ],
+  "reporting": {"formats": ["json", "markdown"], "evidence_policy_ref": "redacted-evidence-v1"},
+  "reproducibility": {
+    "note": "факты извлекаются из рабочего дерева; для воспроизводимого отчёта фиксируйте коммит в target.build_ref"
+  }
+}

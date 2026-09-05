@@ -8,3 +8,4 @@ attack-run-*/
 ATTACK_HARNESS_PROGRESS.md
 .claude/
 .specify/
+.audit/
