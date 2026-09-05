@@ -56,3 +56,39 @@ python3 -m pytest test_tool_poisoning.py -v        # TOOL-04 (+ SINKHOLE_QUERY �
   структурный дымовой тест.
 - Только против своего стенда. `auth_mode=vulnerable` включает уязвимый путь;
   `protected` должен давать те же тесты зелёными (регрессия защиты).
+
+## Обобщённый слой (generic)
+
+Тот же шов, что у аудитора: сценарии generic, привязка к системе — в адаптере.
+
+```
+target.py              — AttackTarget (протокол), Principal, AttackResult, canary()
+targets/stand.py       — StandTarget: единственное место с путями стенда
+scenarios/poisoning.py — memory/tool poisoning, работают с любым AttackTarget
+run_attacks.py         — отчёт аудита → цели → сценарии → path_state
+```
+
+Конвейер целиком:
+
+```bash
+# план без удара по системе
+python3 run_attacks.py ../../.audit/stand.json -c tool-poisoning,memory-poisoning --dry-run
+
+# реальный прогон против своего стенда, результат в словаре аудита
+STAND_URL=... ATTACKER_KEY=... VICTIM_KEY=... \
+  python3 run_attacks.py ../../.audit/stand.json -c memory-poisoning --json
+```
+
+`AttackResult.path_state` возвращает термины аудита:
+`static_path_supported` (вживую не воспроизвелось) → `runtime_path_observed`
+(опубликовано) → `control_violation_observed` (маркер дошёл до жертвы).
+
+### Обобщить на другую систему
+
+1. Реализуйте `AttackTarget` (4 метода: `principals`, `new_session`, `deliver`,
+   `trigger_persist`, `observe`) под её ручки — это аналог профиля аудита.
+2. Сценарии и таксономия (`attack_taxonomy.py`) не меняются.
+3. Раннер тот же; `_make_target()` подменяется на ваш адаптер.
+
+Что переносится: `target.py`, `scenarios/`, `run_attacks.py`, таксономия, оракул.
+Что пишется под систему: `targets/<system>.py` + формулировки инъекций (данные).
