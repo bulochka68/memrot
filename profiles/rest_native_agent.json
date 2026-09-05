@@ -1,0 +1,56 @@
+{
+  "profile_id": "rest-native-agent",
+  "profile_version": "1.0.0",
+  "description": "Второй профиль: REST/native-агент без MCP с векторной памятью (pgvector). Те же правила и формат finding работают через адаптеры (критерий 18).",
+  "components": [
+    {"id": "assistant-api", "type": "rest_service", "name": "assistant REST API", "role": "user_session_handler", "source_paths": ["app/api.py"]},
+    {"id": "native-tools", "type": "native_function", "name": "native tools", "role": "external_tool_host", "source_paths": ["app/tools.py"]},
+    {"id": "vector-memory", "type": "memory_store", "name": "pgvector notes/rules", "role": "memory_store", "source_paths": ["app/memory.py"]},
+    {"id": "rule-publisher", "type": "policy_publisher", "name": "RulePublisher", "role": "policy_publisher", "source_paths": ["app/memory.py"]},
+    {"id": "mail-provider", "type": "external_provider", "name": "external mail", "role": "external_provider"}
+  ],
+  "memory_stores": [
+    {"component_id": "vector-memory", "store_type": "vector",
+     "memory_types": [
+       {"type": "note", "table": "notes", "audience": "user", "authority": "data", "derived": true},
+       {"type": "shared_rule", "table": "rules", "audience": "shared", "authority": "policy", "trusted_publishers": ["rule-publisher"]}
+     ]}
+  ],
+  "tool_routing": {"namespace": "qualified", "router": "native functions bound by python symbol"},
+  "source_facts": {
+    "tool_declarations": [{"component": "native-tools", "path": "app/tools.py", "decorator": "tool", "kind": "native"}],
+    "flows": [
+      {"id": "R-identity", "kind": "identity_binding", "from": "assistant-api", "to": "assistant-api", "path": "app/api.py", "symbol": "current_principal",
+       "patterns": ["jwt\\.decode\\(", "return claims\\[\"sub\"\\]"], "identity_source": "authentication", "principal": "end_user", "rule_refs": ["AUTH-01"]},
+      {"id": "R-note-write", "kind": "memory_write", "from": "assistant-api", "to": "vector-memory", "path": "app/memory.py", "symbol": "VectorMemory.write_note",
+       "patterns": ["INSERT INTO notes", "source_refs"], "memory_type": "note", "audience": "user", "writer_principal": "assistant-api",
+       "provenance_kept": true, "provenance_fields": ["source_refs"], "rule_refs": ["MEM-05"]},
+      {"id": "R-scope-server", "kind": "scope_decision", "from": "assistant-api", "to": "vector-memory", "path": "app/memory.py", "symbol": "VectorMemory.write_note",
+       "patterns": ["audience\\) VALUES \\(%s, %s, %s, 'user'\\)"], "decision_source": "server", "memory_type": "note", "rule_refs": ["MEM-03"]},
+      {"id": "R-note-read", "kind": "memory_read", "from": "vector-memory", "to": "assistant-api", "path": "app/memory.py", "symbol": "VectorMemory.build_context",
+       "patterns": ["WHERE subject_id = %s"], "memory_type": "note", "audience": "user", "filter_by": ["subject_id"], "subject_bound": true,
+       "audience_filter_before_context": true, "rule_refs": ["MEM-01", "MEM-07"]},
+      {"id": "R-rules-context", "kind": "context_include", "from": "vector-memory", "to": "assistant-api", "path": "app/memory.py", "symbol": "VectorMemory.build_context",
+       "patterns": ["\\[rule:approved\\]", "review_state = 'approved'"], "memory_type": "shared_rule", "presented_as": "rules", "context_role": "system",
+       "publisher_trusted": true, "subject_bound": false, "rule_refs": ["MEM-04"]},
+      {"id": "R-publish", "kind": "publish", "from": "rule-publisher", "to": "vector-memory", "path": "app/memory.py", "symbol": "RulePublisher.publish",
+       "patterns": ["assert approver == \"policy-admin\"", "INSERT INTO rules"], "writer_principal": "rule-publisher", "writer_role": "policy_publisher",
+       "memory_type": "shared_rule", "audience": "shared", "authority": "policy", "approval_required": true, "rule_refs": ["MEM-02", "MEM-06"]},
+      {"id": "R-mail-transmit", "kind": "transmit", "from": "native-tools", "to": "mail-provider", "path": "app/tools.py", "symbol": "send_summary",
+       "patterns": ["smtp_send\\(to, body\\)"], "destination": "mail-provider", "data_categories_possible": ["summary", "document_content"],
+       "category_filter": false, "composed_by": "model", "rule_refs": ["EGRESS-01"]}
+    ],
+    "auth_transitions": [
+      {"id": "RT-doc", "input_principal": "end_user", "executing_component": "assistant-api", "operation": "READ", "resource": "document(doc_id)",
+       "auth_scheme": "jwt", "boundary": "RB-doc", "enforcement_point": "assistant-api", "path": "app/api.py", "symbol": "get_document",
+       "patterns": ["if doc\\[\"owner\"\\] != subject", "HTTPException\\(status_code=403"], "policy_decision": "enforced"}
+    ],
+    "token_validation": [
+      {"component": "assistant-api", "path": "app/api.py", "symbol": "current_principal", "scheme": "jwt",
+       "checks": {"signature": {"pattern": "jwt\\.decode\\(", "found_means": true}, "issuer": {"pattern": "issuer=EXPECTED_ISSUER", "found_means": true},
+                  "audience": {"pattern": "audience=EXPECTED_AUDIENCE", "found_means": true}, "expiry": {"pattern": "jwt\\.decode\\(", "found_means": true},
+                  "algorithm": {"pattern": "algorithms=\\[\"RS256\"\\]", "found_means": true}}}
+    ]
+  },
+  "boundaries": [{"id": "RB-doc", "from": "end_user", "to": "assistant-api", "rule": "owner check per document", "enforcement_point": "assistant-api"}]
+}

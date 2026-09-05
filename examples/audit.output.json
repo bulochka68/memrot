@@ -1,200 +1,766 @@
 {
-  "schema": "audit",
-  "version": "1.1",
-  "mode": "passive",
+  "schema": "agent-security-audit",
+  "schema_version": "2.0",
   "meta": {
     "tool": "mcp-audit",
-    "version": "1.1.0",
-    "schema_version": "1.1",
-    "generated_at": 1788537380.6863801,
-    "mode": "passive",
-    "discovery": {
-      "live": false,
-      "snapshot": false,
-      "context_files": 0
-    }
+    "engine_version": "2.0.0",
+    "schema_version": "2.0",
+    "ruleset_version": "2.0.0",
+    "generated_at": 1788611621.9213355,
+    "manifest": {
+      "path": "/home/user/aith_redteaming/examples/mcp_config.example.json",
+      "schema_version": "2.0",
+      "legacy_wrapped": true,
+      "adapters": [
+        {
+          "id": "mcp-config",
+          "kind": "mcp_inventory"
+        }
+      ]
+    },
+    "profile": null,
+    "reproducibility": {},
+    "reporting": {},
+    "canonicalization_version": "2",
+    "mode": "offline",
+    "access_profile": "grey_box",
+    "run_id": "run-2425feb6f6e7",
+    "target": {
+      "id": "legacy-mcp-config",
+      "build_ref": null,
+      "environment": "unknown",
+      "note": "legacy MCP config wrapped into a v2 manifest; target identity/build not declared (pass target_id to set one)"
+    },
+    "runtime_validation_performed": false,
+    "status": "partial",
+    "started_at": 1788611621.9213336,
+    "finished_at": 1788611621.925412
   },
-  "servers": [
+  "target": {
+    "id": "legacy-mcp-config",
+    "build_ref": null,
+    "environment": "unknown",
+    "note": "legacy MCP config wrapped into a v2 manifest; target identity/build not declared (pass target_id to set one)"
+  },
+  "adapters": [
     {
-      "name": "filesystem",
-      "kind": "filesystem",
-      "transport": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/workspace/my-project"
+      "adapter_id": "mcp-config",
+      "kind": "mcp_inventory",
+      "adapter_version": "2.0.0",
+      "status": "available",
+      "supported": [
+        "configured_inventory",
+        "snapshot_inventory",
+        "live_inventory(stdio,http,sse)",
+        "resources_list",
+        "prompts_list",
+        "server_instructions",
+        "agent_context_files"
       ],
-      "env_keys": [],
-      "url": null,
-      "declared_capabilities": {},
-      "handshake": {
-        "ok": true,
-        "protocol_version": null,
-        "server_info": {},
-        "instructions": null,
-        "error": null,
-        "source": "config"
+      "unsupported": {
+        "role_enumeration": "a handshake shows the catalogue for one identity only",
+        "runtime_observed": "runtime usage comes from the trace adapter",
+        "policy_authorized": "authorized tool lists come from the policy adapter"
       },
-      "effective_access": {
-        "kind": "filesystem",
-        "provenance": "effective",
-        "paths": {
-          "allowed": [
-            "/workspace/my-project/**"
+      "reasons": [],
+      "binding": {
+        "path": "/home/user/aith_redteaming/examples/mcp_config.example.json"
+      },
+      "captured_at": 1788611621.9223423,
+      "evidence_count": 5
+    }
+  ],
+  "plan": {
+    "ruleset_version": "2.0.0",
+    "available_sources": [
+      "mcp_inventory"
+    ],
+    "required_controls": [
+      "MEM-01",
+      "MEM-02",
+      "MEM-03",
+      "MEM-04",
+      "MEM-05",
+      "MEM-06",
+      "MEM-07",
+      "MEM-08",
+      "MEM-09",
+      "MEM-10",
+      "AUTH-01",
+      "AUTH-02",
+      "AUTH-03",
+      "AUTH-04",
+      "AUTH-05",
+      "AUTH-06",
+      "INFRA-01",
+      "INFRA-02",
+      "INFRA-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "EGRESS-01",
+      "EGRESS-02",
+      "INV-01",
+      "INV-02"
+    ],
+    "entries": [
+      {
+        "rule_id": "MEM-01",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
           ],
-          "denied": [
-            "/etc/**",
-            "/root/**",
-            "~/.ssh/**",
-            "/proc/**",
-            "/sys/**",
-            "**/.env",
-            "**/.git/config"
+          [
+            "policy_snapshot",
+            "memory_event_snapshot"
+          ],
+          [
+            "trace"
+          ],
+          [
+            "control_fixtures"
+          ]
+        ]
+      },
+      {
+        "rule_id": "MEM-02",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "policy_snapshot",
+            "source_snapshot"
+          ],
+          [
+            "memory_event_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "MEM-03",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "memory_event_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "MEM-04",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "trace"
+          ]
+        ]
+      },
+      {
+        "rule_id": "MEM-05",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "memory_event_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "MEM-06",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "memory_event_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "MEM-07",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "memory_event_snapshot"
+          ],
+          [
+            "trace"
+          ]
+        ]
+      },
+      {
+        "rule_id": "MEM-08",
+        "version": "2.0.0",
+        "stage": "D",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "memory_event_snapshot"
+        ],
+        "required_sources": [
+          [
+            "memory_event_snapshot"
+          ],
+          [
+            "control_fixtures"
+          ],
+          [
+            "policy_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "MEM-09",
+        "version": "2.0.0",
+        "stage": "D",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "trace"
+          ]
+        ]
+      },
+      {
+        "rule_id": "MEM-10",
+        "version": "2.0.0",
+        "stage": "D",
+        "domain": "memory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "policy_snapshot",
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "policy_snapshot",
+            "source_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "AUTH-01",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "identity",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "policy_snapshot",
+            "source_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "AUTH-02",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "identity",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "control_fixtures"
+          ],
+          [
+            "trace"
+          ]
+        ]
+      },
+      {
+        "rule_id": "AUTH-03",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "identity",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "AUTH-04",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "identity",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "policy_snapshot",
+            "source_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "AUTH-05",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "identity",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "AUTH-06",
+        "version": "2.0.0",
+        "stage": "D",
+        "domain": "identity",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "trace"
+          ]
+        ]
+      },
+      {
+        "rule_id": "INFRA-01",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "infrastructure",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "deployment"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot",
+            "policy_snapshot"
+          ],
+          [
+            "deployment"
+          ]
+        ]
+      },
+      {
+        "rule_id": "INFRA-02",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "infrastructure",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "deployment"
+        ],
+        "required_sources": [
+          [
+            "deployment"
+          ]
+        ]
+      },
+      {
+        "rule_id": "INFRA-03",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "infrastructure",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "control_fixtures"
+        ],
+        "required_sources": [
+          [
+            "control_fixtures"
+          ]
+        ]
+      },
+      {
+        "rule_id": "TOOL-01",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "tools",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "baseline"
+        ],
+        "required_sources": [
+          [
+            "mcp_inventory",
+            "baseline"
+          ]
+        ]
+      },
+      {
+        "rule_id": "TOOL-02",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "tools",
+        "status": "planned",
+        "missing_sources": [],
+        "required_sources": [
+          [
+            "mcp_inventory",
+            "source_snapshot"
+          ],
+          [
+            "mcp_inventory"
+          ],
+          [
+            "source_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "TOOL-03",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "tools",
+        "status": "planned",
+        "missing_sources": [],
+        "required_sources": [
+          [
+            "mcp_inventory"
+          ],
+          [
+            "source_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "TOOL-04",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "tools",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "source_snapshot"
+          ],
+          [
+            "trace"
+          ]
+        ]
+      },
+      {
+        "rule_id": "TOOL-05",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "tools",
+        "status": "planned",
+        "missing_sources": [],
+        "required_sources": [
+          [
+            "mcp_inventory"
+          ],
+          [
+            "source_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "EGRESS-01",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "egress",
+        "status": "planned",
+        "missing_sources": [],
+        "required_sources": [
+          [
+            "source_snapshot",
+            "policy_snapshot"
+          ],
+          [
+            "mcp_inventory"
+          ]
+        ]
+      },
+      {
+        "rule_id": "EGRESS-02",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "egress",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "control_fixtures"
+        ],
+        "required_sources": [
+          [
+            "control_fixtures"
+          ]
+        ]
+      },
+      {
+        "rule_id": "INV-01",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "inventory",
+        "status": "not_evaluated",
+        "missing_sources": [
+          "source_snapshot"
+        ],
+        "required_sources": [
+          [
+            "mcp_inventory",
+            "source_snapshot"
+          ],
+          [
+            "mcp_inventory",
+            "policy_snapshot"
+          ],
+          [
+            "mcp_inventory",
+            "trace"
+          ],
+          [
+            "source_snapshot",
+            "policy_snapshot"
+          ]
+        ]
+      },
+      {
+        "rule_id": "INV-02",
+        "version": "2.0.0",
+        "stage": "B",
+        "domain": "inventory",
+        "status": "planned",
+        "missing_sources": [],
+        "required_sources": [
+          [
+            "mcp_inventory"
+          ]
+        ]
+      }
+    ],
+    "planned": 5,
+    "not_evaluated": 23
+  },
+  "inventory": {
+    "servers": [
+      {
+        "name": "filesystem",
+        "component_id": "server:filesystem",
+        "kind": "filesystem",
+        "is_mcp": true,
+        "transport": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          "/workspace/my-project"
+        ],
+        "env_keys": [],
+        "url": null,
+        "declared_capabilities": {},
+        "handshake": {
+          "performed": false,
+          "ok": null,
+          "protocol_version": null,
+          "server_info": {},
+          "instructions": null,
+          "error": null,
+          "source": "config",
+          "captured_at": null,
+          "identity": null,
+          "completeness": "unknown",
+          "notes": [
+            "tools listed in the config; no handshake was performed"
           ]
         },
-        "unbounded": false,
-        "network_access": false
-      },
-      "tools": [
-        {
-          "name": "read_file",
-          "title": null,
-          "description": "Read a file from the project directory.",
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "path": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "path"
-            ]
-          },
-          "annotations": {},
-          "classification": "READ",
-          "destructive": false,
-          "risk": "HIGH",
-          "risk_reasons": [
-            "operation=READ",
-            "secret_grade_source"
-          ],
-          "effective_access": {
-            "network_access": false,
-            "paths": {
-              "allowed": [
-                "/workspace/my-project/**"
-              ],
-              "denied": [
-                "/etc/**",
-                "/root/**",
-                "~/.ssh/**",
-                "/proc/**",
-                "/sys/**",
-                "**/.env",
-                "**/.git/config"
-              ]
-            },
-            "unbounded": false
-          },
-          "egress": false,
-          "sensitive_source": true,
-          "untrusted_input": true,
-          "verified": null,
-          "definition_hash": "sha256:456270e5020f2305739ba4210946302798c3d290cdc4454a7f33058c20801a77",
-          "provenance": {
-            "effective_access": "effective",
-            "classification": "effective",
-            "risk": "effective"
-          },
-          "declared_hints": {}
-        },
-        {
-          "name": "write_file",
-          "title": null,
-          "description": "Write content to a file in the project directory.",
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "path": {
-                "type": "string"
+        "inventory_sources": {
+          "configured": {
+            "count": 3,
+            "origin": "config:mcp_config.example.json",
+            "tools": [
+              {
+                "name": "read_file",
+                "digest": "sha256:4443638107d62cd8f3ba1e8d1d8ee6d32f191ff65c926207f1b68976734c6476"
               },
-              "content": {
-                "type": "string"
+              {
+                "name": "write_file",
+                "digest": "sha256:9506344fa0cf2e61c1f00a4c4d2c8e37f23cbf67706d79a59c4390c095d917ea"
+              },
+              {
+                "name": "delete_file",
+                "digest": "sha256:9372d8dca5c4c6d9e3e48f9c0a9d59d675410e45703c673ccd16b65bfd4e5726"
               }
-            },
-            "required": [
-              "path",
-              "content"
-            ]
+            ],
+            "definitions": [
+              {
+                "name": "read_file",
+                "description": "Read a file from the project directory.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ]
+                }
+              },
+              {
+                "name": "write_file",
+                "description": "Write content to a file in the project directory.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "content"
+                  ]
+                }
+              },
+              {
+                "name": "delete_file",
+                "description": "Delete a file from the project directory.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ]
+                }
+              }
+            ],
+            "evidence_ref": "E-20078d8472"
           },
-          "annotations": {},
-          "classification": "WRITE",
-          "destructive": false,
-          "risk": "HIGH",
-          "risk_reasons": [
-            "operation=WRITE"
-          ],
-          "effective_access": {
-            "network_access": false,
-            "paths": {
-              "allowed": [
-                "/workspace/my-project/**"
-              ],
-              "denied": [
-                "/etc/**",
-                "/root/**",
-                "~/.ssh/**",
-                "/proc/**",
-                "/sys/**",
-                "**/.env",
-                "**/.git/config"
-              ]
-            },
-            "unbounded": false
-          },
-          "egress": false,
-          "sensitive_source": false,
-          "untrusted_input": false,
-          "verified": null,
-          "definition_hash": "sha256:96583996747fc58b884b0135e20a56345ad3fcbc60bae0d8adcfe5dd45f043aa",
-          "provenance": {
-            "effective_access": "effective",
-            "classification": "effective",
-            "risk": "effective"
-          },
-          "declared_hints": {}
+          "summary": {
+            "configured": 3,
+            "source_defined": null,
+            "live_advertised": null,
+            "runtime_observed": null,
+            "policy_authorized": null
+          }
         },
-        {
-          "name": "delete_file",
-          "title": null,
-          "description": "Delete a file from the project directory.",
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "path": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "path"
+        "field_sources": {
+          "transport": "inferred",
+          "kind": "x_audit",
+          "command": "config:mcp_config.example.json",
+          "args": "config:mcp_config.example.json",
+          "tools": "config:mcp_config.example.json"
+        },
+        "capture": {},
+        "effective_access": {
+          "kind": "filesystem",
+          "policy_expected": {
+            "basis": "x_audit / config author statement",
+            "enforced": "unknown",
+            "paths_allowed": [
+              "/workspace/my-project/**"
+            ],
+            "paths_denied": [
+              "/etc/**",
+              "/root/**"
             ]
           },
-          "annotations": {},
-          "classification": "DELETE",
-          "destructive": true,
-          "risk": "CRITICAL",
-          "risk_reasons": [
-            "operation=DELETE"
-          ],
-          "effective_access": {
-            "network_access": false,
-            "paths": {
-              "allowed": [
-                "/workspace/my-project/**"
-              ],
-              "denied": [
+          "inferred": {
+            "basis": "server kind, command arguments and URL",
+            "knowledge_state": "assumed",
+            "paths_allowed": [
+              "/workspace/my-project/**"
+            ],
+            "conventional_denials": {
+              "paths": [
                 "/etc/**",
                 "/root/**",
                 "~/.ssh/**",
@@ -202,293 +768,898 @@
                 "/sys/**",
                 "**/.env",
                 "**/.git/config"
+              ],
+              "note": "auditor convention for expected policy; not an ACL observed on the server"
+            },
+            "unbounded": false,
+            "network_access": null,
+            "network_access_note": "unknown: no override and kind does not imply a network"
+          },
+          "observed": {
+            "basis": "controlled validation / trace",
+            "items": []
+          },
+          "enforcement": "unknown",
+          "note": "expected/inferred access is not an enforced ACL; enforcement needs policy, adapter or observation"
+        },
+        "tools": [
+          {
+            "name": "read_file",
+            "qualified_name": "filesystem/read_file",
+            "capability_id": "cap:filesystem/read_file",
+            "title": null,
+            "description": "Read a file from the project directory.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path"
               ]
             },
-            "unbounded": false
-          },
-          "egress": false,
-          "sensitive_source": false,
-          "untrusted_input": false,
-          "verified": null,
-          "definition_hash": "sha256:4210dcdce78544d77ec64dfd332e289f1e0de82d048c1595a40454c1de55fa97",
-          "provenance": {
-            "effective_access": "effective",
-            "classification": "effective",
-            "risk": "effective"
-          },
-          "declared_hints": {}
-        }
-      ],
-      "resources": [],
-      "prompts": []
-    },
-    {
-      "name": "postgres",
-      "kind": "postgres",
-      "transport": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-postgres",
-        "postgresql://localhost/app"
-      ],
-      "env_keys": [],
-      "url": null,
-      "declared_capabilities": {},
-      "handshake": {
-        "ok": true,
-        "protocol_version": null,
-        "server_info": {},
-        "instructions": null,
-        "error": null,
-        "source": "config"
-      },
-      "effective_access": {
-        "kind": "postgres",
-        "provenance": "effective",
-        "operations": [
-          "SELECT",
-          "INSERT",
-          "UPDATE",
-          "DELETE"
-        ],
-        "ddl": false,
-        "scope": "all",
-        "unbounded": true,
-        "network_access": false
-      },
-      "tools": [
-        {
-          "name": "query",
-          "title": null,
-          "description": "Run a SQL query against the application database.",
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "sql": {
-                "type": "string"
-              }
+            "output_schema": null,
+            "annotations": {},
+            "classification": "READ",
+            "operations": [
+              "READ"
+            ],
+            "side_effects": [],
+            "executing_principal": null,
+            "phase": "request_handling",
+            "target_scope": {},
+            "classification_basis": "definition",
+            "knowledge_state": "assumed",
+            "destructive": false,
+            "capability_risk": "HIGH",
+            "risk_reasons": [
+              "operation=READ",
+              "secret_grade_source"
+            ],
+            "effective_access": {
+              "network_access": null,
+              "basis": "expected+inferred",
+              "enforcement": "unknown",
+              "paths": {
+                "allowed": [
+                  "/workspace/my-project/**"
+                ],
+                "denied_expected": [
+                  "/etc/**",
+                  "/root/**",
+                  "/etc/**",
+                  "/root/**",
+                  "~/.ssh/**",
+                  "/proc/**",
+                  "/sys/**",
+                  "**/.env",
+                  "**/.git/config"
+                ]
+              },
+              "unbounded": false
             },
-            "required": [
-              "sql"
-            ]
+            "egress": false,
+            "sensitive_source": true,
+            "untrusted_input": true,
+            "definition_hash": "sha256:c2:45951c874fe9b72d7abe260df4b38f1ae3e3aeda1add25cbe57dd8e1492c64e5",
+            "provenance": {
+              "access": "expected+inferred",
+              "classification": "definition:name",
+              "capability_risk": "definition+inferred scope; potential damage, not a finding severity"
+            },
+            "declared_hints": {},
+            "claim_refs": [
+              "CL-DEF-filesystem-read_file"
+            ],
+            "contract": {}
           },
-          "annotations": {},
-          "classification": "READ",
-          "destructive": false,
-          "risk": "HIGH",
-          "risk_reasons": [
-            "operation=READ",
-            "unbounded_scope"
-          ],
-          "effective_access": {
-            "network_access": false,
+          {
+            "name": "write_file",
+            "qualified_name": "filesystem/write_file",
+            "capability_id": "cap:filesystem/write_file",
+            "title": null,
+            "description": "Write content to a file in the project directory.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "content"
+              ]
+            },
+            "output_schema": null,
+            "annotations": {},
+            "classification": "WRITE",
+            "operations": [
+              "CREATE",
+              "UPDATE"
+            ],
+            "side_effects": [],
+            "executing_principal": null,
+            "phase": "request_handling",
+            "target_scope": {},
+            "classification_basis": "definition",
+            "knowledge_state": "assumed",
+            "destructive": false,
+            "capability_risk": "HIGH",
+            "risk_reasons": [
+              "operation=WRITE"
+            ],
+            "effective_access": {
+              "network_access": null,
+              "basis": "expected+inferred",
+              "enforcement": "unknown",
+              "paths": {
+                "allowed": [
+                  "/workspace/my-project/**"
+                ],
+                "denied_expected": [
+                  "/etc/**",
+                  "/root/**",
+                  "/etc/**",
+                  "/root/**",
+                  "~/.ssh/**",
+                  "/proc/**",
+                  "/sys/**",
+                  "**/.env",
+                  "**/.git/config"
+                ]
+              },
+              "unbounded": false
+            },
+            "egress": false,
+            "sensitive_source": false,
+            "untrusted_input": false,
+            "definition_hash": "sha256:c2:893b0b409f216df27b0dd373658c23916b5589e2b128ae0bbcc22dee6168d683",
+            "provenance": {
+              "access": "expected+inferred",
+              "classification": "definition:name",
+              "capability_risk": "definition+inferred scope; potential damage, not a finding severity"
+            },
+            "declared_hints": {},
+            "claim_refs": [
+              "CL-DEF-filesystem-write_file"
+            ],
+            "contract": {}
+          },
+          {
+            "name": "delete_file",
+            "qualified_name": "filesystem/delete_file",
+            "capability_id": "cap:filesystem/delete_file",
+            "title": null,
+            "description": "Delete a file from the project directory.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path"
+              ]
+            },
+            "output_schema": null,
+            "annotations": {},
+            "classification": "DELETE",
+            "operations": [
+              "DELETE"
+            ],
+            "side_effects": [],
+            "executing_principal": null,
+            "phase": "request_handling",
+            "target_scope": {},
+            "classification_basis": "definition",
+            "knowledge_state": "assumed",
+            "destructive": true,
+            "capability_risk": "CRITICAL",
+            "risk_reasons": [
+              "operation=DELETE"
+            ],
+            "effective_access": {
+              "network_access": null,
+              "basis": "expected+inferred",
+              "enforcement": "unknown",
+              "paths": {
+                "allowed": [
+                  "/workspace/my-project/**"
+                ],
+                "denied_expected": [
+                  "/etc/**",
+                  "/root/**",
+                  "/etc/**",
+                  "/root/**",
+                  "~/.ssh/**",
+                  "/proc/**",
+                  "/sys/**",
+                  "**/.env",
+                  "**/.git/config"
+                ]
+              },
+              "unbounded": false
+            },
+            "egress": false,
+            "sensitive_source": false,
+            "untrusted_input": false,
+            "definition_hash": "sha256:c2:f3d544edffb03806f2c0f4fc9323765485f44087b7d732668d7d1139bcf9110b",
+            "provenance": {
+              "access": "expected+inferred",
+              "classification": "definition:name",
+              "capability_risk": "definition+inferred scope; potential damage, not a finding severity"
+            },
+            "declared_hints": {},
+            "claim_refs": [
+              "CL-DEF-filesystem-delete_file"
+            ],
+            "contract": {}
+          }
+        ],
+        "resources": [],
+        "prompts": []
+      },
+      {
+        "name": "postgres",
+        "component_id": "server:postgres",
+        "kind": "postgres",
+        "is_mcp": true,
+        "transport": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-postgres",
+          "postgresql://localhost/app"
+        ],
+        "env_keys": [],
+        "url": null,
+        "declared_capabilities": {},
+        "handshake": {
+          "performed": false,
+          "ok": null,
+          "protocol_version": null,
+          "server_info": {},
+          "instructions": null,
+          "error": null,
+          "source": "config",
+          "captured_at": null,
+          "identity": null,
+          "completeness": "unknown",
+          "notes": [
+            "tools listed in the config; no handshake was performed"
+          ]
+        },
+        "inventory_sources": {
+          "configured": {
+            "count": 1,
+            "origin": "config:mcp_config.example.json",
+            "tools": [
+              {
+                "name": "query",
+                "digest": "sha256:b4161a00688acad8fb1f43eb6d380a93d828be9c219d16cb109d99140d9dc0c3"
+              }
+            ],
+            "definitions": [
+              {
+                "name": "query",
+                "description": "Run a SQL query against the application database.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "sql": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "sql"
+                  ]
+                }
+              }
+            ],
+            "evidence_ref": "E-8b492daf61"
+          },
+          "summary": {
+            "configured": 1,
+            "source_defined": null,
+            "live_advertised": null,
+            "runtime_observed": null,
+            "policy_authorized": null
+          }
+        },
+        "field_sources": {
+          "transport": "inferred",
+          "kind": "x_audit",
+          "command": "config:mcp_config.example.json",
+          "args": "config:mcp_config.example.json",
+          "tools": "config:mcp_config.example.json"
+        },
+        "capture": {},
+        "effective_access": {
+          "kind": "postgres",
+          "policy_expected": {
+            "basis": "x_audit / config author statement",
+            "enforced": "unknown",
             "operations": [
               "SELECT",
               "INSERT",
               "UPDATE",
               "DELETE"
             ],
+            "ddl": false
+          },
+          "inferred": {
+            "basis": "server kind, command arguments and URL",
+            "knowledge_state": "assumed",
+            "operations": [
+              "SELECT",
+              "INSERT",
+              "UPDATE",
+              "DELETE"
+            ],
+            "operations_note": "from a readonly flag if present; otherwise the connection is assumed to allow DML - unverified",
             "ddl": false,
-            "unbounded": true
+            "unbounded": true,
+            "network_access": null,
+            "network_access_note": "unknown: no override and kind does not imply a network"
           },
-          "egress": false,
-          "sensitive_source": true,
-          "untrusted_input": true,
-          "verified": null,
-          "definition_hash": "sha256:e612bef5dfd0914877a8beeb4891934a0e8e85f6adbe0a90b1fa8ca56ed3301d",
-          "provenance": {
-            "effective_access": "effective",
-            "classification": "effective",
-            "risk": "effective"
+          "observed": {
+            "basis": "controlled validation / trace",
+            "items": []
           },
-          "declared_hints": {}
-        }
-      ],
-      "resources": [],
-      "prompts": []
-    },
-    {
-      "name": "shell",
-      "kind": "shell",
-      "transport": "stdio",
-      "command": "mcp-server-commands",
-      "args": [],
-      "env_keys": [],
-      "url": null,
-      "declared_capabilities": {},
-      "handshake": {
-        "ok": true,
-        "protocol_version": null,
-        "server_info": {},
-        "instructions": null,
-        "error": null,
-        "source": "config"
+          "enforcement": "unknown",
+          "note": "expected/inferred access is not an enforced ACL; enforcement needs policy, adapter or observation"
+        },
+        "tools": [
+          {
+            "name": "query",
+            "qualified_name": "postgres/query",
+            "capability_id": "cap:postgres/query",
+            "title": null,
+            "description": "Run a SQL query against the application database.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "sql": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sql"
+              ]
+            },
+            "output_schema": null,
+            "annotations": {},
+            "classification": "READ",
+            "operations": [
+              "READ"
+            ],
+            "side_effects": [],
+            "executing_principal": null,
+            "phase": "request_handling",
+            "target_scope": {},
+            "classification_basis": "definition",
+            "knowledge_state": "assumed",
+            "destructive": false,
+            "capability_risk": "HIGH",
+            "risk_reasons": [
+              "operation=READ",
+              "unbounded_scope(inferred)"
+            ],
+            "effective_access": {
+              "network_access": null,
+              "basis": "expected+inferred",
+              "enforcement": "unknown",
+              "operations": [
+                "SELECT",
+                "INSERT",
+                "UPDATE",
+                "DELETE"
+              ],
+              "ddl": false,
+              "unbounded": true
+            },
+            "egress": false,
+            "sensitive_source": true,
+            "untrusted_input": true,
+            "definition_hash": "sha256:c2:cadb6456f06c564c99c316128a969164be86bf1132962cdd70526c7f15ab1de8",
+            "provenance": {
+              "access": "expected+inferred",
+              "classification": "definition:name",
+              "capability_risk": "definition+inferred scope; potential damage, not a finding severity"
+            },
+            "declared_hints": {},
+            "claim_refs": [
+              "CL-DEF-postgres-query"
+            ],
+            "contract": {}
+          }
+        ],
+        "resources": [],
+        "prompts": []
       },
-      "effective_access": {
+      {
+        "name": "shell",
+        "component_id": "server:shell",
         "kind": "shell",
-        "provenance": "effective",
-        "execution": "arbitrary",
-        "unbounded": true,
-        "network_access": true
-      },
-      "tools": [
-        {
-          "name": "execute_command",
-          "title": null,
-          "description": "Execute a shell command and return stdout/stderr.",
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "command": {
-                "type": "string"
+        "is_mcp": true,
+        "transport": "stdio",
+        "command": "mcp-server-commands",
+        "args": [],
+        "env_keys": [],
+        "url": null,
+        "declared_capabilities": {},
+        "handshake": {
+          "performed": false,
+          "ok": null,
+          "protocol_version": null,
+          "server_info": {},
+          "instructions": null,
+          "error": null,
+          "source": "config",
+          "captured_at": null,
+          "identity": null,
+          "completeness": "unknown",
+          "notes": [
+            "tools listed in the config; no handshake was performed"
+          ]
+        },
+        "inventory_sources": {
+          "configured": {
+            "count": 1,
+            "origin": "config:mcp_config.example.json",
+            "tools": [
+              {
+                "name": "execute_command",
+                "digest": "sha256:8c2fa3b0754e38e11cbebb0a51b1055dde1e5cf82d9cee4cbad8b17585075750"
               }
-            },
-            "required": [
-              "command"
-            ]
-          },
-          "annotations": {},
-          "classification": "EXEC",
-          "destructive": false,
-          "risk": "CRITICAL",
-          "risk_reasons": [
-            "operation=EXEC",
-            "egress",
-            "unbounded_scope"
-          ],
-          "effective_access": {
-            "network_access": true,
-            "execution": "arbitrary",
-            "unbounded": true
-          },
-          "egress": true,
-          "sensitive_source": true,
-          "untrusted_input": true,
-          "verified": null,
-          "definition_hash": "sha256:1cb357e7508b439d7bd7bb84f70f69e2468271fce903f16eda4994cab1d4cf60",
-          "provenance": {
-            "effective_access": "effective",
-            "classification": "effective",
-            "risk": "effective"
-          },
-          "declared_hints": {}
-        }
-      ],
-      "resources": [],
-      "prompts": []
-    },
-    {
-      "name": "fetch",
-      "kind": "fetch",
-      "transport": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-fetch"
-      ],
-      "env_keys": [],
-      "url": null,
-      "declared_capabilities": {},
-      "handshake": {
-        "ok": true,
-        "protocol_version": null,
-        "server_info": {},
-        "instructions": null,
-        "error": null,
-        "source": "config"
-      },
-      "effective_access": {
-        "kind": "fetch",
-        "provenance": "effective",
-        "scope": "declared",
-        "network_access": true
-      },
-      "tools": [
-        {
-          "name": "fetch",
-          "title": null,
-          "description": "Fetch a URL and return its contents.",
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "url": {
-                "type": "string"
+            ],
+            "definitions": [
+              {
+                "name": "execute_command",
+                "description": "Execute a shell command and return stdout/stderr.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "command": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "command"
+                  ]
+                }
               }
-            },
-            "required": [
-              "url"
-            ]
+            ],
+            "evidence_ref": "E-b70239a1a1"
           },
-          "annotations": {},
-          "classification": "READ",
-          "destructive": false,
-          "risk": "MEDIUM",
-          "risk_reasons": [
-            "operation=READ"
-          ],
-          "effective_access": {
+          "summary": {
+            "configured": 1,
+            "source_defined": null,
+            "live_advertised": null,
+            "runtime_observed": null,
+            "policy_authorized": null
+          }
+        },
+        "field_sources": {
+          "transport": "inferred",
+          "kind": "x_audit",
+          "command": "config:mcp_config.example.json",
+          "args": "config:mcp_config.example.json",
+          "tools": "config:mcp_config.example.json"
+        },
+        "capture": {},
+        "effective_access": {
+          "kind": "shell",
+          "policy_expected": {
+            "basis": "x_audit / config author statement",
+            "enforced": "unknown",
             "network_access": true
           },
-          "egress": true,
-          "sensitive_source": false,
-          "untrusted_input": true,
-          "verified": null,
-          "definition_hash": "sha256:e18e4adc6c467949d0d54aa0e15133055b7b255749dfc51410ed0719a768b2d2",
-          "provenance": {
-            "effective_access": "effective",
-            "classification": "effective",
-            "risk": "effective"
+          "inferred": {
+            "basis": "server kind, command arguments and URL",
+            "knowledge_state": "assumed",
+            "execution": "arbitrary",
+            "unbounded": true,
+            "network_access": true
           },
-          "declared_hints": {}
-        }
-      ],
-      "resources": [],
-      "prompts": []
-    }
-  ],
-  "agent_context": [],
-  "definition_analysis": {
-    "findings": [
-      {
-        "id": "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
-        "type": "UNCONSTRAINED_EXEC_PARAMETER",
-        "severity": "HIGH",
-        "title": "Unconstrained execution parameter",
-        "description": "query.sql is a free string with no enum/pattern - arbitrary execution surface",
-        "plane": "definition",
-        "provenance": "effective",
-        "server": "postgres",
-        "tool": "query",
-        "evidence": {
-          "parameter": "sql"
+          "observed": {
+            "basis": "controlled validation / trace",
+            "items": []
+          },
+          "enforcement": "unknown",
+          "note": "expected/inferred access is not an enforced ACL; enforcement needs policy, adapter or observation"
         },
-        "taxonomy": []
+        "tools": [
+          {
+            "name": "execute_command",
+            "qualified_name": "shell/execute_command",
+            "capability_id": "cap:shell/execute_command",
+            "title": null,
+            "description": "Execute a shell command and return stdout/stderr.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "command"
+              ]
+            },
+            "output_schema": null,
+            "annotations": {},
+            "classification": "EXEC",
+            "operations": [
+              "EXECUTE",
+              "READ",
+              "CREATE",
+              "UPDATE",
+              "DELETE",
+              "TRANSMIT"
+            ],
+            "side_effects": [],
+            "executing_principal": null,
+            "phase": "request_handling",
+            "target_scope": {},
+            "classification_basis": "definition",
+            "knowledge_state": "assumed",
+            "destructive": false,
+            "capability_risk": "CRITICAL",
+            "risk_reasons": [
+              "operation=EXEC",
+              "egress",
+              "unbounded_scope(inferred)"
+            ],
+            "effective_access": {
+              "network_access": true,
+              "basis": "expected+inferred",
+              "enforcement": "unknown",
+              "execution": "arbitrary",
+              "unbounded": true
+            },
+            "egress": true,
+            "sensitive_source": true,
+            "untrusted_input": true,
+            "definition_hash": "sha256:c2:3ed0d7aa14ddd910b65ba9eeddeb3574dbdd4ed9fd0d8c06d53019fc9bb98356",
+            "provenance": {
+              "access": "expected+inferred",
+              "classification": "definition:name",
+              "capability_risk": "definition+inferred scope; potential damage, not a finding severity"
+            },
+            "declared_hints": {},
+            "claim_refs": [
+              "CL-DEF-shell-execute_command"
+            ],
+            "contract": {}
+          }
+        ],
+        "resources": [],
+        "prompts": []
       },
       {
-        "id": "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
-        "type": "UNCONSTRAINED_EXEC_PARAMETER",
-        "severity": "HIGH",
-        "title": "Unconstrained execution parameter",
-        "description": "execute_command.command is a free string with no enum/pattern - arbitrary execution surface",
-        "plane": "definition",
-        "provenance": "effective",
-        "server": "shell",
-        "tool": "execute_command",
-        "evidence": {
-          "parameter": "command"
+        "name": "fetch",
+        "component_id": "server:fetch",
+        "kind": "fetch",
+        "is_mcp": true,
+        "transport": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-fetch"
+        ],
+        "env_keys": [],
+        "url": null,
+        "declared_capabilities": {},
+        "handshake": {
+          "performed": false,
+          "ok": null,
+          "protocol_version": null,
+          "server_info": {},
+          "instructions": null,
+          "error": null,
+          "source": "config",
+          "captured_at": null,
+          "identity": null,
+          "completeness": "unknown",
+          "notes": [
+            "tools listed in the config; no handshake was performed"
+          ]
         },
-        "taxonomy": []
+        "inventory_sources": {
+          "configured": {
+            "count": 1,
+            "origin": "config:mcp_config.example.json",
+            "tools": [
+              {
+                "name": "fetch",
+                "digest": "sha256:891b3210415e0d033a2e0b4ba2a6b8a57f59afea5814ca2419345c94647dfbc9"
+              }
+            ],
+            "definitions": [
+              {
+                "name": "fetch",
+                "description": "Fetch a URL and return its contents.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ]
+                }
+              }
+            ],
+            "evidence_ref": "E-122b8b2f68"
+          },
+          "summary": {
+            "configured": 1,
+            "source_defined": null,
+            "live_advertised": null,
+            "runtime_observed": null,
+            "policy_authorized": null
+          }
+        },
+        "field_sources": {
+          "transport": "inferred",
+          "kind": "x_audit",
+          "command": "config:mcp_config.example.json",
+          "args": "config:mcp_config.example.json",
+          "tools": "config:mcp_config.example.json"
+        },
+        "capture": {},
+        "effective_access": {
+          "kind": "fetch",
+          "policy_expected": {
+            "basis": "x_audit / config author statement",
+            "enforced": "unknown",
+            "network_access": true
+          },
+          "inferred": {
+            "basis": "server kind, command arguments and URL",
+            "knowledge_state": "assumed",
+            "scope": "declared-only",
+            "network_access": true
+          },
+          "observed": {
+            "basis": "controlled validation / trace",
+            "items": []
+          },
+          "enforcement": "unknown",
+          "note": "expected/inferred access is not an enforced ACL; enforcement needs policy, adapter or observation"
+        },
+        "tools": [
+          {
+            "name": "fetch",
+            "qualified_name": "fetch/fetch",
+            "capability_id": "cap:fetch/fetch",
+            "title": null,
+            "description": "Fetch a URL and return its contents.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "url"
+              ]
+            },
+            "output_schema": null,
+            "annotations": {},
+            "classification": "READ",
+            "operations": [
+              "READ",
+              "TRANSMIT"
+            ],
+            "side_effects": [],
+            "executing_principal": null,
+            "phase": "request_handling",
+            "target_scope": {},
+            "classification_basis": "definition",
+            "knowledge_state": "assumed",
+            "destructive": false,
+            "capability_risk": "MEDIUM",
+            "risk_reasons": [
+              "operation=READ"
+            ],
+            "effective_access": {
+              "network_access": true,
+              "basis": "expected+inferred",
+              "enforcement": "unknown"
+            },
+            "egress": true,
+            "sensitive_source": false,
+            "untrusted_input": true,
+            "definition_hash": "sha256:c2:4702962f0f5726e43e808a388702825b93927555d370fc33252333b1353a1bfe",
+            "provenance": {
+              "access": "expected+inferred",
+              "classification": "definition:name",
+              "capability_risk": "definition+inferred scope; potential damage, not a finding severity"
+            },
+            "declared_hints": {},
+            "claim_refs": [
+              "CL-DEF-fetch-fetch"
+            ],
+            "contract": {}
+          }
+        ],
+        "resources": [],
+        "prompts": []
       }
     ],
-    "hash_baseline": {
-      "fetch/fetch": "sha256:e18e4adc6c467949d0d54aa0e15133055b7b255749dfc51410ed0719a768b2d2",
-      "filesystem/delete_file": "sha256:4210dcdce78544d77ec64dfd332e289f1e0de82d048c1595a40454c1de55fa97",
-      "filesystem/read_file": "sha256:456270e5020f2305739ba4210946302798c3d290cdc4454a7f33058c20801a77",
-      "filesystem/write_file": "sha256:96583996747fc58b884b0135e20a56345ad3fcbc60bae0d8adcfe5dd45f043aa",
-      "postgres/query": "sha256:e612bef5dfd0914877a8beeb4891934a0e8e85f6adbe0a90b1fa8ca56ed3301d",
-      "shell/execute_command": "sha256:1cb357e7508b439d7bd7bb84f70f69e2468271fce903f16eda4994cab1d4cf60"
+    "agent_context": [],
+    "reconciliation": [
+      {
+        "kind": "single_source",
+        "server": "filesystem",
+        "sources": [
+          "configured"
+        ],
+        "context": {
+          "server": "filesystem",
+          "component_id": "server:filesystem",
+          "build_ref": null,
+          "identity": null,
+          "captured_at": null
+        },
+        "detail": "filesystem: only ['configured'] inventory source(s); nothing to reconcile"
+      },
+      {
+        "kind": "single_source",
+        "server": "postgres",
+        "sources": [
+          "configured"
+        ],
+        "context": {
+          "server": "postgres",
+          "component_id": "server:postgres",
+          "build_ref": null,
+          "identity": null,
+          "captured_at": null
+        },
+        "detail": "postgres: only ['configured'] inventory source(s); nothing to reconcile"
+      },
+      {
+        "kind": "single_source",
+        "server": "shell",
+        "sources": [
+          "configured"
+        ],
+        "context": {
+          "server": "shell",
+          "component_id": "server:shell",
+          "build_ref": null,
+          "identity": null,
+          "captured_at": null
+        },
+        "detail": "shell: only ['configured'] inventory source(s); nothing to reconcile"
+      },
+      {
+        "kind": "single_source",
+        "server": "fetch",
+        "sources": [
+          "configured"
+        ],
+        "context": {
+          "server": "fetch",
+          "component_id": "server:fetch",
+          "build_ref": null,
+          "identity": null,
+          "captured_at": null
+        },
+        "detail": "fetch: only ['configured'] inventory source(s); nothing to reconcile"
+      }
+    ]
+  },
+  "components": [
+    {
+      "component_id": "server:filesystem",
+      "type": "mcp_server",
+      "name": "filesystem",
+      "role": "",
+      "relations": [],
+      "deployment_ref": null,
+      "inventory_sources": [
+        "configured",
+        "summary"
+      ],
+      "source_refs": [],
+      "attributes": {
+        "kind": "filesystem",
+        "transport": "stdio",
+        "url": null
+      },
+      "knowledge_state": "known"
     },
+    {
+      "component_id": "server:postgres",
+      "type": "mcp_server",
+      "name": "postgres",
+      "role": "",
+      "relations": [],
+      "deployment_ref": null,
+      "inventory_sources": [
+        "configured",
+        "summary"
+      ],
+      "source_refs": [],
+      "attributes": {
+        "kind": "postgres",
+        "transport": "stdio",
+        "url": null
+      },
+      "knowledge_state": "known"
+    },
+    {
+      "component_id": "server:shell",
+      "type": "mcp_server",
+      "name": "shell",
+      "role": "",
+      "relations": [],
+      "deployment_ref": null,
+      "inventory_sources": [
+        "configured",
+        "summary"
+      ],
+      "source_refs": [],
+      "attributes": {
+        "kind": "shell",
+        "transport": "stdio",
+        "url": null
+      },
+      "knowledge_state": "known"
+    },
+    {
+      "component_id": "server:fetch",
+      "type": "mcp_server",
+      "name": "fetch",
+      "role": "",
+      "relations": [],
+      "deployment_ref": null,
+      "inventory_sources": [
+        "configured",
+        "summary"
+      ],
+      "source_refs": [],
+      "attributes": {
+        "kind": "fetch",
+        "transport": "stdio",
+        "url": null
+      },
+      "knowledge_state": "known"
+    }
+  ],
+  "principals": [],
+  "capabilities": [],
+  "memory_stores": [],
+  "boundaries": [],
+  "edges": [],
+  "definition_analysis": {
+    "finding_refs": [
+      "F-aa404cad06",
+      "F-44249b0e3b"
+    ],
+    "hash_baseline": {
+      "fetch/fetch": "sha256:c2:4702962f0f5726e43e808a388702825b93927555d370fc33252333b1353a1bfe",
+      "filesystem/delete_file": "sha256:c2:f3d544edffb03806f2c0f4fc9323765485f44087b7d732668d7d1139bcf9110b",
+      "filesystem/read_file": "sha256:c2:45951c874fe9b72d7abe260df4b38f1ae3e3aeda1add25cbe57dd8e1492c64e5",
+      "filesystem/write_file": "sha256:c2:893b0b409f216df27b0dd373658c23916b5589e2b128ae0bbcc22dee6168d683",
+      "postgres/query": "sha256:c2:cadb6456f06c564c99c316128a969164be86bf1132962cdd70526c7f15ab1de8",
+      "shell/execute_command": "sha256:c2:3ed0d7aa14ddd910b65ba9eeddeb3574dbdd4ed9fd0d8c06d53019fc9bb98356"
+    },
+    "canonicalization_version": "2",
     "collisions": [],
     "mcp_scan": {
       "available": null,
@@ -496,150 +1667,1531 @@
       "reason": "disabled"
     }
   },
-  "effective_capabilities": {
-    "filesystem": {
-      "kind": "filesystem",
-      "provenance": "effective",
-      "paths": {
-        "allowed": [
-          "/workspace/my-project/**"
-        ],
-        "denied": [
-          "/etc/**",
-          "/root/**",
-          "~/.ssh/**",
-          "/proc/**",
-          "/sys/**",
-          "**/.env",
-          "**/.git/config"
-        ]
+  "evidence": [
+    {
+      "evidence_id": "E-66df17d0db",
+      "source_type": "config",
+      "method": "parsing",
+      "locator": {
+        "path": "examples/mcp_config.example.json",
+        "kind": "mcp_config"
       },
-      "unbounded": false,
-      "network_access": false
+      "digest": "sha256:b8893de86d1748e6a1505e088d8dba30eda5dd26e599fcc19e25bafdb336ddc4",
+      "captured_at": 1788611621.9218082,
+      "adapter": "mcp_inventory",
+      "adapter_version": "2.0.0",
+      "scope": {
+        "environment": "unknown"
+      },
+      "summary": "MCP client config with 4 server entr(ies)",
+      "fragment": null,
+      "limitations": [],
+      "extensions": {}
     },
-    "postgres": {
-      "kind": "postgres",
-      "provenance": "effective",
-      "operations": [
-        "SELECT",
-        "INSERT",
-        "UPDATE",
-        "DELETE"
+    {
+      "evidence_id": "E-20078d8472",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "path": "examples/mcp_config.example.json",
+        "server": "filesystem",
+        "inventory": "configured"
+      },
+      "digest": "sha256:280432c11cb2ad908ed1928feee0733b8c40e0c2ab2a0e7b9ef3d50d27f6fbf6",
+      "captured_at": 1788611621.92199,
+      "adapter": "mcp_inventory",
+      "adapter_version": "2.0.0",
+      "scope": {
+        "environment": "unknown"
+      },
+      "summary": "3 configured tool definition(s) for filesystem",
+      "fragment": null,
+      "limitations": [
+        "configured catalogue: what the client config lists, not what a server advertises"
       ],
-      "ddl": false,
-      "scope": "all",
-      "unbounded": true,
-      "network_access": false
-    },
-    "shell": {
-      "kind": "shell",
-      "provenance": "effective",
-      "execution": "arbitrary",
-      "unbounded": true,
-      "network_access": true
-    },
-    "fetch": {
-      "kind": "fetch",
-      "provenance": "effective",
-      "scope": "declared",
-      "network_access": true
-    }
-  },
-  "tests": [],
-  "security_findings": [
-    {
-      "id": "MCP-001",
-      "type": "ARBITRARY_CODE_EXECUTION",
-      "severity": "CRITICAL",
-      "title": "Arbitrary code execution available to the agent",
-      "description": "One or more tools can execute arbitrary commands: shell/execute_command",
-      "plane": "capability",
-      "provenance": "effective",
-      "server": null,
-      "tool": null,
-      "evidence": {
-        "tools": [
-          "shell/execute_command"
-        ]
-      },
-      "taxonomy": []
+      "extensions": {}
     },
     {
-      "id": "MCP-002",
-      "type": "DESTRUCTIVE_OPERATIONS",
-      "severity": "CRITICAL",
-      "title": "Destructive operations available",
-      "description": "Tools can delete/destroy data: filesystem/delete_file",
-      "plane": "capability",
-      "provenance": "effective",
-      "server": null,
-      "tool": null,
-      "evidence": {
-        "tools": [
-          "filesystem/delete_file"
-        ]
+      "evidence_id": "E-8b492daf61",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "path": "examples/mcp_config.example.json",
+        "server": "postgres",
+        "inventory": "configured"
       },
-      "taxonomy": []
+      "digest": "sha256:06a7cd59d6d1fda55e4c0e37caa05465a9032f6fbf51311d6a0b926f7745d1a5",
+      "captured_at": 1788611621.9221148,
+      "adapter": "mcp_inventory",
+      "adapter_version": "2.0.0",
+      "scope": {
+        "environment": "unknown"
+      },
+      "summary": "1 configured tool definition(s) for postgres",
+      "fragment": null,
+      "limitations": [
+        "configured catalogue: what the client config lists, not what a server advertises"
+      ],
+      "extensions": {}
     },
     {
-      "id": "MCP-003",
-      "type": "PROJECT_WRITE_ACCESS",
-      "severity": "HIGH",
-      "title": "Write access to project / data",
-      "description": "2 tool(s) can modify data",
-      "plane": "capability",
-      "provenance": "effective",
-      "server": null,
-      "tool": null,
-      "evidence": {
-        "tools": [
-          "filesystem/write_file",
-          "filesystem/delete_file"
-        ]
+      "evidence_id": "E-b70239a1a1",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "path": "examples/mcp_config.example.json",
+        "server": "shell",
+        "inventory": "configured"
       },
-      "taxonomy": []
+      "digest": "sha256:f114c4f6859c1a13a8e3eb64633ec2625e35af552af9b6888c6720673cc80dcb",
+      "captured_at": 1788611621.9222598,
+      "adapter": "mcp_inventory",
+      "adapter_version": "2.0.0",
+      "scope": {
+        "environment": "unknown"
+      },
+      "summary": "1 configured tool definition(s) for shell",
+      "fragment": null,
+      "limitations": [
+        "configured catalogue: what the client config lists, not what a server advertises"
+      ],
+      "extensions": {}
     },
     {
-      "id": "MCP-004",
-      "type": "LETHAL_TRIFECTA",
-      "severity": "CRITICAL",
-      "title": "Lethal trifecta assembled",
-      "description": "Lethal trifecta assembled: sensitive access + untrusted input + external channel all present. A single tool holds all three: ['shell/execute_command'].",
-      "plane": "correlation",
-      "provenance": "effective",
-      "server": null,
-      "tool": null,
-      "evidence": {
-        "legs_present": {
-          "sensitive_access": true,
-          "untrusted_input": true,
-          "external_channel": true
-        },
-        "single_tool_trifecta": [
-          "shell/execute_command"
-        ]
+      "evidence_id": "E-122b8b2f68",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "path": "examples/mcp_config.example.json",
+        "server": "fetch",
+        "inventory": "configured"
       },
-      "taxonomy": []
+      "digest": "sha256:e1e5a6b9d738805a92db7261039ee0d3567b2ba810e8027a952ce0d55ea0d0b0",
+      "captured_at": 1788611621.9223318,
+      "adapter": "mcp_inventory",
+      "adapter_version": "2.0.0",
+      "scope": {
+        "environment": "unknown"
+      },
+      "summary": "1 configured tool definition(s) for fetch",
+      "fragment": null,
+      "limitations": [
+        "configured catalogue: what the client config lists, not what a server advertises"
+      ],
+      "extensions": {}
+    },
+    {
+      "evidence_id": "E-a16498a508",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "server": "filesystem",
+        "tool": "read_file",
+        "inventory": "config"
+      },
+      "digest": "sha256:4443638107d62cd8f3ba1e8d1d8ee6d32f191ff65c926207f1b68976734c6476",
+      "captured_at": 1788611621.922961,
+      "adapter": null,
+      "adapter_version": null,
+      "scope": {
+        "identity": null,
+        "environment": "unknown"
+      },
+      "summary": "definition of filesystem/read_file",
+      "fragment": null,
+      "limitations": [
+        "definition text is untrusted self-report"
+      ],
+      "extensions": {}
+    },
+    {
+      "evidence_id": "E-8bb4c82d91",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "server": "filesystem",
+        "tool": "write_file",
+        "inventory": "config"
+      },
+      "digest": "sha256:9506344fa0cf2e61c1f00a4c4d2c8e37f23cbf67706d79a59c4390c095d917ea",
+      "captured_at": 1788611621.9233131,
+      "adapter": null,
+      "adapter_version": null,
+      "scope": {
+        "identity": null,
+        "environment": "unknown"
+      },
+      "summary": "definition of filesystem/write_file",
+      "fragment": null,
+      "limitations": [
+        "definition text is untrusted self-report"
+      ],
+      "extensions": {}
+    },
+    {
+      "evidence_id": "E-1a82047222",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "server": "filesystem",
+        "tool": "delete_file",
+        "inventory": "config"
+      },
+      "digest": "sha256:9372d8dca5c4c6d9e3e48f9c0a9d59d675410e45703c673ccd16b65bfd4e5726",
+      "captured_at": 1788611621.9235365,
+      "adapter": null,
+      "adapter_version": null,
+      "scope": {
+        "identity": null,
+        "environment": "unknown"
+      },
+      "summary": "definition of filesystem/delete_file",
+      "fragment": null,
+      "limitations": [
+        "definition text is untrusted self-report"
+      ],
+      "extensions": {}
+    },
+    {
+      "evidence_id": "E-9542dd7d34",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "server": "postgres",
+        "tool": "query",
+        "inventory": "config"
+      },
+      "digest": "sha256:b4161a00688acad8fb1f43eb6d380a93d828be9c219d16cb109d99140d9dc0c3",
+      "captured_at": 1788611621.9237192,
+      "adapter": null,
+      "adapter_version": null,
+      "scope": {
+        "identity": null,
+        "environment": "unknown"
+      },
+      "summary": "definition of postgres/query",
+      "fragment": null,
+      "limitations": [
+        "definition text is untrusted self-report"
+      ],
+      "extensions": {}
+    },
+    {
+      "evidence_id": "E-5fb5b315a4",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "server": "shell",
+        "tool": "execute_command",
+        "inventory": "config"
+      },
+      "digest": "sha256:8c2fa3b0754e38e11cbebb0a51b1055dde1e5cf82d9cee4cbad8b17585075750",
+      "captured_at": 1788611621.923958,
+      "adapter": null,
+      "adapter_version": null,
+      "scope": {
+        "identity": null,
+        "environment": "unknown"
+      },
+      "summary": "definition of shell/execute_command",
+      "fragment": null,
+      "limitations": [
+        "definition text is untrusted self-report"
+      ],
+      "extensions": {}
+    },
+    {
+      "evidence_id": "E-0d1f868132",
+      "source_type": "definition",
+      "method": "parsing",
+      "locator": {
+        "server": "fetch",
+        "tool": "fetch",
+        "inventory": "config"
+      },
+      "digest": "sha256:891b3210415e0d033a2e0b4ba2a6b8a57f59afea5814ca2419345c94647dfbc9",
+      "captured_at": 1788611621.9242206,
+      "adapter": null,
+      "adapter_version": null,
+      "scope": {
+        "identity": null,
+        "environment": "unknown"
+      },
+      "summary": "definition of fetch/fetch",
+      "fragment": null,
+      "limitations": [
+        "definition text is untrusted self-report"
+      ],
+      "extensions": {}
     }
   ],
+  "claims": [
+    {
+      "claim_id": "CL-DEF-filesystem-read_file",
+      "statement": "filesystem/read_file is defined in the config catalogue",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-a16498a508"
+      ],
+      "scope": {},
+      "confidence": "high",
+      "confidence_explanation": "",
+      "limitations": [
+        "presence in this catalogue only; other roles/builds may differ"
+      ],
+      "rule_refs": [],
+      "component_refs": [
+        "server:filesystem"
+      ],
+      "source_type": "definition",
+      "method": "parsing"
+    },
+    {
+      "claim_id": "CL-DEF-filesystem-write_file",
+      "statement": "filesystem/write_file is defined in the config catalogue",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-8bb4c82d91"
+      ],
+      "scope": {},
+      "confidence": "high",
+      "confidence_explanation": "",
+      "limitations": [
+        "presence in this catalogue only; other roles/builds may differ"
+      ],
+      "rule_refs": [],
+      "component_refs": [
+        "server:filesystem"
+      ],
+      "source_type": "definition",
+      "method": "parsing"
+    },
+    {
+      "claim_id": "CL-DEF-filesystem-delete_file",
+      "statement": "filesystem/delete_file is defined in the config catalogue",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-1a82047222"
+      ],
+      "scope": {},
+      "confidence": "high",
+      "confidence_explanation": "",
+      "limitations": [
+        "presence in this catalogue only; other roles/builds may differ"
+      ],
+      "rule_refs": [],
+      "component_refs": [
+        "server:filesystem"
+      ],
+      "source_type": "definition",
+      "method": "parsing"
+    },
+    {
+      "claim_id": "CL-DEF-postgres-query",
+      "statement": "postgres/query is defined in the config catalogue",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-9542dd7d34"
+      ],
+      "scope": {},
+      "confidence": "high",
+      "confidence_explanation": "",
+      "limitations": [
+        "presence in this catalogue only; other roles/builds may differ"
+      ],
+      "rule_refs": [],
+      "component_refs": [
+        "server:postgres"
+      ],
+      "source_type": "definition",
+      "method": "parsing"
+    },
+    {
+      "claim_id": "CL-DEF-shell-execute_command",
+      "statement": "shell/execute_command is defined in the config catalogue",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-5fb5b315a4"
+      ],
+      "scope": {},
+      "confidence": "high",
+      "confidence_explanation": "",
+      "limitations": [
+        "presence in this catalogue only; other roles/builds may differ"
+      ],
+      "rule_refs": [],
+      "component_refs": [
+        "server:shell"
+      ],
+      "source_type": "definition",
+      "method": "parsing"
+    },
+    {
+      "claim_id": "CL-DEF-fetch-fetch",
+      "statement": "fetch/fetch is defined in the config catalogue",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-0d1f868132"
+      ],
+      "scope": {},
+      "confidence": "high",
+      "confidence_explanation": "",
+      "limitations": [
+        "presence in this catalogue only; other roles/builds may differ"
+      ],
+      "rule_refs": [],
+      "component_refs": [
+        "server:fetch"
+      ],
+      "source_type": "definition",
+      "method": "parsing"
+    },
+    {
+      "claim_id": "CL-CAP-arbitrary_code_execution",
+      "statement": "1 tool(s) classified as arbitrary execution: ['shell/execute_command']",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-5fb5b315a4"
+      ],
+      "scope": {},
+      "confidence": "medium",
+      "confidence_explanation": "classification from definitions/config (assumed); not an observed exercise of the capability",
+      "limitations": [
+        "capability presence, not a violation; enforcement and scope unverified",
+        "absence refers to the inspected catalogues only"
+      ],
+      "rule_refs": [],
+      "component_refs": [],
+      "source_type": null,
+      "method": null
+    },
+    {
+      "claim_id": "CL-CAP-destructive_operations",
+      "statement": "destructive tools: ['filesystem/delete_file']",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-1a82047222"
+      ],
+      "scope": {},
+      "confidence": "medium",
+      "confidence_explanation": "classification from definitions/config (assumed); not an observed exercise of the capability",
+      "limitations": [
+        "capability presence, not a violation; enforcement and scope unverified",
+        "absence refers to the inspected catalogues only"
+      ],
+      "rule_refs": [],
+      "component_refs": [],
+      "source_type": null,
+      "method": null
+    },
+    {
+      "claim_id": "CL-CAP-write_access",
+      "statement": "2 tool(s) can modify data: ['filesystem/write_file', 'filesystem/delete_file']",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-1a82047222",
+        "E-8bb4c82d91"
+      ],
+      "scope": {},
+      "confidence": "medium",
+      "confidence_explanation": "classification from definitions/config (assumed); not an observed exercise of the capability",
+      "limitations": [
+        "capability presence, not a violation; enforcement and scope unverified",
+        "absence refers to the inspected catalogues only"
+      ],
+      "rule_refs": [],
+      "component_refs": [],
+      "source_type": null,
+      "method": null
+    },
+    {
+      "claim_id": "CL-CAP-full_project_access",
+      "statement": "no server with an unbounded filesystem scope; a single allowed write does not prove full project access",
+      "claim_status": "static_supported",
+      "evidence_refs": [
+        "E-0d1f868132",
+        "E-1a82047222",
+        "E-5fb5b315a4",
+        "E-8bb4c82d91",
+        "E-9542dd7d34",
+        "E-a16498a508"
+      ],
+      "scope": {},
+      "confidence": "medium",
+      "confidence_explanation": "classification from definitions/config (assumed); not an observed exercise of the capability",
+      "limitations": [
+        "capability presence, not a violation; enforcement and scope unverified",
+        "absence refers to the inspected catalogues only"
+      ],
+      "rule_refs": [],
+      "component_refs": [],
+      "source_type": null,
+      "method": null
+    }
+  ],
+  "control_results": [
+    {
+      "rule_id": "MEM-01",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "retrieval of personal memory is bound to the requesting subject / allowed audience",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "MEM-02",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "no code path or service right lets user-session processing publish shared policy",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "MEM-03",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "owner and audience are resolved server-side from the authenticated principal and policy",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "MEM-04",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "context blocks carry an authority marking; data blocks are not presented as rules",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "MEM-05",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "derived records reference their parents or are explicitly marked as lineage-lost",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "MEM-06",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "publication to a shared audience requires an authorized review/approval transition",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "MEM-07",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "audience policy is applied before context delivery; caches and indexes are partitioned by audience",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "MEM-08",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "revoked sources and their derivatives leave retrieval within the agreed delay",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['memory_event_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: memory_event_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "memory_event_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "MEM-09",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "background processing keeps identity, idempotency and policy revision",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "MEM-10",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "each memory type has a defined retention and a cleanup mechanism",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['policy_snapshot', 'source_snapshot'] (memory topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: policy_snapshot",
+        "missing source: source_snapshot",
+        "memory topology unknown"
+      ],
+      "missing_sources": [
+        "policy_snapshot",
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "AUTH-01",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "the principal comes from authentication only",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (authorization topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "authorization topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "AUTH-02",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "each receiving service authorizes the subject for the concrete object",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (authorization topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "authorization topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "AUTH-03",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "mandatory checks are fixed server-side",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (authorization topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "authorization topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "AUTH-04",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "each receiving service validates the checks required by its scheme",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (authorization topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "authorization topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "AUTH-05",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "delegated credentials are bound to the end user, task and resource",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (authorization topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "authorization topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "AUTH-06",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "revocation and expiry take effect within the policy window",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot'] (authorization topology unknown)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot",
+        "authorization topology unknown"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "INFRA-01",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "service rights on memory stores are minimal and publication is separated",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['deployment'] (no deployment snapshot or store-access facts)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: deployment",
+        "no deployment snapshot or store-access facts"
+      ],
+      "missing_sources": [
+        "deployment"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "INFRA-02",
+      "rule_version": "2.0.0",
+      "applicability": "unknown",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "storage ports are not published beyond the intended zone",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['deployment'] (no deployment snapshot or store-access facts)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: deployment",
+        "no deployment snapshot or store-access facts"
+      ],
+      "missing_sources": [
+        "deployment"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "INFRA-03",
+      "rule_version": "2.0.0",
+      "applicability": "not_applicable",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_APPLICABLE",
+      "expected_invariant": "controlled validation runs on synthetic data with technical isolation attested by the fixture",
+      "observed_effect": null,
+      "interpretation": "no controlled validation in this mode",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "no controlled validation in this mode"
+      ],
+      "missing_sources": [],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "TOOL-01",
+      "rule_version": "2.0.0",
+      "applicability": "applicable",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "every definition matches an approved baseline entry",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['baseline']",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: baseline"
+      ],
+      "missing_sources": [
+        "baseline"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "TOOL-02",
+      "rule_version": "2.0.0",
+      "applicability": "applicable",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "configured, source-defined and live contracts agree",
+      "observed_effect": null,
+      "interpretation": "only one definition source per tool; contracts cannot be compared",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "only one definition source per tool; contracts cannot be compared",
+        "missing source: source_snapshot or live inventory"
+      ],
+      "missing_sources": [],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "TOOL-03",
+      "rule_version": "2.0.0",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "control_outcome": "PASS",
+      "expected_invariant": "tool names resolve unambiguously in the real router",
+      "observed_effect": null,
+      "interpretation": "router namespace: unknown; 0 name collision(s)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "router namespace unknown; no collisions found in the current inventory"
+      ],
+      "missing_sources": [],
+      "method": "static_analysis",
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "TOOL-04",
+      "rule_version": "2.0.0",
+      "applicability": "applicable",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "tool results never reach policy publication without an authorized process",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot']",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "TOOL-05",
+      "rule_version": "2.0.0",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "control_outcome": "INCONCLUSIVE",
+      "expected_invariant": "definitions and context carry no unreviewed injection signals",
+      "observed_effect": null,
+      "interpretation": "2 text signal(s) recorded as hypotheses with fragment, rule and explanation; an imperative, Unicode or a link does not prove malicious intent - review required",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [
+        "F-aa404cad06",
+        "F-44249b0e3b"
+      ],
+      "limitations": [],
+      "missing_sources": [],
+      "method": "static_analysis",
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "EGRESS-01",
+      "rule_version": "2.0.0",
+      "applicability": "applicable",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "both destination and data category are allowed for every external transmission",
+      "observed_effect": null,
+      "interpretation": "egress-capable tools ['shell/execute_command', 'fetch/fetch'] without a declared transmit flow or egress policy",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "egress-capable tools ['shell/execute_command', 'fetch/fetch'] without a declared transmit flow or egress policy",
+        "missing source: profile.flows(transmit)",
+        "missing source: policy.egress"
+      ],
+      "missing_sources": [],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "EGRESS-02",
+      "rule_version": "2.0.0",
+      "applicability": "not_applicable",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_APPLICABLE",
+      "expected_invariant": "external effects are observed by a local fixture, not inferred from config text",
+      "observed_effect": null,
+      "interpretation": "no controlled validation in this mode",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "no controlled validation in this mode"
+      ],
+      "missing_sources": [],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "INV-01",
+      "rule_version": "2.0.0",
+      "applicability": "applicable",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "inventory sources agree or differences are explained",
+      "observed_effect": null,
+      "interpretation": "required source(s) not bound: ['source_snapshot']",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "missing source: source_snapshot"
+      ],
+      "missing_sources": [
+        "source_snapshot"
+      ],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    },
+    {
+      "rule_id": "INV-02",
+      "rule_version": "2.0.0",
+      "applicability": "applicable",
+      "execution_status": "skipped",
+      "control_outcome": "NOT_EVALUATED",
+      "expected_invariant": "discovery is complete and fresh for the identity used",
+      "observed_effect": null,
+      "interpretation": "discovery not performed in this mode (configured catalogue only)",
+      "evaluated_boundary_refs": [],
+      "component_refs": [],
+      "claim_refs": [],
+      "evidence_refs": [],
+      "finding_refs": [],
+      "limitations": [
+        "discovery not performed in this mode (configured catalogue only)"
+      ],
+      "missing_sources": [],
+      "method": null,
+      "case_refs": [],
+      "conditions": {}
+    }
+  ],
+  "findings": [
+    {
+      "code": "UNCONSTRAINED_EXEC_PARAMETER",
+      "title": "Unconstrained execution parameter",
+      "description": "query.sql is a free string with no enum/pattern - arbitrary execution surface",
+      "rule_id": "TOOL-05",
+      "plane": "definition",
+      "verification_status": "hypothesis",
+      "severity": null,
+      "potential_severity": "HIGH",
+      "severity_rationale": "potential severity if the parameter is abused as described",
+      "rule_version": "",
+      "root_cause": "",
+      "requirement": "TOOL-05: schema signals are recorded with parameter, rule and explanation",
+      "preconditions": [],
+      "expected_invariant": "parameters match the tool's purpose; no free-form sinks or credential inputs",
+      "component_refs": [
+        "server:postgres"
+      ],
+      "boundary_refs": [],
+      "scope": {},
+      "claim_refs": [],
+      "evidence_refs": [
+        "E-9542dd7d34"
+      ],
+      "observed_effect": null,
+      "potential_effect": null,
+      "remediation": "review the parameter with the definition owner; constrain or remove it",
+      "remediation_owner": null,
+      "remediation_priority": null,
+      "closure_criterion": "parameter constrained (enum/pattern) or removed; annotation corrected",
+      "limitations": [
+        "schema heuristic: a hypothesis about misuse potential, not an observed abuse"
+      ],
+      "unconfirmed": [],
+      "related_findings": [],
+      "memory_stages": {},
+      "first_seen": null,
+      "last_seen": null,
+      "remediation_state": "open",
+      "reassessment": {},
+      "server": "postgres",
+      "tool": "query",
+      "evidence": {
+        "parameter": "sql",
+        "where": "inputSchema.sql",
+        "rule": "UNCONSTRAINED_EXEC_PARAMETER",
+        "explanation": "free-form execution input"
+      },
+      "taxonomy": [],
+      "finding_id": "F-aa404cad06",
+      "instance_id": "run-2425feb6f6e7:F-aa404cad06",
+      "effective_severity": "HIGH"
+    },
+    {
+      "code": "UNCONSTRAINED_EXEC_PARAMETER",
+      "title": "Unconstrained execution parameter",
+      "description": "execute_command.command is a free string with no enum/pattern - arbitrary execution surface",
+      "rule_id": "TOOL-05",
+      "plane": "definition",
+      "verification_status": "hypothesis",
+      "severity": null,
+      "potential_severity": "HIGH",
+      "severity_rationale": "potential severity if the parameter is abused as described",
+      "rule_version": "",
+      "root_cause": "",
+      "requirement": "TOOL-05: schema signals are recorded with parameter, rule and explanation",
+      "preconditions": [],
+      "expected_invariant": "parameters match the tool's purpose; no free-form sinks or credential inputs",
+      "component_refs": [
+        "server:shell"
+      ],
+      "boundary_refs": [],
+      "scope": {},
+      "claim_refs": [],
+      "evidence_refs": [
+        "E-5fb5b315a4"
+      ],
+      "observed_effect": null,
+      "potential_effect": null,
+      "remediation": "review the parameter with the definition owner; constrain or remove it",
+      "remediation_owner": null,
+      "remediation_priority": null,
+      "closure_criterion": "parameter constrained (enum/pattern) or removed; annotation corrected",
+      "limitations": [
+        "schema heuristic: a hypothesis about misuse potential, not an observed abuse"
+      ],
+      "unconfirmed": [],
+      "related_findings": [],
+      "memory_stages": {},
+      "first_seen": null,
+      "last_seen": null,
+      "remediation_state": "open",
+      "reassessment": {},
+      "server": "shell",
+      "tool": "execute_command",
+      "evidence": {
+        "parameter": "command",
+        "where": "inputSchema.command",
+        "rule": "UNCONSTRAINED_EXEC_PARAMETER",
+        "explanation": "free-form execution input"
+      },
+      "taxonomy": [],
+      "finding_id": "F-44249b0e3b",
+      "instance_id": "run-2425feb6f6e7:F-44249b0e3b",
+      "effective_severity": "HIGH"
+    }
+  ],
+  "tests": [],
+  "memory_cases": [],
+  "coverage": [
+    {
+      "metric": "inventory_completeness",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "no reference inventory",
+      "method": "n/a",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "no reference list; overall completeness unknown",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "component_coverage",
+      "numerator": 2,
+      "denominator": 4,
+      "denominator_source": "components of manifest/profile/inventory",
+      "method": "component referenced by a PASS/FAIL control or a finding",
+      "unknown": 0,
+      "gaps": [
+        "server:filesystem",
+        "server:fetch"
+      ],
+      "limitation": "does not show the depth of evaluation per component",
+      "details": {},
+      "ratio": 0.5,
+      "display": "2/4 (50.0%)"
+    },
+    {
+      "metric": "mandatory_control_coverage",
+      "numerator": 1,
+      "denominator": 26,
+      "denominator_source": "required controls minus justified not-applicable",
+      "method": "PASS + FAIL / all",
+      "unknown": 25,
+      "gaps": [
+        "MEM-01:NOT_EVALUATED",
+        "MEM-02:NOT_EVALUATED",
+        "MEM-03:NOT_EVALUATED",
+        "MEM-04:NOT_EVALUATED",
+        "MEM-05:NOT_EVALUATED",
+        "MEM-06:NOT_EVALUATED",
+        "MEM-07:NOT_EVALUATED",
+        "MEM-08:NOT_EVALUATED",
+        "MEM-09:NOT_EVALUATED",
+        "MEM-10:NOT_EVALUATED",
+        "AUTH-01:NOT_EVALUATED",
+        "AUTH-02:NOT_EVALUATED",
+        "AUTH-03:NOT_EVALUATED",
+        "AUTH-04:NOT_EVALUATED",
+        "AUTH-05:NOT_EVALUATED",
+        "AUTH-06:NOT_EVALUATED",
+        "INFRA-01:NOT_EVALUATED",
+        "INFRA-02:NOT_EVALUATED",
+        "TOOL-01:NOT_EVALUATED",
+        "TOOL-02:NOT_EVALUATED",
+        "TOOL-04:NOT_EVALUATED",
+        "TOOL-05:INCONCLUSIVE",
+        "EGRESS-01:NOT_EVALUATED",
+        "INV-01:NOT_EVALUATED",
+        "INV-02:NOT_EVALUATED"
+      ],
+      "limitation": "INCONCLUSIVE, NOT_EVALUATED and unknown applicability stay in the denominator",
+      "details": {},
+      "ratio": 0.0385,
+      "display": "1/26 (3.9%)"
+    },
+    {
+      "metric": "mandatory_control_coverage_static",
+      "numerator": 1,
+      "denominator": 26,
+      "denominator_source": "same as above",
+      "method": "static methods only",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "static support shows code/config facts, not runtime behaviour",
+      "details": {},
+      "ratio": 0.0385,
+      "display": "1/26 (3.9%)"
+    },
+    {
+      "metric": "mandatory_control_coverage_runtime",
+      "numerator": 0,
+      "denominator": 26,
+      "denominator_source": "same as above",
+      "method": "observation / fixtures only",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "runtime support is bound to the observed principal, build and environment",
+      "details": {},
+      "ratio": 0.0,
+      "display": "0/26 (0.0%)"
+    },
+    {
+      "metric": "identity_coverage",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "policy has no access_rules",
+      "method": "n/a",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "expected relations unknown",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "memory_stage_W",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "applicable memory cases",
+      "method": "stage observed or not_observed with coverage",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "stages are never merged into one verified",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "memory_stage_R",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "applicable memory cases",
+      "method": "stage observed or not_observed with coverage",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "stages are never merged into one verified",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "memory_stage_C",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "applicable memory cases",
+      "method": "stage observed or not_observed with coverage",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "stages are never merged into one verified",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "memory_stage_B",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "applicable memory cases",
+      "method": "stage observed or not_observed with coverage",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "stages are never merged into one verified",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "boundary_coverage",
+      "numerator": 0,
+      "denominator": null,
+      "denominator_source": "boundaries of the accepted model",
+      "method": "boundary reached by a PASS/FAIL evaluation",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "an unreached backend is not counted as evaluated",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "execution_quality",
+      "numerator": 0,
+      "denominator": null,
+      "denominator_source": "control cases",
+      "method": "validly completed cases",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "errors are not excluded to make the report look complete",
+      "details": {
+        "errors": 0,
+        "timeouts": 0,
+        "skipped": 0
+      },
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "observation_quality",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "no trace",
+      "method": "n/a",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "no runtime observation available",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    }
+  ],
+  "trifecta": {
+    "indicator": "LETHAL_TRIFECTA",
+    "state": "capability_combination",
+    "capability_combination": true,
+    "legs": {
+      "sensitive_access": [
+        "filesystem/read_file",
+        "postgres/query",
+        "shell/execute_command"
+      ],
+      "untrusted_input": [
+        "fetch/fetch",
+        "filesystem/read_file",
+        "postgres/query",
+        "shell/execute_command"
+      ],
+      "external_channel": [
+        "fetch/fetch",
+        "shell/execute_command"
+      ]
+    },
+    "legs_present": {
+      "sensitive_access": true,
+      "untrusted_input": true,
+      "external_channel": true
+    },
+    "single_tool_trifecta": [
+      "shell/execute_command"
+    ],
+    "chains": [],
+    "explanation": "Capability combination present: sensitive access, untrusted input and an external channel exist in the inventory. No connected path is established. A single tool holds all three legs: ['shell/execute_command'].",
+    "limitations": [
+      "legs are classified from definitions (assumed); the indicator shows a combination of capabilities, not an observed leak; runtime confirmation of one edge is not transferred to others"
+    ]
+  },
   "summary": {
     "server_count": 4,
     "tool_count": 6,
-    "by_risk": {
+    "capability_risk_by_level": {
       "LOW": 0,
       "MEDIUM": 1,
       "HIGH": 3,
       "CRITICAL": 2
     },
-    "critical": 2,
-    "high": 3,
-    "medium": 1,
-    "low": 0,
-    "definition_findings": 2,
-    "context_findings": 0,
-    "overall_risk": "CRITICAL",
+    "max_capability_risk": "CRITICAL",
+    "findings_confirmed": 0,
+    "findings_hypotheses": 2,
+    "findings_by_severity": {
+      "LOW": 0,
+      "MEDIUM": 0,
+      "HIGH": 0,
+      "CRITICAL": 0
+    },
+    "definition_signals": 2,
+    "control_results": {
+      "NOT_EVALUATED": 24,
+      "NOT_APPLICABLE": 2,
+      "PASS": 1,
+      "INCONCLUSIVE": 1
+    },
+    "runtime_validation_performed": false,
     "trifecta": {
-      "assembled": true,
+      "indicator": "LETHAL_TRIFECTA",
+      "state": "capability_combination",
+      "capability_combination": true,
       "legs": {
         "sensitive_access": [
           "filesystem/read_file",
@@ -665,93 +3217,312 @@
       "single_tool_trifecta": [
         "shell/execute_command"
       ],
-      "explanation": "Lethal trifecta assembled: sensitive access + untrusted input + external channel all present. A single tool holds all three: ['shell/execute_command']."
+      "chains": [],
+      "explanation": "Capability combination present: sensitive access, untrusted input and an external channel exist in the inventory. No connected path is established. A single tool holds all three legs: ['shell/execute_command'].",
+      "limitations": [
+        "legs are classified from definitions (assumed); the indicator shows a combination of capabilities, not an observed leak; runtime confirmation of one edge is not transferred to others"
+      ]
+    },
+    "note": "capability risk is potential damage per tool; finding severity is separate; no single security percentage is emitted",
+    "capability_indicators": {
+      "arbitrary_code_execution": {
+        "present": true,
+        "tools": [
+          "shell/execute_command"
+        ],
+        "claim_ref": "CL-CAP-arbitrary_code_execution",
+        "potential_severity": "CRITICAL",
+        "status": "static_supported",
+        "note": ""
+      },
+      "destructive_operations": {
+        "present": true,
+        "tools": [
+          "filesystem/delete_file"
+        ],
+        "claim_ref": "CL-CAP-destructive_operations",
+        "potential_severity": "CRITICAL",
+        "status": "static_supported",
+        "note": ""
+      },
+      "write_access": {
+        "present": true,
+        "tools": [
+          "filesystem/write_file",
+          "filesystem/delete_file"
+        ],
+        "claim_ref": "CL-CAP-write_access",
+        "potential_severity": "HIGH",
+        "status": "static_supported",
+        "note": "modification of objects within the tool's scope; not a statement about the whole project"
+      },
+      "full_project_access": {
+        "present": false,
+        "tools": [],
+        "claim_ref": "CL-CAP-full_project_access",
+        "potential_severity": "HIGH",
+        "status": "static_supported",
+        "note": "derived from inferred scope (assumed); a successful write of one object is not full access"
+      }
+    },
+    "correlation": {
+      "chains": [],
+      "break_points": []
     }
   },
   "verdict": {
-    "overall_risk": "CRITICAL",
-    "arbitrary_code_execution": true,
-    "full_project_access": true,
-    "lethal_trifecta": true,
+    "assessment_state": "partial",
+    "security_conclusion": "undetermined",
+    "basis": [],
+    "confirmed_finding_refs": [],
+    "hypothesis_finding_refs": [
+      "F-aa404cad06",
+      "F-44249b0e3b"
+    ],
+    "required_controls": {
+      "MEM-01": "NOT_EVALUATED",
+      "MEM-02": "NOT_EVALUATED",
+      "MEM-03": "NOT_EVALUATED",
+      "MEM-04": "NOT_EVALUATED",
+      "MEM-05": "NOT_EVALUATED",
+      "MEM-06": "NOT_EVALUATED",
+      "MEM-07": "NOT_EVALUATED",
+      "MEM-08": "NOT_EVALUATED",
+      "MEM-09": "NOT_EVALUATED",
+      "MEM-10": "NOT_EVALUATED",
+      "AUTH-01": "NOT_EVALUATED",
+      "AUTH-02": "NOT_EVALUATED",
+      "AUTH-03": "NOT_EVALUATED",
+      "AUTH-04": "NOT_EVALUATED",
+      "AUTH-05": "NOT_EVALUATED",
+      "AUTH-06": "NOT_EVALUATED",
+      "INFRA-01": "NOT_EVALUATED",
+      "INFRA-02": "NOT_EVALUATED",
+      "INFRA-03": "NOT_APPLICABLE",
+      "TOOL-01": "NOT_EVALUATED",
+      "TOOL-02": "NOT_EVALUATED",
+      "TOOL-03": "PASS",
+      "TOOL-04": "NOT_EVALUATED",
+      "TOOL-05": "INCONCLUSIVE",
+      "EGRESS-01": "NOT_EVALUATED",
+      "EGRESS-02": "NOT_APPLICABLE",
+      "INV-01": "NOT_EVALUATED",
+      "INV-02": "NOT_EVALUATED"
+    },
+    "unresolved_controls": [
+      "MEM-01",
+      "MEM-02",
+      "MEM-03",
+      "MEM-04",
+      "MEM-05",
+      "MEM-06",
+      "MEM-07",
+      "MEM-08",
+      "MEM-09",
+      "MEM-10",
+      "AUTH-01",
+      "AUTH-02",
+      "AUTH-03",
+      "AUTH-04",
+      "AUTH-05",
+      "AUTH-06",
+      "INFRA-01",
+      "INFRA-02",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-04",
+      "TOOL-05",
+      "EGRESS-01",
+      "INV-01",
+      "INV-02"
+    ],
+    "missing_adapters": [],
+    "confidence": {
+      "level": "low",
+      "explanation": "absence of findings is only as strong as the coverage; no runtime observation",
+      "note": "qualitative; not a calibrated probability of exploitation"
+    },
+    "indicators": {
+      "arbitrary_code_execution": {
+        "present": true,
+        "tools": [
+          "shell/execute_command"
+        ],
+        "claim_ref": "CL-CAP-arbitrary_code_execution",
+        "potential_severity": "CRITICAL",
+        "status": "static_supported",
+        "note": ""
+      },
+      "destructive_operations": {
+        "present": true,
+        "tools": [
+          "filesystem/delete_file"
+        ],
+        "claim_ref": "CL-CAP-destructive_operations",
+        "potential_severity": "CRITICAL",
+        "status": "static_supported",
+        "note": ""
+      },
+      "write_access": {
+        "present": true,
+        "tools": [
+          "filesystem/write_file",
+          "filesystem/delete_file"
+        ],
+        "claim_ref": "CL-CAP-write_access",
+        "potential_severity": "HIGH",
+        "status": "static_supported",
+        "note": "modification of objects within the tool's scope; not a statement about the whole project"
+      },
+      "full_project_access": {
+        "present": false,
+        "tools": [],
+        "claim_ref": "CL-CAP-full_project_access",
+        "potential_severity": "HIGH",
+        "status": "static_supported",
+        "note": "derived from inferred scope (assumed); a successful write of one object is not full access"
+      }
+    },
+    "trifecta_state": "capability_combination",
     "cross_server": {
       "server_count": 4,
-      "shadowing_possible": false,
-      "signals": [],
-      "note": "Shadowing risk grows with server count; review collisions and cross-references."
+      "collision_signals": [],
+      "router_namespace": "unknown",
+      "note": "shadowing needs a collision and a router that does not disambiguate (TOOL-03)"
     },
-    "reasons": [
-      "arbitrary command execution is available",
-      "lethal trifecta is assembled",
-      "write access to project data"
+    "declared_divergences": [],
+    "limitations": [
+      "legacy MCP config wrapped into a manifest: target identity, build and environment were not declared",
+      "MEM-01: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (memory topology unknown))",
+      "MEM-02: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (memory topology unknown))",
+      "MEM-03: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (memory topology unknown))",
+      "MEM-04: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (memory topology unknown))",
+      "MEM-05: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (memory topology unknown))",
+      "MEM-06: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (memory topology unknown))",
+      "MEM-07: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (memory topology unknown))",
+      "MEM-08: NOT_EVALUATED (required source(s) not bound: ['memory_event_snapshot'] (memory topology unknown))",
+      "MEM-09: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (memory topology unknown))",
+      "MEM-10: NOT_EVALUATED (required source(s) not bound: ['policy_snapshot', 'source_snapshot'] (memory topology unknown))",
+      "AUTH-01: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (authorization topology unknown))",
+      "AUTH-02: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (authorization topology unknown))",
+      "AUTH-03: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (authorization topology unknown))",
+      "AUTH-04: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (authorization topology unknown))",
+      "AUTH-05: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (authorization topology unknown))",
+      "AUTH-06: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'] (authorization topology unknown))",
+      "INFRA-01: NOT_EVALUATED (required source(s) not bound: ['deployment'] (no deployment snapshot or store-access facts))",
+      "INFRA-02: NOT_EVALUATED (required source(s) not bound: ['deployment'] (no deployment snapshot or store-access facts))",
+      "TOOL-01: NOT_EVALUATED (required source(s) not bound: ['baseline'])",
+      "TOOL-02: NOT_EVALUATED (only one definition source per tool; contracts cannot be compared)",
+      "TOOL-04: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'])",
+      "TOOL-05: INCONCLUSIVE (2 text signal(s) recorded as hypotheses with fragment, rule and explanation; an imperative, Unicode or a link does not prove malicious intent - review required)",
+      "EGRESS-01: NOT_EVALUATED (egress-capable tools ['shell/execute_command', 'fetch/fetch'] without a declared transmit flow or egress policy)",
+      "INV-01: NOT_EVALUATED (required source(s) not bound: ['source_snapshot'])",
+      "INV-02: NOT_EVALUATED (discovery not performed in this mode (configured catalogue only))",
+      "no runtime validation was performed: all supported claims are static (config, definitions, source, policy)"
     ],
-    "confidence": 0.6,
-    "basis": "effective+verified",
-    "declared_divergences": []
+    "release_decision": "delegated to ObSec release policy; an unknown mandatory control never becomes an allow"
   },
   "downstream": {
     "P2_matrix": [
       {
         "id": "TM-EXEC",
         "title": "Arbitrary code execution",
-        "reachable": true,
-        "evidence": [
+        "state": "present",
+        "refs": [
           "shell/execute_command"
-        ]
+        ],
+        "claim_status": "static_supported",
+        "preconditions": [],
+        "note": "fact/uncertainty for threat modelling; downstream must not rename a hypothesis into a confirmed result"
       },
       {
         "id": "TM-WRITE",
-        "title": "Unauthorized data modification",
-        "reachable": true,
-        "evidence": [
+        "title": "Data modification capability",
+        "state": "present",
+        "refs": [
           "filesystem/write_file",
           "filesystem/delete_file"
-        ]
+        ],
+        "claim_status": "static_supported",
+        "preconditions": [],
+        "note": "fact/uncertainty for threat modelling; downstream must not rename a hypothesis into a confirmed result"
+      },
+      {
+        "id": "TM-FULL",
+        "title": "Unbounded filesystem scope",
+        "state": "absent",
+        "refs": [],
+        "claim_status": "static_supported",
+        "preconditions": [],
+        "note": "fact/uncertainty for threat modelling; downstream must not rename a hypothesis into a confirmed result"
       },
       {
         "id": "TM-EXFIL",
-        "title": "Data exfiltration channel",
-        "reachable": true,
-        "evidence": [
+        "title": "External channel",
+        "state": "present",
+        "refs": [
           "shell/execute_command",
           "fetch/fetch"
-        ]
+        ],
+        "claim_status": "hypothesis",
+        "preconditions": [],
+        "note": "fact/uncertainty for threat modelling; downstream must not rename a hypothesis into a confirmed result"
       },
       {
         "id": "TM-POISON",
-        "title": "Tool poisoning via definitions",
-        "reachable": true,
-        "evidence": [
-          "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER",
-          "SCHEMA-UNCONSTRAINED_EXEC_PARAMETER"
-        ]
+        "title": "Definition-plane signals",
+        "state": "signals",
+        "refs": [
+          "F-aa404cad06",
+          "F-44249b0e3b"
+        ],
+        "claim_status": "hypothesis",
+        "preconditions": [],
+        "note": "fact/uncertainty for threat modelling; downstream must not rename a hypothesis into a confirmed result"
       },
       {
         "id": "TM-TRIFECTA",
-        "title": "Lethal trifecta",
-        "reachable": true,
-        "evidence": {
+        "title": "Lethal trifecta indicator",
+        "state": "capability_combination",
+        "refs": {
           "sensitive_access": true,
           "untrusted_input": true,
           "external_channel": true
-        }
+        },
+        "claim_status": "hypothesis",
+        "preconditions": [],
+        "note": "fact/uncertainty for threat modelling; downstream must not rename a hypothesis into a confirmed result"
       },
       {
         "id": "TM-SHADOW",
-        "title": "Cross-server shadowing",
-        "reachable": false,
-        "evidence": []
+        "title": "Cross-server shadowing precondition",
+        "state": "absent",
+        "refs": [],
+        "claim_status": "contradicted",
+        "preconditions": [],
+        "note": "fact/uncertainty for threat modelling; downstream must not rename a hypothesis into a confirmed result"
       }
     ],
     "P3_corpus": [
       {
+        "campaign": "C4-*",
+        "name": "tool poisoning",
+        "reason": "definition-plane signals (hypotheses)",
+        "refs": [
+          "F-aa404cad06",
+          "F-44249b0e3b"
+        ]
+      },
+      {
         "campaign": "C4-EXEC",
         "name": "command execution abuse",
-        "reason": "EXEC tool present"
+        "reason": "EXEC capability present"
       },
       {
         "campaign": "C2-*",
-        "name": "memory / context exfil",
-        "reason": "trifecta assembled"
+        "name": "memory / context poisoning",
+        "reason": "trifecta capability combination",
+        "refs": []
       }
     ],
     "P8_baseline_keys": [
@@ -761,7 +3532,12 @@
       "filesystem/write_file",
       "postgres/query",
       "shell/execute_command"
-    ]
+    ],
+    "P2_uncertainties": []
   },
-  "drift": {}
+  "drift": {},
+  "import_history": {},
+  "limitations": [
+    "legacy MCP config wrapped into a manifest: target identity, build and environment were not declared"
+  ]
 }

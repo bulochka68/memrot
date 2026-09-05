@@ -1,0 +1,1632 @@
+{
+  "export_version": "1.0",
+  "schema_version": "2.0",
+  "run": {
+    "run_id": "run-18d18234f15c",
+    "target": {
+      "id": "genai-invest-stand",
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "environment": "local-compose-stand (branch bulochka68-with-stand)",
+      "boundaries": [
+        "agent-api",
+        "agent",
+        "session-finalizer",
+        "memory-store",
+        "mcp-invest",
+        "invest-server",
+        "redis",
+        "mongo",
+        "postgres",
+        "keycloak"
+      ],
+      "snapshot_note": "Все адаптеры этого примера читают заранее снятые снимки; стенд, MCP-процессы и модель не запускались."
+    },
+    "mode": "offline",
+    "status": "partial",
+    "started_at": 1788611621.7385063,
+    "finished_at": 1788611621.7588372,
+    "engine_version": "2.0.0",
+    "ruleset_version": "2.0.0"
+  },
+  "verdict": {
+    "assessment_state": "partial",
+    "security_conclusion": "findings_present",
+    "gate_code": "GATE_BLOCK_FINDINGS_PARTIAL",
+    "basis": [
+      "CL-AUTH-01-F-identity-apikey",
+      "CL-AUTH-01-F-identity-oidc",
+      "CL-AUTH-02-T1-user-api",
+      "CL-AUTH-02-T2-agent-mcp",
+      "CL-AUTH-02-T3-mcp-backend",
+      "CL-AUTH-02-T3b-account-owner",
+      "CL-AUTH-02-T5-token-exchange",
+      "CL-AUTH-03-agent-api",
+      "CL-AUTH-03-invest-server",
+      "CL-AUTH-03-mcp-invest",
+      "CL-AUTH-04-agent-api",
+      "CL-AUTH-04-invest-server",
+      "CL-AUTH-04-mcp-invest",
+      "CL-AUTH-05-T4-agent-token",
+      "CL-AUTH-05-T5-token-exchange",
+      "CL-AUTH-06-F-revocation-apikey",
+      "CL-EGRESS-01-F-search-transmit",
+      "CL-INFRA-01-F-store-access-policy",
+      "CL-INFRA-01-auth-mongo",
+      "CL-INFRA-01-auth-redis",
+      "CL-INFRA-02-mongo",
+      "CL-INFRA-02-redis",
+      "CL-MEM-01-F-dialog-read",
+      "CL-MEM-01-F-episodic-read",
+      "CL-MEM-01-F-user-facts-read",
+      "CL-MEM-02-F-persist-policy",
+      "CL-MEM-02-rights-F-store-access-policy",
+      "CL-MEM-03-F-scope-from-llm",
+      "CL-MEM-04-F-context-policy-as-rules",
+      "CL-MEM-05-F-answer-to-working",
+      "CL-MEM-05-F-derive-facts",
+      "CL-MEM-06-F-persist-policy",
+      "CL-MEM-06-F-trust-elevation-confidence",
+      "CL-MEM-07-F-dialog-read",
+      "CL-MEM-07-F-episodic-read",
+      "CL-MEM-07-F-policy-read-unscoped",
+      "CL-MEM-07-F-user-facts-read",
+      "CL-MEM-09-J-finalize",
+      "CL-MEM-10-shared_policy",
+      "CL-MEM-10-user_fact",
+      "CL-MEM-10-working",
+      "CL-TOOL-02-agent-native/duckduckgo_search",
+      "CL-TOOL-04-tool-result-to-policy"
+    ],
+    "unresolved_controls": [
+      "MEM-08",
+      "TOOL-01",
+      "TOOL-05",
+      "INV-01",
+      "INV-02"
+    ],
+    "invariant": "an unknown result of a mandatory control never becomes a release allow"
+  },
+  "findings": [
+    {
+      "stable_id": "F-066fafcc1b",
+      "instance_id": "run-18d18234f15c:F-066fafcc1b",
+      "rule_id": "MEM-04",
+      "rule_version": "2.0.0",
+      "code": "MEMORY_PRESENTED_AS_RULES",
+      "title": "Memory content presented as rules without content authority",
+      "component_refs": [
+        "memory-store"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "flow": "F-context-policy-as-rules"
+      },
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-MEM-04-F-context-policy-as-rules"
+      ],
+      "evidence_refs": [
+        "E-ec5b11d7cd"
+      ],
+      "limitations": [],
+      "closure_criterion": "context assembly separates data blocks from instruction blocks and records the authority of each",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-16e42e7d4e",
+      "instance_id": "run-18d18234f15c:F-16e42e7d4e",
+      "rule_id": "AUTH-04",
+      "rule_version": "2.0.0",
+      "code": "TOKEN_VALIDATION_INCOMPLETE",
+      "title": "agent-api: token validation skips issuer, audience",
+      "component_refs": [
+        "agent-api"
+      ],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P1",
+      "claim_refs": [
+        "CL-AUTH-04-agent-api"
+      ],
+      "evidence_refs": [
+        "E-10786f1d2f"
+      ],
+      "limitations": [],
+      "closure_criterion": "each receiving service rejects tokens with a foreign issuer/audience (fixture)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-2a34099aa7",
+      "instance_id": "run-18d18234f15c:F-2a34099aa7",
+      "rule_id": "MEM-06",
+      "rule_version": "2.0.0",
+      "code": "AUTOMATIC_TRUST_ELEVATION",
+      "title": "Retelling or model confidence acts as publication permission",
+      "component_refs": [
+        "session-finalizer"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "flow": "F-trust-elevation-confidence"
+      },
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-MEM-06-F-trust-elevation-confidence"
+      ],
+      "evidence_refs": [
+        "E-c1e3adb492"
+      ],
+      "limitations": [],
+      "closure_criterion": "shared records carry review_state=approved with an approval_ref from a trusted publisher",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-2d71e63939",
+      "instance_id": "run-18d18234f15c:F-2d71e63939",
+      "rule_id": "TOOL-05",
+      "rule_version": "",
+      "code": "MODEL_ADDRESSED_IMPERATIVE",
+      "title": "Imperative addressed to the model",
+      "component_refs": [
+        "server:mcp-invest"
+      ],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "hypothesis",
+      "severity": null,
+      "potential_severity": "MEDIUM",
+      "remediation_priority": null,
+      "claim_refs": [],
+      "evidence_refs": [
+        "E-9cccb65e85"
+      ],
+      "limitations": [
+        "text heuristic: the signal is a hypothesis, not proof of compromise or of a right to change the server"
+      ],
+      "closure_criterion": "the fragment is removed or justified by the definition owner",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "definition"
+      ]
+    },
+    {
+      "stable_id": "F-3a09a63a4b",
+      "instance_id": "run-18d18234f15c:F-3a09a63a4b",
+      "rule_id": "MEM-08",
+      "rule_version": "2.0.0",
+      "code": "REVOCATION_MECHANISM_MISSING",
+      "title": "No revocation / derived-data withdrawal mechanism",
+      "component_refs": [],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "hypothesis",
+      "severity": null,
+      "potential_severity": "MEDIUM",
+      "remediation_priority": "P2",
+      "claim_refs": [
+        "CL-MEM-08-no-mechanism"
+      ],
+      "evidence_refs": [],
+      "limitations": [
+        "stage D: revocation fixtures and index-version tracking are on the roadmap"
+      ],
+      "closure_criterion": "after revocation, source and dependent records do not return to context beyond the agreed delay (fixture)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-3d561de31c",
+      "instance_id": "run-18d18234f15c:F-3d561de31c",
+      "rule_id": "AUTH-02",
+      "rule_version": "2.0.0",
+      "code": "RESOURCE_AUTHORIZATION_MISSING",
+      "title": "Resource authorization not enforced at mcp-invest",
+      "component_refs": [
+        "mcp-invest"
+      ],
+      "boundary_refs": [
+        "B-agent-mcp"
+      ],
+      "scope": {
+        "transition": "T2-agent-mcp"
+      },
+      "verification_status": "static_supported",
+      "severity": "CRITICAL",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-AUTH-02-T2-agent-mcp"
+      ],
+      "evidence_refs": [
+        "E-0a803c01e7"
+      ],
+      "limitations": [
+        "an entry-API refusal does not cover a backend the request never reached"
+      ],
+      "closure_criterion": "each receiving service decides authorization for the concrete object; foreign-object fixture is refused at this hop",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-485f6ad0df",
+      "instance_id": "run-18d18234f15c:F-485f6ad0df",
+      "rule_id": "AUTH-03",
+      "rule_version": "2.0.0",
+      "code": "CLIENT_CAN_WEAKEN_SERVER_POLICY",
+      "title": "Client parameters weaken mandatory server checks at invest-server",
+      "component_refs": [
+        "invest-server"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "component": "invest-server"
+      },
+      "verification_status": "static_supported",
+      "severity": "CRITICAL",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-AUTH-03-invest-server"
+      ],
+      "evidence_refs": [
+        "E-60b6143c8c",
+        "E-7e61565950"
+      ],
+      "limitations": [],
+      "closure_criterion": "the server defines mandatory checks; a client mode parameter cannot relax them (fixture)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-4cfa945006",
+      "instance_id": "run-18d18234f15c:F-4cfa945006",
+      "rule_id": "INFRA-02",
+      "rule_version": "2.0.0",
+      "code": "STORAGE_PUBLISHED_ON_HOST",
+      "title": "redis storage port published on the host",
+      "component_refs": [
+        "redis"
+      ],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-INFRA-02-redis"
+      ],
+      "evidence_refs": [
+        "E-accb7535b7"
+      ],
+      "limitations": [
+        "reachability from specific external zones not established"
+      ],
+      "closure_criterion": "storage ports are not published; reachability from external zones is refused (observed per zone)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "infrastructure"
+      ]
+    },
+    {
+      "stable_id": "F-5a85937de0",
+      "instance_id": "run-18d18234f15c:F-5a85937de0",
+      "rule_id": "INV-01",
+      "rule_version": "2.0.0",
+      "code": "INVENTORY_MISMATCH",
+      "title": "Inventory mismatch for mcp-invest (configured/source_defined)",
+      "component_refs": [],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "hypothesis",
+      "severity": null,
+      "potential_severity": "MEDIUM",
+      "remediation_priority": "P1",
+      "claim_refs": [
+        "CL-INV-01-mcp-invest-configured/source_defined",
+        "CL-INV-01-mcp-invest-configured/policy_authorized"
+      ],
+      "evidence_refs": [
+        "E-c54d75536d",
+        "E-2ac7d9bb5b",
+        "E-a839e18a39",
+        "E-ec48dbee28",
+        "E-6a8e761a06"
+      ],
+      "limitations": [
+        "a mismatch is not automatically a hidden tool; reasons may be legitimate"
+      ],
+      "closure_criterion": "all inventory sources agree for the same server identity, build, role and time, or differences are explained",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "inventory"
+      ]
+    },
+    {
+      "stable_id": "F-5ff05000e5",
+      "instance_id": "run-18d18234f15c:F-5ff05000e5",
+      "rule_id": "MEM-10",
+      "rule_version": "2.0.0",
+      "code": "RETENTION_UNDEFINED_OR_EXCEEDED",
+      "title": "Retention for memory type user_fact is undefined or exceeds policy",
+      "component_refs": [],
+      "boundary_refs": [],
+      "scope": {
+        "memory_type": "user_fact"
+      },
+      "verification_status": "static_supported",
+      "severity": "MEDIUM",
+      "potential_severity": null,
+      "remediation_priority": "P2",
+      "claim_refs": [
+        "CL-MEM-10-user_fact"
+      ],
+      "evidence_refs": [
+        "E-2e56c59cee"
+      ],
+      "limitations": [
+        "stage D: maintenance events are on the roadmap"
+      ],
+      "closure_criterion": "each memory type has a retention policy in config and a cleanup mechanism with maintenance events",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-60668b9ae2",
+      "instance_id": "run-18d18234f15c:F-60668b9ae2",
+      "rule_id": "MEM-10",
+      "rule_version": "2.0.0",
+      "code": "RETENTION_UNDEFINED_OR_EXCEEDED",
+      "title": "Retention for memory type shared_policy is undefined or exceeds policy",
+      "component_refs": [],
+      "boundary_refs": [],
+      "scope": {
+        "memory_type": "shared_policy"
+      },
+      "verification_status": "static_supported",
+      "severity": "MEDIUM",
+      "potential_severity": null,
+      "remediation_priority": "P2",
+      "claim_refs": [
+        "CL-MEM-10-shared_policy"
+      ],
+      "evidence_refs": [
+        "E-f497653645"
+      ],
+      "limitations": [
+        "stage D: maintenance events are on the roadmap"
+      ],
+      "closure_criterion": "each memory type has a retention policy in config and a cleanup mechanism with maintenance events",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-665097ecae",
+      "instance_id": "run-18d18234f15c:F-665097ecae",
+      "rule_id": "TOOL-05",
+      "rule_version": "",
+      "code": "AUTHORIZATION_STEERING",
+      "title": "Parameter description steers the model to pass an arbitrary identifier (IDOR / broken access control)",
+      "component_refs": [
+        "server:mcp-invest"
+      ],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "hypothesis",
+      "severity": null,
+      "potential_severity": "HIGH",
+      "remediation_priority": null,
+      "claim_refs": [],
+      "evidence_refs": [
+        "E-570d9592d1"
+      ],
+      "limitations": [
+        "text heuristic: the signal is a hypothesis, not proof of compromise or of a right to change the server"
+      ],
+      "closure_criterion": "the fragment is removed or justified by the definition owner",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "definition"
+      ]
+    },
+    {
+      "stable_id": "F-864c303962",
+      "instance_id": "run-18d18234f15c:F-864c303962",
+      "rule_id": "MEM-06",
+      "rule_version": "2.0.0",
+      "code": "AUTOMATIC_TRUST_ELEVATION",
+      "title": "Shared publication without an approval transition",
+      "component_refs": [
+        "session-finalizer"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "flow": "F-persist-policy"
+      },
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-MEM-06-F-persist-policy"
+      ],
+      "evidence_refs": [
+        "E-c1e3adb492"
+      ],
+      "limitations": [],
+      "closure_criterion": "shared records carry review_state=approved with an approval_ref from a trusted publisher",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-95ab9aadae",
+      "instance_id": "run-18d18234f15c:F-95ab9aadae",
+      "rule_id": "AUTH-04",
+      "rule_version": "2.0.0",
+      "code": "TOKEN_VALIDATION_INCOMPLETE",
+      "title": "mcp-invest: token validation skips audience",
+      "component_refs": [
+        "mcp-invest"
+      ],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P1",
+      "claim_refs": [
+        "CL-AUTH-04-mcp-invest"
+      ],
+      "evidence_refs": [
+        "E-77f12a2234"
+      ],
+      "limitations": [],
+      "closure_criterion": "each receiving service rejects tokens with a foreign issuer/audience (fixture)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-96ac946f83",
+      "instance_id": "run-18d18234f15c:F-96ac946f83",
+      "rule_id": "AUTH-03",
+      "rule_version": "2.0.0",
+      "code": "CLIENT_CAN_WEAKEN_SERVER_POLICY",
+      "title": "Client parameters weaken mandatory server checks at agent-api",
+      "component_refs": [
+        "agent-api"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "component": "agent-api"
+      },
+      "verification_status": "static_supported",
+      "severity": "CRITICAL",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-AUTH-03-agent-api"
+      ],
+      "evidence_refs": [
+        "E-4a9897a36f",
+        "E-ff0f6dafef"
+      ],
+      "limitations": [],
+      "closure_criterion": "the server defines mandatory checks; a client mode parameter cannot relax them (fixture)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-974158ed15",
+      "instance_id": "run-18d18234f15c:F-974158ed15",
+      "rule_id": "AUTH-02",
+      "rule_version": "2.0.0",
+      "code": "RESOURCE_AUTHORIZATION_MISSING",
+      "title": "Resource authorization not enforced at invest-server",
+      "component_refs": [
+        "invest-server"
+      ],
+      "boundary_refs": [
+        "B-mcp-backend"
+      ],
+      "scope": {
+        "transition": "T3-mcp-backend"
+      },
+      "verification_status": "static_supported",
+      "severity": "CRITICAL",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-AUTH-02-T3-mcp-backend"
+      ],
+      "evidence_refs": [
+        "E-60b6143c8c"
+      ],
+      "limitations": [
+        "an entry-API refusal does not cover a backend the request never reached"
+      ],
+      "closure_criterion": "each receiving service decides authorization for the concrete object; foreign-object fixture is refused at this hop",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-a23c2cf23d",
+      "instance_id": "run-18d18234f15c:F-a23c2cf23d",
+      "rule_id": "INFRA-02",
+      "rule_version": "2.0.0",
+      "code": "STORAGE_PUBLISHED_ON_HOST",
+      "title": "mongo storage port published on the host",
+      "component_refs": [
+        "mongo"
+      ],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-INFRA-02-mongo"
+      ],
+      "evidence_refs": [
+        "E-13933d746a"
+      ],
+      "limitations": [
+        "reachability from specific external zones not established"
+      ],
+      "closure_criterion": "storage ports are not published; reachability from external zones is refused (observed per zone)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "infrastructure"
+      ]
+    },
+    {
+      "stable_id": "F-a9b2c57941",
+      "instance_id": "run-18d18234f15c:F-a9b2c57941",
+      "rule_id": "MEM-05",
+      "rule_version": "2.0.0",
+      "code": "PROVENANCE_LOST",
+      "title": "Derived memory loses its parents",
+      "component_refs": [
+        "session-finalizer"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "flow": "F-derive-facts"
+      },
+      "verification_status": "static_supported",
+      "severity": "MEDIUM",
+      "potential_severity": null,
+      "remediation_priority": "P1",
+      "claim_refs": [
+        "CL-MEM-05-F-derive-facts"
+      ],
+      "evidence_refs": [
+        "E-c1e3adb492"
+      ],
+      "limitations": [],
+      "closure_criterion": "every derived record carries source_event_refs / derived_from or an explicit lineage_completeness=lost",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-b10c949fb6",
+      "instance_id": "run-18d18234f15c:F-b10c949fb6",
+      "rule_id": "AUTH-04",
+      "rule_version": "2.0.0",
+      "code": "TOKEN_VALIDATION_INCOMPLETE",
+      "title": "invest-server: token validation skips audience",
+      "component_refs": [
+        "invest-server"
+      ],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P1",
+      "claim_refs": [
+        "CL-AUTH-04-invest-server"
+      ],
+      "evidence_refs": [
+        "E-31a00dd9fb"
+      ],
+      "limitations": [],
+      "closure_criterion": "each receiving service rejects tokens with a foreign issuer/audience (fixture)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-b366e3d23f",
+      "instance_id": "run-18d18234f15c:F-b366e3d23f",
+      "rule_id": "TOOL-02",
+      "rule_version": "2.0.0",
+      "code": "CONTRACT_MISMATCH",
+      "title": "Operation contract mismatch: agent-native/duckduckgo_search",
+      "component_refs": [],
+      "boundary_refs": [],
+      "scope": {},
+      "verification_status": "static_supported",
+      "severity": "MEDIUM",
+      "potential_severity": null,
+      "remediation_priority": "P1",
+      "claim_refs": [
+        "CL-TOOL-02-agent-native/duckduckgo_search"
+      ],
+      "evidence_refs": [
+        "E-ae129c839f"
+      ],
+      "limitations": [],
+      "closure_criterion": "configured, source-defined and live schemas agree for the tool (names, required, types)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "tools"
+      ]
+    },
+    {
+      "stable_id": "F-be38f8e6b7",
+      "instance_id": "run-18d18234f15c:F-be38f8e6b7",
+      "rule_id": "TOOL-04",
+      "rule_version": "2.0.0",
+      "code": "TOOL_RESULT_REACHES_POLICY",
+      "title": "Tool results can influence shared memory / policy",
+      "component_refs": [],
+      "boundary_refs": [],
+      "scope": {
+        "chain": "tool-result-to-policy"
+      },
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-TOOL-04-tool-result-to-policy"
+      ],
+      "evidence_refs": [
+        "E-2c64becd47",
+        "E-c1e3adb492",
+        "E-e8da8f9c04"
+      ],
+      "limitations": [],
+      "closure_criterion": "no derivation path from tool results to shared policy without an authorized review",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "tools"
+      ]
+    },
+    {
+      "stable_id": "F-c2c7b528ad",
+      "instance_id": "run-18d18234f15c:F-c2c7b528ad",
+      "rule_id": "EGRESS-01",
+      "rule_version": "2.0.0",
+      "code": "EGRESS_DATA_CATEGORY_UNCONTROLLED",
+      "title": "Uncontrolled transmission to duckduckgo",
+      "component_refs": [
+        "agent"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "flow": "F-search-transmit"
+      },
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P1",
+      "claim_refs": [
+        "CL-EGRESS-01-F-search-transmit"
+      ],
+      "evidence_refs": [
+        "E-dd35524719"
+      ],
+      "limitations": [],
+      "closure_criterion": "egress policy is enforced for destination and category; fixture observes the actual payload locally",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "egress"
+      ]
+    },
+    {
+      "stable_id": "F-c3ac7ea94b",
+      "instance_id": "run-18d18234f15c:F-c3ac7ea94b",
+      "rule_id": "AUTH-02",
+      "rule_version": "2.0.0",
+      "code": "RESOURCE_AUTHORIZATION_MISSING",
+      "title": "Resource authorization not enforced at invest-server",
+      "component_refs": [
+        "invest-server"
+      ],
+      "boundary_refs": [
+        "B-mcp-backend"
+      ],
+      "scope": {
+        "transition": "T3b-account-owner"
+      },
+      "verification_status": "static_supported",
+      "severity": "CRITICAL",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-AUTH-02-T3b-account-owner"
+      ],
+      "evidence_refs": [
+        "E-7e61565950"
+      ],
+      "limitations": [
+        "an entry-API refusal does not cover a backend the request never reached"
+      ],
+      "closure_criterion": "each receiving service decides authorization for the concrete object; foreign-object fixture is refused at this hop",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-c9b97e6334",
+      "instance_id": "run-18d18234f15c:F-c9b97e6334",
+      "rule_id": "AUTH-05",
+      "rule_version": "2.0.0",
+      "code": "UNBOUNDED_DELEGATION",
+      "title": "Service credentials bypass end-user restrictions at agent",
+      "component_refs": [
+        "agent"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "transition": "T4-agent-token"
+      },
+      "verification_status": "static_supported",
+      "severity": "CRITICAL",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-AUTH-05-T4-agent-token"
+      ],
+      "evidence_refs": [
+        "E-a2ff9df05e"
+      ],
+      "limitations": [],
+      "closure_criterion": "downstream calls carry the end-user binding; a service token alone is refused for user resources",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-cc44e3d173",
+      "instance_id": "run-18d18234f15c:F-cc44e3d173",
+      "rule_id": "AUTH-03",
+      "rule_version": "2.0.0",
+      "code": "CLIENT_CAN_WEAKEN_SERVER_POLICY",
+      "title": "Client parameters weaken mandatory server checks at mcp-invest",
+      "component_refs": [
+        "mcp-invest"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "component": "mcp-invest"
+      },
+      "verification_status": "static_supported",
+      "severity": "CRITICAL",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-AUTH-03-mcp-invest"
+      ],
+      "evidence_refs": [
+        "E-0a803c01e7",
+        "E-9501ca2be1"
+      ],
+      "limitations": [],
+      "closure_criterion": "the server defines mandatory checks; a client mode parameter cannot relax them (fixture)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "identity"
+      ]
+    },
+    {
+      "stable_id": "F-d4c5f187ec",
+      "instance_id": "run-18d18234f15c:F-d4c5f187ec",
+      "rule_id": "INFRA-01",
+      "rule_version": "2.0.0",
+      "code": "EXCESSIVE_STORE_RIGHTS",
+      "title": "agent-api holds rights on mongo:agent_policy_memories beyond policy",
+      "component_refs": [
+        "agent-api",
+        "mongo:agent_policy_memories"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "flow": "F-store-access-policy"
+      },
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-INFRA-01-F-store-access-policy"
+      ],
+      "evidence_refs": [
+        "E-a5ec992c02"
+      ],
+      "limitations": [],
+      "closure_criterion": "service rights on memory stores match policy; publication is a separate credential",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "infrastructure"
+      ]
+    },
+    {
+      "stable_id": "F-eb603c8b4a",
+      "instance_id": "run-18d18234f15c:F-eb603c8b4a",
+      "rule_id": "MEM-03",
+      "rule_version": "2.0.0",
+      "code": "SCOPE_DECIDED_BY_UNTRUSTED_SOURCE",
+      "title": "Memory owner / audience decided by an untrusted source",
+      "component_refs": [
+        "session-finalizer"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "flow": "F-scope-from-llm"
+      },
+      "verification_status": "static_supported",
+      "severity": "HIGH",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-MEM-03-F-scope-from-llm"
+      ],
+      "evidence_refs": [
+        "E-c1e3adb492"
+      ],
+      "limitations": [],
+      "closure_criterion": "proposed scope from model/external content is advisory only; the server decides",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-ef5eae79b2",
+      "instance_id": "run-18d18234f15c:F-ef5eae79b2",
+      "rule_id": "MEM-02",
+      "rule_version": "2.0.0",
+      "code": "USER_HANDLER_PUBLISHES_SHARED_POLICY",
+      "title": "User-session processing is linked to shared policy publication",
+      "component_refs": [
+        "session-finalizer",
+        "mongo:agent_policy_memories"
+      ],
+      "boundary_refs": [
+        "B-mem-publish"
+      ],
+      "scope": {
+        "flow": "F-persist-policy"
+      },
+      "verification_status": "static_supported",
+      "severity": "CRITICAL",
+      "potential_severity": null,
+      "remediation_priority": "P0",
+      "claim_refs": [
+        "CL-MEM-02-F-persist-policy"
+      ],
+      "evidence_refs": [
+        "E-c1e3adb492"
+      ],
+      "limitations": [
+        "DB rights of the running deployment not verified",
+        "passage of a concrete user text through the extraction step not verified",
+        "права БД работающего deployment не проверены",
+        "прохождение конкретного пользовательского текста через извлечение фактов не проверено"
+      ],
+      "closure_criterion": "user processing holds no publication permission for shared policy; publisher has a distinct principal",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-fd0eac557e",
+      "instance_id": "run-18d18234f15c:F-fd0eac557e",
+      "rule_id": "MEM-09",
+      "rule_version": "2.0.0",
+      "code": "BACKGROUND_JOB_CONSISTENCY",
+      "title": "Background job J-finalize lacks consistency guarantees",
+      "component_refs": [
+        "session-finalizer"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "job": "J-finalize"
+      },
+      "verification_status": "static_supported",
+      "severity": "MEDIUM",
+      "potential_severity": null,
+      "remediation_priority": "P2",
+      "claim_refs": [
+        "CL-MEM-09-J-finalize"
+      ],
+      "evidence_refs": [
+        "E-ef2a903aa2"
+      ],
+      "limitations": [
+        "stage D: runtime job events (job ids, parent ids) are on the roadmap"
+      ],
+      "closure_criterion": "retries, concurrent sessions and delayed jobs keep the original identity and skip cancelled data (fixture)",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    },
+    {
+      "stable_id": "F-ffdfd92481",
+      "instance_id": "run-18d18234f15c:F-ffdfd92481",
+      "rule_id": "MEM-05",
+      "rule_version": "2.0.0",
+      "code": "PROVENANCE_LOST",
+      "title": "Derived memory loses its parents",
+      "component_refs": [
+        "agent"
+      ],
+      "boundary_refs": [],
+      "scope": {
+        "flow": "F-answer-to-working"
+      },
+      "verification_status": "static_supported",
+      "severity": "MEDIUM",
+      "potential_severity": null,
+      "remediation_priority": "P1",
+      "claim_refs": [
+        "CL-MEM-05-F-answer-to-working"
+      ],
+      "evidence_refs": [
+        "E-e8da8f9c04"
+      ],
+      "limitations": [],
+      "closure_criterion": "every derived record carries source_event_refs / derived_from or an explicit lineage_completeness=lost",
+      "remediation_state": "open",
+      "disposition": null,
+      "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+      "sections": [
+        "memory"
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "rule_id": "AUTH-01",
+      "rule_version": "2.0.0",
+      "outcome": "PASS",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "AUTH-02",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-3d561de31c",
+        "F-974158ed15",
+        "F-c3ac7ea94b"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "AUTH-03",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-96ac946f83",
+        "F-cc44e3d173",
+        "F-485f6ad0df"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "AUTH-04",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-95ab9aadae",
+        "F-b10c949fb6",
+        "F-16e42e7d4e"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "AUTH-05",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-c9b97e6334"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "AUTH-06",
+      "rule_version": "2.0.0",
+      "outcome": "PASS",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "EGRESS-01",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-c2c7b528ad"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "EGRESS-02",
+      "rule_version": "2.0.0",
+      "outcome": "NOT_APPLICABLE",
+      "applicability": "not_applicable",
+      "execution_status": "skipped",
+      "finding_refs": [],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "INFRA-01",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-d4c5f187ec"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "INFRA-02",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-4cfa945006",
+        "F-a23c2cf23d"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "INFRA-03",
+      "rule_version": "2.0.0",
+      "outcome": "NOT_APPLICABLE",
+      "applicability": "not_applicable",
+      "execution_status": "skipped",
+      "finding_refs": [],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "INV-01",
+      "rule_version": "2.0.0",
+      "outcome": "INCONCLUSIVE",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-5a85937de0",
+        "F-5a85937de0"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "INV-02",
+      "rule_version": "2.0.0",
+      "outcome": "NOT_EVALUATED",
+      "applicability": "applicable",
+      "execution_status": "skipped",
+      "finding_refs": [],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-01",
+      "rule_version": "2.0.0",
+      "outcome": "PASS",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-02",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-ef5eae79b2"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-03",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-eb603c8b4a"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-04",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-066fafcc1b"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-05",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-a9b2c57941",
+        "F-ffdfd92481"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-06",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-2a34099aa7",
+        "F-864c303962"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-07",
+      "rule_version": "2.0.0",
+      "outcome": "PASS",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-08",
+      "rule_version": "2.0.0",
+      "outcome": "INCONCLUSIVE",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-3a09a63a4b"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-09",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-fd0eac557e"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "MEM-10",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-5ff05000e5",
+        "F-60668b9ae2"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "TOOL-01",
+      "rule_version": "2.0.0",
+      "outcome": "NOT_EVALUATED",
+      "applicability": "applicable",
+      "execution_status": "skipped",
+      "finding_refs": [],
+      "missing_sources": [
+        "baseline"
+      ],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "TOOL-02",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-b366e3d23f"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "TOOL-03",
+      "rule_version": "2.0.0",
+      "outcome": "PASS",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "TOOL-04",
+      "rule_version": "2.0.0",
+      "outcome": "FAIL",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-be38f8e6b7"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    },
+    {
+      "rule_id": "TOOL-05",
+      "rule_version": "2.0.0",
+      "outcome": "INCONCLUSIVE",
+      "applicability": "applicable",
+      "execution_status": "completed",
+      "finding_refs": [
+        "F-2d71e63939",
+        "F-665097ecae"
+      ],
+      "missing_sources": [],
+      "run_id": "run-18d18234f15c"
+    }
+  ],
+  "coverage": [
+    {
+      "metric": "inventory_completeness",
+      "numerator": 10,
+      "denominator": 15,
+      "denominator_source": "reference inventory (profile/policy)",
+      "method": "name matching per server",
+      "unknown": 0,
+      "gaps": [
+        "mcp-invest/margin_instrument_get_info",
+        "mcp-invest/dividend_calendar_list",
+        "mcp-invest/coupon_calendar_list",
+        "mcp-invest/bond_get_info",
+        "mcp-invest/emitent_get_static_info"
+      ],
+      "limitation": "the reference list may itself be partial",
+      "details": {},
+      "ratio": 0.6667,
+      "display": "10/15 (66.7%)"
+    },
+    {
+      "metric": "component_coverage",
+      "numerator": 9,
+      "denominator": 16,
+      "denominator_source": "components of manifest/profile/inventory",
+      "method": "component referenced by a PASS/FAIL control or a finding",
+      "unknown": 0,
+      "gaps": [
+        "server:agent-native",
+        "agent-native",
+        "mongo:semantic_memories",
+        "redis:working",
+        "postgres",
+        "keycloak",
+        "duckduckgo"
+      ],
+      "limitation": "does not show the depth of evaluation per component",
+      "details": {},
+      "ratio": 0.5625,
+      "display": "9/16 (56.2%)"
+    },
+    {
+      "metric": "mandatory_control_coverage",
+      "numerator": 21,
+      "denominator": 26,
+      "denominator_source": "required controls minus justified not-applicable",
+      "method": "PASS + FAIL / all",
+      "unknown": 5,
+      "gaps": [
+        "MEM-08:INCONCLUSIVE",
+        "TOOL-01:NOT_EVALUATED",
+        "TOOL-05:INCONCLUSIVE",
+        "INV-01:INCONCLUSIVE",
+        "INV-02:NOT_EVALUATED"
+      ],
+      "limitation": "INCONCLUSIVE, NOT_EVALUATED and unknown applicability stay in the denominator",
+      "details": {},
+      "ratio": 0.8077,
+      "display": "21/26 (80.8%)"
+    },
+    {
+      "metric": "mandatory_control_coverage_static",
+      "numerator": 21,
+      "denominator": 26,
+      "denominator_source": "same as above",
+      "method": "static methods only",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "static support shows code/config facts, not runtime behaviour",
+      "details": {},
+      "ratio": 0.8077,
+      "display": "21/26 (80.8%)"
+    },
+    {
+      "metric": "mandatory_control_coverage_runtime",
+      "numerator": 0,
+      "denominator": 26,
+      "denominator_source": "same as above",
+      "method": "observation / fixtures only",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "runtime support is bound to the observed principal, build and environment",
+      "details": {},
+      "ratio": 0.0,
+      "display": "0/26 (0.0%)"
+    },
+    {
+      "metric": "identity_coverage",
+      "numerator": 2,
+      "denominator": 4,
+      "denominator_source": "expected access relations in policy",
+      "method": "policy relations with at least one verified transition (operation + resource)",
+      "unknown": 0,
+      "gaps": [
+        "end_user:READ:market_data",
+        "end_user:READ:own memory"
+      ],
+      "limitation": "not replaced by the number of tokens used; a verified transition is a static fact",
+      "details": {},
+      "ratio": 0.5,
+      "display": "2/4 (50.0%)"
+    },
+    {
+      "metric": "memory_stage_W",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "applicable memory cases",
+      "method": "stage observed or not_observed with coverage",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "stages are never merged into one verified",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "memory_stage_R",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "applicable memory cases",
+      "method": "stage observed or not_observed with coverage",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "stages are never merged into one verified",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "memory_stage_C",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "applicable memory cases",
+      "method": "stage observed or not_observed with coverage",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "stages are never merged into one verified",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "memory_stage_B",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "applicable memory cases",
+      "method": "stage observed or not_observed with coverage",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "stages are never merged into one verified",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "boundary_coverage",
+      "numerator": 3,
+      "denominator": 5,
+      "denominator_source": "boundaries of the accepted model",
+      "method": "boundary reached by a PASS/FAIL evaluation",
+      "unknown": 0,
+      "gaps": [
+        "B-mem-publish",
+        "B-context"
+      ],
+      "limitation": "an unreached backend is not counted as evaluated",
+      "details": {},
+      "ratio": 0.6,
+      "display": "3/5 (60.0%)"
+    },
+    {
+      "metric": "execution_quality",
+      "numerator": 0,
+      "denominator": null,
+      "denominator_source": "control cases",
+      "method": "validly completed cases",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "errors are not excluded to make the report look complete",
+      "details": {
+        "errors": 0,
+        "timeouts": 0,
+        "skipped": 0
+      },
+      "ratio": null,
+      "display": "не определено"
+    },
+    {
+      "metric": "observation_quality",
+      "numerator": null,
+      "denominator": null,
+      "denominator_source": "no trace",
+      "method": "n/a",
+      "unknown": 0,
+      "gaps": [],
+      "limitation": "no runtime observation available",
+      "details": {},
+      "ratio": null,
+      "display": "не определено"
+    }
+  ],
+  "exporter": {
+    "status": "ok",
+    "errors": [],
+    "note": "exporter status is independent of the audit result"
+  }
+}

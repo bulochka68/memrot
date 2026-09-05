@@ -1,15 +1,26 @@
-"""MCP agent audit subsystem (pipeline phase P1: Audit / Inventory).
+"""Agent security audit subsystem (pipeline phase P1: Audit / Inventory).
 
-Three planes:
-  * capability  - discovery + classification + effective access (layers 1, 3)
-  * definition  - static analysis of tool descriptions / schemas (layer 2)
-  * behavioral  - active probes in an isolated sandbox only (layer 4)
+Version 2.0 widens the object of the audit from "MCP tools" to the life
+cycle of an agentic system: inventory and capabilities, definitions and
+context, identity and authorization, memory, observed behaviour and
+infrastructure.  MCP stays one of the supported interfaces.
 
-Every fact carries a provenance: ``declared`` (server self-report),
-``effective`` (derived from config / permissions) or ``verified``
-(confirmed by an active probe).  The verdict is built from
-effective + verified facts only.
+Four version numbers are kept apart on purpose (TZ §2, §18):
+
+* ``AUDIT_SCHEMA_VERSION`` - the JSON contract of the emitted report;
+* ``RULESET_VERSION``      - the catalogue of control requirements;
+* ``ENGINE_VERSION``       - this package (``__version__``);
+* ``DOC_VERSION``          - the architecture document the code implements.
+
+Every claim carries its own provenance, method, status, scope, confidence
+and limitations.  There is no global ``verified`` flag and no fixed
+confidence: the verdict is traceable to claims and evidence.
 """
 
-__version__ = "1.1.0"
-AUDIT_SCHEMA_VERSION = "1.1"
+__version__ = "2.0.0"
+ENGINE_VERSION = __version__
+AUDIT_SCHEMA = "agent-security-audit"
+AUDIT_SCHEMA_VERSION = "2.0"
+RULESET_VERSION = "2.0.0"
+DOC_VERSION = "2.0"
+LEGACY_SCHEMA_VERSIONS = ("1.0", "1.1")

@@ -1,0 +1,196 @@
+{
+  "schema": "deployment-snapshot",
+  "version": "1.0",
+  "captured_from": {
+    "path": "docker-compose.yml",
+    "repository": "bulochka68/aith_redteaming",
+    "branch": "bulochka68-with-stand",
+    "commit": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+    "method": "compose services with environment reduced to key names",
+    "captured_at": 1788610412.7054071
+  },
+  "note": "Environment values, secrets and volume contents are intentionally omitted; only key names are kept.",
+  "services": {
+    "redis": {
+      "image": "redis:7-alpine",
+      "build": null,
+      "ports": [
+        "6379:6379"
+      ],
+      "environment": [],
+      "depends_on": []
+    },
+    "mongo": {
+      "image": "mongo:7",
+      "build": null,
+      "ports": [
+        "27017:27017"
+      ],
+      "environment": [],
+      "depends_on": []
+    },
+    "postgres": {
+      "image": "postgres:16-alpine",
+      "build": null,
+      "ports": [],
+      "environment": [
+        "POSTGRES_DB",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_USER"
+      ],
+      "depends_on": []
+    },
+    "invest-server": {
+      "image": null,
+      "build": "./invest-server",
+      "ports": [
+        "8200:8000"
+      ],
+      "environment": [
+        "DATABASE_URL",
+        "INVEST_SERVER_AUTH_MODE",
+        "KEYCLOAK_ISSUER_URL",
+        "KEYCLOAK_URL"
+      ],
+      "depends_on": [
+        "keycloak",
+        "postgres"
+      ]
+    },
+    "mcp-invest": {
+      "image": null,
+      "build": "./mcp-invest",
+      "ports": [
+        "8100:8000"
+      ],
+      "environment": [
+        "INVEST_SERVER_URL",
+        "KEYCLOAK_ISSUER_URL",
+        "KEYCLOAK_URL",
+        "MCP_INVEST_AUTH_MODE",
+        "MCP_INVEST_SERVICE_CLIENT_ID",
+        "MCP_INVEST_SERVICE_CLIENT_SECRET"
+      ],
+      "depends_on": [
+        "invest-server",
+        "keycloak"
+      ]
+    },
+    "keycloak": {
+      "image": "quay.io/keycloak/keycloak:26.0",
+      "build": null,
+      "ports": [
+        "8180:8080",
+        "8443:8443"
+      ],
+      "environment": [
+        "KC_FEATURES",
+        "KC_HEALTH_ENABLED",
+        "KC_HOSTNAME",
+        "KC_HTTPS_CERTIFICATE_FILE",
+        "KC_HTTPS_CERTIFICATE_KEY_FILE",
+        "KEYCLOAK_ADMIN",
+        "KEYCLOAK_ADMIN_PASSWORD"
+      ],
+      "depends_on": [],
+      "command": [
+        "start-dev --import-realm"
+      ]
+    },
+    "agent-api": {
+      "image": null,
+      "build": ".",
+      "ports": [
+        "8600:8600"
+      ],
+      "environment": [
+        "AGENT_API_URL",
+        "KEYCLOAK_ISSUER_URL",
+        "KEYCLOAK_URL",
+        "MCP_INVEST_URL",
+        "MONGO_URI",
+        "REDIS_URL"
+      ],
+      "depends_on": [
+        "keycloak",
+        "mcp-invest",
+        "mongo",
+        "redis"
+      ],
+      "command": [
+        "uvicorn",
+        "app.api_server:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8600"
+      ]
+    },
+    "librechat": {
+      "image": "registry.librechat.ai/danny-avila/librechat-dev:latest",
+      "build": null,
+      "ports": [
+        "3080:3080"
+      ],
+      "environment": [
+        "ALLOW_SOCIAL_LOGIN",
+        "DOMAIN_CLIENT",
+        "DOMAIN_SERVER",
+        "HOST",
+        "MONGO_URI",
+        "NODE_TLS_REJECT_UNAUTHORIZED",
+        "OPENID_CALLBACK_URL",
+        "OPENID_CLIENT_ID",
+        "OPENID_CLIENT_SECRET",
+        "OPENID_ISSUER",
+        "OPENID_SCOPE",
+        "OPENID_SESSION_SECRET",
+        "OPENID_USE_END_SESSION_ENDPOINT",
+        "PORT",
+        "SCHEDULES_SINGLE_PROCESS"
+      ],
+      "depends_on": [
+        "agent-api",
+        "keycloak",
+        "mongo"
+      ]
+    },
+    "oauth2-proxy": {
+      "image": "quay.io/oauth2-proxy/oauth2-proxy:latest",
+      "build": null,
+      "ports": [
+        "8501:4180"
+      ],
+      "environment": [],
+      "depends_on": [
+        "agent-api",
+        "keycloak"
+      ],
+      "command": [
+        "--http-address=0.0.0.0:4180",
+        "--upstream=http://agent-api:8600",
+        "--provider=oidc",
+        "--client-id=streamlit-app",
+        "--client-secret=[REDACTED]",
+        "--redirect-url=http://localhost:8501/oauth2/callback",
+        "--oidc-issuer-url=https://localhost:8443/realms/genai-stand",
+        "--skip-oidc-discovery=true",
+        "--login-url=https://localhost:8443/realms/genai-stand/protocol/openid-connect/auth",
+        "--redeem-url=http://keycloak:8080/realms/genai-stand/protocol/openid-connect/token",
+        "--oidc-jwks-url=http://keycloak:8080/realms/genai-stand/protocol/openid-connect/certs",
+        "--pass-access-token=true",
+        "--set-xauthrequest=true",
+        "--cookie-refresh=60s",
+        "--whitelist-domain=localhost:8443",
+        "--cookie-secure=false",
+        "--cookie-secret=[REDACTED]",
+        "--email-domain=*",
+        "--skip-provider-button=true"
+      ]
+    }
+  },
+  "volumes": [
+    "invest_postgres_data",
+    "mongo_data"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "2.0",
+  "target": {
+    "id": "genai-invest-stand",
+    "build_ref": "912edfb1a3891f07a6986b15ca8b6f9188800709",
+    "environment": "local-compose-stand (branch bulochka68-with-stand)",
+    "boundaries": ["agent-api", "agent", "session-finalizer", "memory-store", "mcp-invest", "invest-server", "redis", "mongo", "postgres", "keycloak"],
+    "snapshot_note": "Все адаптеры этого примера читают заранее снятые снимки; стенд, MCP-процессы и модель не запускались."
+  },
+  "inspection": {
+    "access_profile": "white_box",
+    "mode": "offline",
+    "profile_ref": "../profiles/genai_invest_stand.json",
+    "business_policy_ref": "policy",
+    "inventory_manifest_ref": "mcp-config"
+  },
+  "adapters": [
+    {"id": "mcp-config", "kind": "mcp_inventory",
+     "binding": {"path": "genai_invest_stand.config.json", "live": false,
+                 "capture": {"method": "manual transcription of the client-side MCP config (9 tools) as captured for the v1.1 example", "captured_at": "2026-09-04", "identity": "n/a (no handshake)"}}},
+    {"id": "source", "kind": "source_snapshot",
+     "binding": {"path": "genai_invest_stand.source_facts.json"}},
+    {"id": "policy", "kind": "policy_snapshot",
+     "binding": {"path": "genai_invest_stand.policy.json"}},
+    {"id": "deployment", "kind": "deployment",
+     "binding": {"path": "genai_invest_stand.deployment.json"}}
+  ],
+  "reporting": {"formats": ["json", "markdown"], "evidence_policy_ref": "redacted-evidence-v1"},
+  "reproducibility": {
+    "model_versions": {"research_model": "RESEARCH_MODEL env (default openai:gpt-4o-mini)", "summarization_model": "SUMMARIZATION_MODEL env (default openai:gpt-4o-mini)"},
+    "prompt_versions": {"orchestrator_prompts": "app/orchestrator/prompts.py@912edfb1"},
+    "note": "generation parameters of the stand were not captured; no runtime validation was performed"
+  }
+}

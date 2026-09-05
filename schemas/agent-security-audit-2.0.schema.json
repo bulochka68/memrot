@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aith-redteaming/schemas/agent-security-audit-2.0.schema.json",
+  "title": "agent-security-audit v2.0",
+  "description": "Canonical audit document of an agentic system. Every statement is a claim with provenance, method, status, scope, confidence and limitations. Semantic (referential) validation is defined by mcp_audit.validation.",
+  "type": "object",
+  "required": ["schema", "schema_version", "meta", "target", "adapters", "plan", "inventory", "components", "principals",
+               "capabilities", "memory_stores", "boundaries", "edges", "definition_analysis", "evidence", "claims",
+               "control_results", "findings", "tests", "memory_cases", "coverage", "trifecta", "summary", "verdict",
+               "downstream", "drift", "import_history", "limitations"],
+  "properties": {
+    "schema": {"const": "agent-security-audit"},
+    "schema_version": {"const": "2.0"},
+    "meta": {
+      "type": "object",
+      "required": ["schema_version", "engine_version", "ruleset_version", "mode", "access_profile", "run_id", "runtime_validation_performed", "status"],
+      "properties": {
+        "mode": {"enum": ["offline", "live_inventory", "trace_review", "controlled_validation", "baseline_comparison"]},
+        "access_profile": {"enum": ["black_box", "grey_box", "white_box"]},
+        "runtime_validation_performed": {"type": "boolean"},
+        "status": {"enum": ["running", "completed", "partial", "failed"]}
+      }
+    },
+    "target": {"type": "object", "properties": {"id": {"type": ["string", "null"]}, "build_ref": {"type": ["string", "null"]}, "environment": {"type": ["string", "null"]}}},
+    "adapters": {"type": "array", "items": {"$ref": "#/$defs/adapter_status"}},
+    "plan": {"type": "object"},
+    "inventory": {"type": "object", "required": ["servers", "agent_context", "reconciliation"]},
+    "components": {"type": "array", "items": {"type": "object", "required": ["component_id", "type"]}},
+    "principals": {"type": "array", "items": {"type": "object", "required": ["principal_id", "type", "identity_source"]}},
+    "capabilities": {"type": "array"},
+    "memory_stores": {"type": "array"},
+    "boundaries": {"type": "array", "items": {"type": "object", "required": ["boundary_id", "from_ref", "to_ref"]}},
+    "edges": {"type": "array", "items": {"type": "object", "required": ["edge_id", "from_ref", "to_ref", "kind", "state"],
+              "properties": {"state": {"$ref": "#/$defs/path_state"}}}},
+    "definition_analysis": {"type": "object", "required": ["finding_refs", "hash_baseline", "collisions"]},
+    "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+    "claims": {"type": "array", "items": {"$ref": "#/$defs/claim"}},
+    "control_results": {"type": "array", "items": {"$ref": "#/$defs/control_result"}},
+    "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+    "tests": {"type": "array", "items": {"$ref": "#/$defs/control_case"}},
+    "memory_cases": {"type": "array"},
+    "coverage": {"type": "array", "items": {"$ref": "#/$defs/coverage_metric"}},
+    "trifecta": {"type": "object", "properties": {"state": {"$ref": "#/$defs/path_state"}}},
+    "summary": {"type": "object"},
+    "verdict": {"$ref": "#/$defs/verdict"},
+    "downstream": {"type": "object"},
+    "drift": {"type": "object"},
+    "import_history": {"type": "object"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "source_type": {"enum": ["config", "definition", "source_code", "policy_snapshot", "deployment_snapshot", "memory_snapshot", "runtime_trace", "fixture_observation", "baseline", "imported"]},
+    "method": {"enum": ["parsing", "static_analysis", "policy_inspection", "observation", "controlled_validation", "import"]},
+    "claim_status": {"enum": ["hypothesis", "static_supported", "runtime_supported", "contradicted", "inconclusive"]},
+    "confidence": {"enum": ["low", "medium", "high", "unknown"]},
+    "control_outcome": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "NOT_EVALUATED", "NOT_APPLICABLE"]},
+    "execution_status": {"enum": ["completed", "error", "timeout", "skipped"]},
+    "applicability": {"enum": ["applicable", "not_applicable", "unknown"]},
+    "stage_observation": {"enum": ["observed", "not_observed", "unknown", "not_evaluated"]},
+    "path_state": {"enum": ["capability_combination", "static_path_supported", "runtime_path_observed", "control_violation_observed", "unknown"]},
+    "severity": {"enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+    "adapter_status": {
+      "type": "object",
+      "required": ["adapter_id", "kind", "adapter_version", "status", "supported", "unsupported", "reasons"],
+      "properties": {"status": {"enum": ["available", "unavailable", "partial", "stale", "skipped"]}}
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["evidence_id", "source_type", "method", "locator", "limitations"],
+      "properties": {"evidence_id": {"type": "string", "pattern": "^E-[0-9a-f]{10}$"}, "source_type": {"$ref": "#/$defs/source_type"},
+                     "method": {"$ref": "#/$defs/method"}, "locator": {"type": "object"}, "digest": {"type": ["string", "null"]},
+                     "limitations": {"type": "array", "items": {"type": "string"}}}
+    },
+    "claim": {
+      "type": "object",
+      "required": ["claim_id", "statement", "claim_status", "evidence_refs", "scope", "confidence", "limitations"],
+      "properties": {"claim_status": {"$ref": "#/$defs/claim_status"}, "confidence": {"$ref": "#/$defs/confidence"},
+                     "evidence_refs": {"type": "array", "items": {"type": "string"}}}
+    },
+    "control_result": {
+      "type": "object",
+      "required": ["rule_id", "rule_version", "applicability", "execution_status", "control_outcome", "expected_invariant",
+                   "evaluated_boundary_refs", "claim_refs", "evidence_refs", "finding_refs", "limitations", "missing_sources"],
+      "properties": {"applicability": {"$ref": "#/$defs/applicability"}, "execution_status": {"$ref": "#/$defs/execution_status"},
+                     "control_outcome": {"$ref": "#/$defs/control_outcome"}}
+    },
+    "finding": {
+      "type": "object",
+      "required": ["finding_id", "instance_id", "code", "rule_id", "rule_version", "title", "root_cause", "component_refs", "boundary_refs",
+                   "scope", "requirement", "preconditions", "expected_invariant", "claim_refs", "evidence_refs", "verification_status",
+                   "observed_effect", "potential_effect", "severity", "potential_severity", "severity_rationale", "remediation",
+                   "remediation_owner", "remediation_priority", "closure_criterion", "limitations", "unconfirmed", "related_findings",
+                   "first_seen", "last_seen", "remediation_state", "reassessment", "memory_stages"],
+      "properties": {"finding_id": {"type": "string", "pattern": "^F-[0-9a-f]{10}$"}, "verification_status": {"$ref": "#/$defs/claim_status"},
+                     "severity": {"anyOf": [{"$ref": "#/$defs/severity"}, {"type": "null"}]},
+                     "potential_severity": {"anyOf": [{"$ref": "#/$defs/severity"}, {"type": "null"}]},
+                     "memory_stages": {"type": "object", "additionalProperties": {"$ref": "#/$defs/stage_observation"}}}
+    },
+    "control_case": {
+      "type": "object",
+      "required": ["id", "server", "expected", "execution_status", "control_outcome", "error_class", "observed_effect", "limitations"],
+      "properties": {"expected": {"enum": ["allowed", "denied"]}, "execution_status": {"$ref": "#/$defs/execution_status"},
+                     "control_outcome": {"$ref": "#/$defs/control_outcome"}}
+    },
+    "coverage_metric": {
+      "type": "object",
+      "required": ["metric", "numerator", "denominator", "denominator_source", "method", "unknown", "gaps", "limitation", "ratio", "display"],
+      "properties": {"numerator": {"type": ["integer", "null"]}, "denominator": {"type": ["integer", "null"]}, "ratio": {"type": ["number", "null"]}}
+    },
+    "verdict": {
+      "type": "object",
+      "required": ["assessment_state", "security_conclusion", "basis", "limitations"],
+      "properties": {"assessment_state": {"enum": ["complete_for_scope", "partial", "not_assessed"]},
+                     "security_conclusion": {"enum": ["findings_present", "no_violations_observed", "undetermined"]},
+                     "basis": {"type": "array", "items": {"type": "string"}}}
+    }
+  }
+}

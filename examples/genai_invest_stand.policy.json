@@ -1,0 +1,68 @@
+{
+  "schema": "access-policy",
+  "policy_id": "genai-invest-stand-expected",
+  "version": "1.0.0",
+  "owner": "stand security team (illustrative expectation for the audit example)",
+  "note": "Ожидаемая политика доступа и памяти стенда. Это декларация ожиданий, по которой аудитор оценивает контроли; она не доказывает исполнение.",
+  "principals": [
+    {"id": "end_user", "type": "end_user", "identity_source": "authentication", "allowed_scope": {"resources": "own client data (cus) and own accounts"}},
+    {"id": "agent-service", "type": "service_account", "identity_source": "config", "allowed_scope": {"resources": "market data; client data only with a subject-bound token"}},
+    {"id": "mcp-invest-service", "type": "service_account", "identity_source": "config", "allowed_scope": {"resources": "backend calls only with the end-user binding forwarded"}},
+    {"id": "session-finalizer", "type": "background_worker", "identity_source": "config", "allowed_scope": {"memory": "personal memory of the finalized session's user"}},
+    {"id": "policy-admin", "type": "policy_publisher", "identity_source": "authentication", "allowed_scope": {"memory": "shared policy publication after review"}}
+  ],
+  "access_rules": [
+    {"subject": "end_user", "operation": "READ", "resource": "client_data(cus)", "condition": "resource.cus == subject.cus", "enforcement": ["mcp-invest", "invest-server"]},
+    {"subject": "end_user", "operation": "READ", "resource": "account_data(account_id)", "condition": "account.owner_cus == subject.cus", "enforcement": ["mcp-invest", "invest-server"]},
+    {"subject": "end_user", "operation": "READ", "resource": "market_data", "condition": "none", "enforcement": ["mcp-invest"]},
+    {"subject": "end_user", "operation": "READ", "resource": "own memory", "condition": "record.subject == subject", "enforcement": ["memory-store"]}
+  ],
+  "boundaries": [
+    {"id": "B-user-api", "from": "end_user", "to": "agent-api", "rule": "principal established by authentication only", "enforcement_point": "agent-api"},
+    {"id": "B-agent-mcp", "from": "agent", "to": "mcp-invest", "rule": "subject -> object authorization for every call", "enforcement_point": "mcp-invest",
+     "delegation": "subject-bound token (token exchange)"},
+    {"id": "B-mcp-backend", "from": "mcp-invest", "to": "invest-server", "rule": "subject -> object authorization for every call", "enforcement_point": "invest-server",
+     "delegation": "end-user binding forwarded"},
+    {"id": "B-mem-publish", "from": "session-finalizer", "to": "mongo:agent_policy_memories", "rule": "only policy-admin publishes shared policy", "enforcement_point": "application + DB rights"},
+    {"id": "B-context", "from": "memory-store", "to": "agent", "rule": "authority marking per context block", "enforcement_point": "MemoryStore.build_context"}
+  ],
+  "memory_policy": {
+    "scope_decision_authority": "server",
+    "memory_types": [
+      {"type": "working", "audience": "session", "authority": "data", "allowed_writers": ["agent"], "retention": {"ttl_seconds": 86400}},
+      {"type": "dialog", "audience": "user", "authority": "data", "allowed_writers": ["session-finalizer"], "retention": {"ttl_days": 365}},
+      {"type": "episode", "audience": "user", "authority": "data", "derived": true, "allowed_writers": ["session-finalizer"], "retention": {"ttl_days": 365}},
+      {"type": "user_fact", "audience": "user", "authority": "data", "derived": true, "allowed_writers": ["session-finalizer"], "retention": {"ttl_days": 365}},
+      {"type": "shared_policy", "audience": "shared", "authority": "policy", "derived": true, "trusted_publishers": ["policy-admin"],
+       "allowed_writers": ["policy-admin"], "review_required": true, "retention": {"ttl_days": 90}}
+    ],
+    "allowed_sharing": [],
+    "revocation": {"propagate_to_derived": true, "max_delay_seconds": 3600}
+  },
+  "authentication": {
+    "agent-api": {"scheme": "api_key"},
+    "agent-api-sso": {"scheme": "jwt", "expected_issuer": "https://localhost:8443/realms/genai-stand", "expected_audience": "streamlit-app"},
+    "mcp-invest": {"scheme": "jwt", "expected_issuer": "https://localhost:8443/realms/genai-stand", "expected_audience": "mcp-invest"},
+    "invest-server": {"scheme": "jwt", "expected_issuer": "https://localhost:8443/realms/genai-stand", "expected_audience": "invest-server"}
+  },
+  "mandatory_server_checks": ["resource_authorization", "token_audience", "subject_bound_delegation"],
+  "service_rights": {
+    "agent-api": {"mongo:agent_policy_memories": ["read"], "mongo:semantic_memories": ["read", "write"], "redis:working": ["read", "write"]},
+    "session-finalizer": {"mongo:agent_policy_memories": [], "mongo:semantic_memories": ["read", "write"]},
+    "policy-admin": {"mongo:agent_policy_memories": ["read", "write", "publish"]}
+  },
+  "network": {"storage_publication": "forbidden", "note": "storage ports must not be published on the host; access only from the service network"},
+  "egress": {
+    "allowed_destinations": [
+      {"id": "duckduckgo", "categories_allowed": ["public_query"], "categories_forbidden": ["client_identifier", "portfolio_data", "account_data"]}
+    ],
+    "controls_required": ["category_filter"]
+  },
+  "authorized_tools": {
+    "mcp-invest": ["instruments_search", "portfolio_get_positions_valuation", "portfolio_presence_get", "register_tax_get",
+                   "client_operation_history_list", "margin_instruments_list", "margin_instrument_get_info", "client_training_list",
+                   "dividend_calendar_list", "coupon_calendar_list", "bond_get_info", "emitent_get_static_info",
+                   "fin_instrument_prices_get", "ideas_list"],
+    "agent-native": ["duckduckgo_search"]
+  }
+}

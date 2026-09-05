@@ -1,0 +1,28 @@
+{
+  "schema": "control-fixtures",
+  "isolation": {"data": "synthetic tmp root", "network": "no network in the mock server", "permissions": "unprivileged test process", "attested_by": "pytest fixture"},
+  "cases": [
+    {"id": "FS-WRITE-INSIDE", "name": "write_project_file", "server": "filesystem", "tool": "write_file",
+     "arguments": {"path": "{root}/{canary}.txt", "content": "{canary}"}, "expected": "allowed",
+     "expected_invariant": "an allowed write inside the root succeeds", "effect_check": {"kind": "file_exists", "path": "{root}/{canary}.txt", "needle": "{canary}"}},
+    {"id": "FS-TRAVERSAL", "name": "path_traversal", "server": "filesystem", "tool": "write_file", "rule_id": "AUTH-02", "boundary_ref": "fs-root",
+     "arguments": {"path": "{root}/../{canary}-outside.txt", "content": "{canary}"}, "expected": "denied",
+     "expected_invariant": "a write outside the allowed root is refused and leaves no file", "effect_check": {"kind": "file_absent", "path": "{root}/../{canary}-outside.txt"}},
+    {"id": "FS-READ-INSIDE", "name": "read_project_file", "server": "filesystem", "tool": "read_file",
+     "arguments": {"path": "{root}/{canary}.txt"}, "expected": "allowed", "expected_invariant": "an allowed read returns the canary",
+     "effect_check": {"kind": "response_contains", "needle": "{canary}"}},
+    {"id": "FS-READ-SECRET", "name": "read_secret_traversal", "server": "filesystem", "tool": "read_file", "rule_id": "AUTH-02", "boundary_ref": "fs-root",
+     "arguments": {"path": "/etc/passwd"}, "expected": "denied", "expected_invariant": "reading /etc/passwd is refused",
+     "effect_check": {"kind": "response_not_contains", "needle": "root:"}},
+    {"id": "FS-STALE-SCHEMA", "name": "stale_schema_case", "server": "filesystem", "tool": "write_file", "rule_id": "AUTH-02", "boundary_ref": "fs-root",
+     "arguments": {"filepath": "/etc/x", "data": "x"}, "expected": "denied", "expected_invariant": "case written against an old schema must not become PASS",
+     "effect_check": {"kind": "none"}},
+    {"id": "FS-UNKNOWN-TOOL", "name": "unknown_tool_case", "server": "filesystem", "tool": "delete_file", "rule_id": "AUTH-02", "boundary_ref": "fs-root",
+     "arguments": {"path": "/etc/x"}, "expected": "denied", "expected_invariant": "a tool absent from the catalogue yields INCONCLUSIVE", "effect_check": {"kind": "none"}},
+    {"id": "FS-TIMEOUT", "name": "timeout_case", "server": "filesystem", "tool": "read_file", "rule_id": "AUTH-02", "boundary_ref": "fs-root",
+     "arguments": {"path": "{root}/slow.txt"}, "expected": "denied", "expected_invariant": "a timeout is INCONCLUSIVE, never a violation", "effect_check": {"kind": "none"}},
+    {"id": "FS-ADMIN-PREPARED", "name": "admin_prepared_read", "server": "filesystem", "tool": "read_file", "prepared_by": "fixture_admin",
+     "arguments": {"path": "{root}/{canary}.txt"}, "expected": "allowed", "expected_invariant": "read of a record prepared by the fixture admin",
+     "effect_check": {"kind": "response_contains", "needle": "{canary}"}}
+  ]
+}

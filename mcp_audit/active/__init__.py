@@ -1,12 +1,15 @@
-"""Layer 4 - Active Verification (behavioral plane).  SANDBOX ONLY.
+"""Layer 4 - Controlled validation (behavioural plane).  ISOLATED FIXTURE ONLY.
 
-This layer really calls ``tools/call``: it reads, writes, deletes and runs
-commands.  It must only execute inside the isolated stand (pipeline phase P0).
-The IsolationGuard refuses to run unless it is explicitly told it is in a
-sandbox, and it forces egress to a sinkhole and secrets to canaries.
+Executes *registered* control cases through ``tools/call`` with agreed
+schemas, separates execution status from control outcome, observes effects
+independently of response text where possible, and records the isolation
+declaration apart from technical isolation evidence.
 """
 from .isolation import IsolationGuard, SandboxViolation
+from .fixtures import ControlCase, cases_from_fixtures, kind_cases, schema_agrees
 from .probes import default_probes, Probe
-from .runner import run_active_verification
+from .runner import run_controlled_validation, run_active_verification, classify_error, decide, observe_effect
 
-__all__ = ["IsolationGuard", "SandboxViolation", "default_probes", "Probe", "run_active_verification"]
+__all__ = ["IsolationGuard", "SandboxViolation", "ControlCase", "cases_from_fixtures", "kind_cases", "schema_agrees",
+           "default_probes", "Probe", "run_controlled_validation", "run_active_verification", "classify_error",
+           "decide", "observe_effect"]

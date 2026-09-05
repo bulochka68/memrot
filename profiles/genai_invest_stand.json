@@ -1,0 +1,1105 @@
+{
+  "profile_id": "genai-invest-stand",
+  "profile_version": "1.0.0",
+  "description": "Профиль стенда GenAI Investment Assistant (ветка bulochka68-with-stand, коммит 912edfb1). Здесь живут имена компонентов, коллекций, символов и параметров стенда; правила ядра оперируют понятиями principal, resource, publisher, memory audience и authorization decision (ТЗ §19.1, §22).",
+  "concepts": {
+    "input_principal": "личность API/SSO; идентификатор клиента `cus` из привязки API-ключа или claim токена",
+    "client_identifier": "cus",
+    "main_agent": "app/agent/runner.py (run_research)",
+    "native_external_tool": "duckduckgo_search в app/agent/tools.py",
+    "mcp_tools": "mcp-invest/server.py",
+    "next_resource_service": "invest-server",
+    "session_finalization_background": "app/orchestrator/graph.py",
+    "context_assembly": "MemoryStore.build_context (app/memory/store.py)",
+    "shared_rules": "AgentPolicyMemory, коллекция agent_policy_memories",
+    "stores": "Redis (рабочая память), MongoDB (долговременная), Postgres (клиентские данные)",
+    "stand_mode_parameter": "auth_mode / MCP_INVEST_AUTH_MODE / INVEST_SERVER_AUTH_MODE / X-Demo-Auth-Mode"
+  },
+  "servers": {
+    "mcp-invest": "mcp-invest",
+    "agent-native": "agent-native"
+  },
+  "components": [
+    {
+      "id": "agent-api",
+      "type": "rest_service",
+      "name": "agent-api (FastAPI)",
+      "role": "user_session_handler",
+      "source_paths": [
+        "app/api_server.py"
+      ]
+    },
+    {
+      "id": "agent",
+      "type": "agent",
+      "name": "ReAct agent",
+      "role": "user_session_handler",
+      "source_paths": [
+        "app/agent/runner.py"
+      ]
+    },
+    {
+      "id": "agent-native",
+      "type": "native_function",
+      "name": "native tools host (duckduckgo_search)",
+      "role": "external_tool_host",
+      "source_paths": [
+        "app/agent/tools.py"
+      ]
+    },
+    {
+      "id": "session-finalizer",
+      "type": "background_job",
+      "name": "LangGraph session finalizer",
+      "role": "background_worker",
+      "source_paths": [
+        "app/orchestrator/graph.py"
+      ]
+    },
+    {
+      "id": "memory-store",
+      "type": "orchestrator",
+      "name": "MemoryStore facade / context assembly",
+      "role": "context_assembler",
+      "source_paths": [
+        "app/memory/store.py",
+        "app/memory/mongo.py",
+        "app/memory/working.py"
+      ]
+    },
+    {
+      "id": "mongo",
+      "type": "memory_store",
+      "name": "MongoDB long-term memory",
+      "role": "memory_store",
+      "deployment_ref": "mongo"
+    },
+    {
+      "id": "mongo:agent_policy_memories",
+      "type": "memory_store",
+      "name": "collection agent_policy_memories (shared policy)",
+      "role": "shared_policy_store",
+      "authority": "policy",
+      "audience": "shared"
+    },
+    {
+      "id": "mongo:semantic_memories",
+      "type": "memory_store",
+      "name": "collection semantic_memories (user facts)",
+      "role": "memory_store",
+      "audience": "user"
+    },
+    {
+      "id": "redis:working",
+      "type": "memory_store",
+      "name": "Redis working memory",
+      "role": "memory_store",
+      "audience": "session",
+      "deployment_ref": "redis"
+    },
+    {
+      "id": "mcp-invest",
+      "type": "mcp_server",
+      "name": "mcp-invest (FastMCP)",
+      "role": "resource_service",
+      "source_paths": [
+        "mcp-invest/server.py",
+        "mcp-invest/auth.py"
+      ],
+      "deployment_ref": "mcp-invest"
+    },
+    {
+      "id": "invest-server",
+      "type": "rest_service",
+      "name": "invest-server (Postgres backend)",
+      "role": "resource_service",
+      "source_paths": [
+        "invest-server/main.py",
+        "invest-server/auth.py"
+      ],
+      "deployment_ref": "invest-server"
+    },
+    {
+      "id": "postgres",
+      "type": "memory_store",
+      "name": "Postgres client data",
+      "role": "data_store",
+      "deployment_ref": "postgres"
+    },
+    {
+      "id": "keycloak",
+      "type": "identity_provider",
+      "name": "Keycloak realm genai-stand",
+      "role": "identity_provider",
+      "deployment_ref": "keycloak"
+    },
+    {
+      "id": "duckduckgo",
+      "type": "external_provider",
+      "name": "DuckDuckGo web search",
+      "role": "external_provider"
+    }
+  ],
+  "principals": [
+    {
+      "id": "end_user",
+      "type": "end_user",
+      "identity_source": "authentication"
+    },
+    {
+      "id": "agent-service",
+      "type": "service_account",
+      "identity_source": "config"
+    },
+    {
+      "id": "mcp-invest-service",
+      "type": "service_account",
+      "identity_source": "config"
+    },
+    {
+      "id": "session-finalizer",
+      "type": "background_worker",
+      "identity_source": "config"
+    }
+  ],
+  "memory_stores": [
+    {
+      "component_id": "mongo",
+      "store_type": "mongodb",
+      "memory_types": [
+        {
+          "type": "dialog",
+          "collection": "dialog_sessions",
+          "audience": "user",
+          "authority": "data"
+        },
+        {
+          "type": "episode",
+          "collection": "episodic_memories",
+          "audience": "user",
+          "authority": "data",
+          "derived": true
+        },
+        {
+          "type": "user_fact",
+          "collection": "semantic_memories",
+          "audience": "user",
+          "authority": "data",
+          "derived": true
+        },
+        {
+          "type": "shared_policy",
+          "collection": "agent_policy_memories",
+          "audience": "shared",
+          "authority": "policy",
+          "derived": true,
+          "scope_model": "none (no user_id, read by all)"
+        }
+      ],
+      "observability": {
+        "memory_events": "none exported",
+        "acl": "not exported",
+        "note": "documents carry scope/user_id fields; presence of the fields does not prove access control"
+      }
+    },
+    {
+      "component_id": "redis:working",
+      "store_type": "redis",
+      "memory_types": [
+        {
+          "type": "working",
+          "key": "working:{user_id}:{session_id}",
+          "audience": "session",
+          "authority": "data",
+          "retention": {
+            "ttl_seconds": 86400
+          }
+        }
+      ]
+    }
+  ],
+  "memory_field_map": {
+    "memory_id": "policy_id",
+    "subject_ref": "user_id",
+    "session_ref": "session_id",
+    "created_at": "created_at",
+    "origin_actor_ref": "source"
+  },
+  "tool_routing": {
+    "namespace": "flat",
+    "router": "agent filters MCP tools by name (INVEST_MCP_TOOLS) and merges them with native tools into one flat list",
+    "evidence_symbol": "INVEST_MCP_TOOLS"
+  },
+  "inventory_differences": [],
+  "reference_inventory": {
+    "mcp-invest": [
+      "instruments_search",
+      "portfolio_get_positions_valuation",
+      "portfolio_presence_get",
+      "register_tax_get",
+      "client_operation_history_list",
+      "margin_instruments_list",
+      "margin_instrument_get_info",
+      "client_training_list",
+      "dividend_calendar_list",
+      "coupon_calendar_list",
+      "bond_get_info",
+      "emitent_get_static_info",
+      "fin_instrument_prices_get",
+      "ideas_list"
+    ],
+    "agent-native": [
+      "duckduckgo_search"
+    ]
+  },
+  "side_effects": [
+    {
+      "effect": "conversation_write",
+      "component": "agent",
+      "phase": "finalization",
+      "memory_type": "working",
+      "flow_ref": "F-answer-to-working",
+      "applies_to": {
+        "servers": [
+          "mcp-invest",
+          "agent-native"
+        ]
+      },
+      "basis": "source_inference"
+    }
+  ],
+  "revocation": {
+    "mechanism": "none",
+    "note": "no revocation path for derived facts or shared policy in this build"
+  },
+  "source_facts": {
+    "tool_declarations": [
+      {
+        "component": "mcp-invest",
+        "path": "mcp-invest/server.py",
+        "decorator": "mcp.tool",
+        "kind": "mcp"
+      },
+      {
+        "component": "agent-native",
+        "path": "app/agent/tools.py",
+        "decorator": "tool",
+        "kind": "native"
+      }
+    ],
+    "flows": [
+      {
+        "id": "F-persist-policy",
+        "kind": "publish",
+        "from": "session-finalizer",
+        "to": "mongo:agent_policy_memories",
+        "path": "app/orchestrator/graph.py",
+        "symbol": "persist_all",
+        "patterns": [
+          "scope == \"global\"",
+          "AgentPolicyMemory\\(",
+          "save_agent_policy"
+        ],
+        "writer_principal": "session-finalizer",
+        "writer_role": "background_worker",
+        "memory_type": "shared_policy",
+        "audience": "shared",
+        "authority": "policy",
+        "approval_required": false,
+        "boundary": "B-mem-publish",
+        "conditions": [
+          "LLM extraction marks a fact as scope=global"
+        ],
+        "statement": "Обработка извлечённых фактов пользовательской сессии содержит ветвь записи общей политики (AgentPolicyMemory).",
+        "rule_refs": [
+          "MEM-02",
+          "MEM-06"
+        ],
+        "limitations": [
+          "права БД работающего deployment не проверены",
+          "прохождение конкретного пользовательского текста через извлечение фактов не проверено"
+        ]
+      },
+      {
+        "id": "F-scope-from-llm",
+        "kind": "scope_decision",
+        "from": "session-finalizer",
+        "to": "mongo:agent_policy_memories",
+        "path": "app/orchestrator/graph.py",
+        "symbol": "persist_all",
+        "patterns": [
+          "scope = f.get\\(\"scope\", \"user\"\\)",
+          "if scope not in \\(\"user\", \"global\"\\)"
+        ],
+        "decision_source": "llm_output",
+        "validation": "range check (user|global) only",
+        "memory_type": "shared_policy",
+        "statement": "Область (user/global) берётся из структурированного вывода LLM; сервер лишь ограничивает множество значений.",
+        "rule_refs": [
+          "MEM-03"
+        ]
+      },
+      {
+        "id": "F-context-policy-as-rules",
+        "kind": "context_include",
+        "from": "memory-store",
+        "to": "agent",
+        "path": "app/memory/store.py",
+        "symbol": "MemoryStore.build_context",
+        "patterns": [
+          "agent_policy\\.list_all",
+          "которых агент должен придерживаться"
+        ],
+        "memory_type": "shared_policy",
+        "presented_as": "rules",
+        "context_role": "system",
+        "publisher_trusted": false,
+        "subject_bound": false,
+        "statement": "Общая политика собирается как правила («которых агент должен придерживаться») и попадает в системное сообщение без привязки к текущему пользователю.",
+        "rule_refs": [
+          "MEM-04"
+        ]
+      },
+      {
+        "id": "F-user-facts-read",
+        "kind": "memory_read",
+        "from": "memory-store",
+        "to": "mongo:semantic_memories",
+        "path": "app/memory/mongo.py",
+        "symbol": "SemanticRepo.list_for_context",
+        "patterns": [
+          "\"user_id\": user_id",
+          "\"scope\": \"user\""
+        ],
+        "memory_type": "user_fact",
+        "audience": "user",
+        "filter_by": [
+          "user_id",
+          "scope"
+        ],
+        "subject_bound": true,
+        "audience_filter_before_context": true,
+        "statement": "Личные факты читаются с фильтром user_id+scope до сборки контекста.",
+        "rule_refs": [
+          "MEM-01",
+          "MEM-07"
+        ]
+      },
+      {
+        "id": "F-dialog-read",
+        "kind": "memory_read",
+        "from": "memory-store",
+        "to": "mongo",
+        "path": "app/memory/mongo.py",
+        "symbol": "DialogRepo.list_for_user",
+        "patterns": [
+          "find\\(\\{\"user_id\": user_id\\}\\)"
+        ],
+        "memory_type": "dialog",
+        "audience": "user",
+        "filter_by": [
+          "user_id"
+        ],
+        "subject_bound": true,
+        "audience_filter_before_context": true,
+        "rule_refs": [
+          "MEM-01",
+          "MEM-07"
+        ]
+      },
+      {
+        "id": "F-episodic-read",
+        "kind": "memory_read",
+        "from": "memory-store",
+        "to": "mongo",
+        "path": "app/memory/mongo.py",
+        "symbol": "EpisodicRepo.list_for_user",
+        "patterns": [
+          "find\\(\\{\"user_id\": user_id\\}\\)"
+        ],
+        "memory_type": "episode",
+        "audience": "user",
+        "filter_by": [
+          "user_id"
+        ],
+        "subject_bound": true,
+        "audience_filter_before_context": true,
+        "rule_refs": [
+          "MEM-01",
+          "MEM-07"
+        ]
+      },
+      {
+        "id": "F-policy-read-unscoped",
+        "kind": "memory_read",
+        "from": "memory-store",
+        "to": "mongo:agent_policy_memories",
+        "path": "app/memory/mongo.py",
+        "symbol": "AgentPolicyRepo.list_all",
+        "patterns": [
+          "find\\(\\{\\}\\)"
+        ],
+        "memory_type": "shared_policy",
+        "audience": "shared",
+        "filter_by": [],
+        "subject_bound": false,
+        "audience_filter_before_context": true,
+        "statement": "Общая политика читается без какой-либо привязки (по дизайну: аудитория — все клиенты).",
+        "rule_refs": [
+          "MEM-04"
+        ]
+      },
+      {
+        "id": "F-derive-facts",
+        "kind": "derivation",
+        "from": "session-finalizer",
+        "to": "mongo:semantic_memories",
+        "path": "app/orchestrator/graph.py",
+        "symbol": "persist_all",
+        "patterns": [
+          "source_episode_id=episodes\\[0\\]\\.episode_id if episodes else None",
+          "source_session_id=session_id"
+        ],
+        "from_types": [
+          "dialog",
+          "episode"
+        ],
+        "provenance_kept": false,
+        "provenance_fields": [
+          "source_episode_id (first episode only)",
+          "source_session_id (policy, audit only)"
+        ],
+        "statement": "Производные факты хранят только ссылку на сессию/первый эпизод; связь с сообщениями и результатами инструментов теряется.",
+        "rule_refs": [
+          "MEM-05"
+        ]
+      },
+      {
+        "id": "F-answer-to-working",
+        "kind": "memory_write",
+        "from": "agent",
+        "to": "redis:working",
+        "path": "app/agent/runner.py",
+        "symbol": "run_research",
+        "patterns": [
+          "store\\.append_turn\\(user_id, session_id, query, final_text\\)"
+        ],
+        "memory_type": "working",
+        "audience": "session",
+        "writer_principal": "agent",
+        "provenance_kept": false,
+        "provenance_fields": [],
+        "statement": "В рабочую память пишутся запрос и финальный ответ, а не сырые результаты инструментов: для связи tool result → memory нужна прослеживаемость производного ответа.",
+        "rule_refs": [
+          "MEM-05",
+          "TOOL-04"
+        ]
+      },
+      {
+        "id": "F-load-working",
+        "kind": "data_flow",
+        "from": "redis:working",
+        "to": "session-finalizer",
+        "path": "app/orchestrator/graph.py",
+        "symbol": "load_working",
+        "patterns": [
+          "store\\.get_working\\("
+        ],
+        "statement": "Финализация читает рабочую память сессии как текст диалога."
+      },
+      {
+        "id": "F-search-results-to-model",
+        "kind": "data_flow",
+        "from": "duckduckgo",
+        "to": "agent",
+        "path": "app/agent/runner.py",
+        "symbol": "run_research",
+        "patterns": [
+          "ToolMessage\\(content=str\\(result\\)"
+        ],
+        "statement": "Результаты инструментов (в т.ч. веб-поиска) передаются модели как сообщения."
+      },
+      {
+        "id": "F-mcp-results-to-model",
+        "kind": "data_flow",
+        "from": "mcp-invest",
+        "to": "agent",
+        "path": "app/agent/runner.py",
+        "symbol": "run_research",
+        "patterns": [
+          "ToolMessage\\(content=str\\(result\\)"
+        ],
+        "statement": "Результаты MCP-инструментов передаются модели как сообщения."
+      },
+      {
+        "id": "F-agent-calls-mcp",
+        "kind": "control_flow",
+        "from": "agent",
+        "to": "mcp-invest",
+        "path": "app/agent/runner.py",
+        "symbol": "_load_tools",
+        "patterns": [
+          "MultiServerMCPClient\\("
+        ],
+        "statement": "Агент подключает MCP-инструменты Инвеста."
+      },
+      {
+        "id": "F-search-transmit",
+        "kind": "transmit",
+        "from": "agent",
+        "to": "duckduckgo",
+        "path": "app/agent/tools.py",
+        "symbol": "duckduckgo_search",
+        "patterns": [
+          "ddgs\\.text\\(query"
+        ],
+        "destination": "duckduckgo",
+        "data_categories_possible": [
+          "public_query",
+          "client_identifier",
+          "portfolio_data"
+        ],
+        "category_filter": false,
+        "composed_by": "model",
+        "statement": "Query веб-поиска — данные, передаваемые внешнему провайдеру; текст составляет модель без фильтра категорий.",
+        "rule_refs": [
+          "EGRESS-01"
+        ],
+        "limitations": [
+          "фактическая передача клиентских данных не наблюдалась"
+        ]
+      },
+      {
+        "id": "F-trust-elevation-confidence",
+        "kind": "trust_elevation",
+        "from": "session-finalizer",
+        "to": "mongo:agent_policy_memories",
+        "path": "app/orchestrator/graph.py",
+        "symbol": "persist_all",
+        "patterns": [
+          "confidence=float\\(f\\.get\\(\"confidence\", 0\\.8\\)\\)"
+        ],
+        "mechanism": "LLM-reported confidence is stored as the record's confidence; no review/approval transition before shared publication",
+        "memory_type": "shared_policy",
+        "statement": "Пересказ модели и её confidence становятся общей политикой без отдельного разрешённого перехода.",
+        "rule_refs": [
+          "MEM-06"
+        ]
+      },
+      {
+        "id": "F-identity-apikey",
+        "kind": "identity_binding",
+        "from": "agent-api",
+        "to": "agent",
+        "path": "app/api_server.py",
+        "symbol": "_resolve_user",
+        "patterns": [
+          "find_by_hash\\(hash_key\\(raw_key\\)\\)",
+          "return record\\.user_id"
+        ],
+        "identity_source": "authentication",
+        "principal": "end_user",
+        "statement": "user_id берётся строго из привязки API-ключа; тело запроса не может его переопределить.",
+        "rule_refs": [
+          "AUTH-01"
+        ]
+      },
+      {
+        "id": "F-identity-oidc",
+        "kind": "identity_binding",
+        "from": "agent-api",
+        "to": "agent",
+        "path": "app/api_server.py",
+        "symbol": "_current_identity",
+        "patterns": [
+          "x-forwarded-access-token",
+          "jwt\\.decode\\("
+        ],
+        "identity_source": "authentication",
+        "principal": "end_user",
+        "statement": "Личность SSO берётся из токена, проброшенного oauth2-proxy.",
+        "rule_refs": [
+          "AUTH-01"
+        ]
+      },
+      {
+        "id": "F-security-mode-body",
+        "kind": "security_mode",
+        "from": "agent-api",
+        "to": "agent",
+        "path": "app/api_server.py",
+        "symbol": "ChatCompletionRequest",
+        "patterns": [
+          "auth_mode: str = \"vulnerable\""
+        ],
+        "client_can_weaken": true,
+        "weakening_parameters": [
+          "body.auth_mode (default vulnerable)"
+        ],
+        "statement": "Режим защиты выбирается полем тела запроса; значение по умолчанию — vulnerable.",
+        "rule_refs": [
+          "AUTH-03"
+        ]
+      },
+      {
+        "id": "F-security-mode-header",
+        "kind": "security_mode",
+        "from": "mcp-invest",
+        "to": "invest-server",
+        "path": "mcp-invest/server.py",
+        "symbol": "_demo_mode",
+        "patterns": [
+          "x-demo-auth-mode"
+        ],
+        "client_can_weaken": true,
+        "weakening_parameters": [
+          "header X-Demo-Auth-Mode"
+        ],
+        "statement": "Заголовок клиента переопределяет режим проверки на mcp-invest и форвардится в invest-server.",
+        "rule_refs": [
+          "AUTH-03"
+        ]
+      },
+      {
+        "id": "F-store-access-policy",
+        "kind": "store_access",
+        "from": "agent-api",
+        "to": "mongo:agent_policy_memories",
+        "path": "app/memory/store.py",
+        "symbol": "MemoryStore.save_agent_policy",
+        "patterns": [
+          "agent_policy\\.insert_many"
+        ],
+        "rights": [
+          "read",
+          "write",
+          "publish"
+        ],
+        "authority": "policy",
+        "statement": "Процесс agent-api (и оркестратор внутри него) пишет в коллекцию общей политики через общий клиент Mongo.",
+        "rule_refs": [
+          "INFRA-01",
+          "MEM-02"
+        ]
+      },
+      {
+        "id": "F-revocation-apikey",
+        "kind": "revocation_check",
+        "from": "agent-api",
+        "to": "mongo",
+        "path": "app/memory/mongo.py",
+        "symbol": "ApiKeyRepo.find_by_hash",
+        "patterns": [
+          "\"revoked\": False"
+        ],
+        "checked_per_request": true,
+        "scheme": "api_key",
+        "statement": "Отзыв API-ключа проверяется при каждом запросе.",
+        "rule_refs": [
+          "AUTH-06"
+        ]
+      },
+      {
+        "id": "F-retention-working",
+        "kind": "retention",
+        "from": "memory-store",
+        "to": "redis:working",
+        "path": "app/memory/working.py",
+        "symbol": "WorkingMemoryStore.save",
+        "patterns": [
+          "setex\\("
+        ],
+        "memory_type": "working",
+        "ttl_seconds": 86400,
+        "mechanism": "redis setex (WORKING_MEMORY_TTL)",
+        "statement": "Рабочая память ограничена TTL.",
+        "rule_refs": [
+          "MEM-10"
+        ]
+      },
+      {
+        "id": "F-retention-policy",
+        "kind": "retention",
+        "from": "memory-store",
+        "to": "mongo:agent_policy_memories",
+        "path": "app/memory/mongo.py",
+        "symbol": "AgentPolicyRepo",
+        "patterns": [
+          "insert_one\\("
+        ],
+        "negate_patterns": [
+          "expireAfterSeconds",
+          "ttl"
+        ],
+        "memory_type": "shared_policy",
+        "ttl_seconds": null,
+        "mechanism": "none",
+        "statement": "Для общей политики нет TTL/очистки.",
+        "rule_refs": [
+          "MEM-10"
+        ]
+      },
+      {
+        "id": "F-retention-user-fact",
+        "kind": "retention",
+        "from": "memory-store",
+        "to": "mongo:semantic_memories",
+        "path": "app/memory/mongo.py",
+        "symbol": "SemanticRepo",
+        "patterns": [
+          "insert_one\\("
+        ],
+        "negate_patterns": [
+          "expireAfterSeconds",
+          "ttl"
+        ],
+        "memory_type": "user_fact",
+        "ttl_seconds": null,
+        "mechanism": "none",
+        "statement": "Для семантической памяти нет TTL/очистки.",
+        "rule_refs": [
+          "MEM-10"
+        ]
+      }
+    ],
+    "auth_transitions": [
+      {
+        "id": "T1-user-api",
+        "input_principal": "end_user",
+        "executing_component": "agent-api",
+        "operation": "READ",
+        "resource": "chat/agent",
+        "next_component": "agent",
+        "auth_scheme": "api_key",
+        "boundary": "B-user-api",
+        "enforcement_point": "agent-api",
+        "path": "app/api_server.py",
+        "symbol": "chat_completions",
+        "patterns": [
+          "user_id = _resolve_user\\(authorization\\)"
+        ],
+        "policy_decision": "enforced",
+        "client_can_weaken": true,
+        "statement": "Личность устанавливается по API-ключу; но поле auth_mode тела запроса выбирает режим защиты последующих переходов."
+      },
+      {
+        "id": "T2-agent-mcp",
+        "input_principal": "end_user",
+        "executing_component": "mcp-invest",
+        "operation": "READ",
+        "resource": "client_data(cus)",
+        "next_component": "invest-server",
+        "auth_scheme": "jwt",
+        "boundary": "B-agent-mcp",
+        "enforcement_point": "mcp-invest",
+        "path": "mcp-invest/server.py",
+        "symbol": "_check_cus",
+        "patterns": [
+          "auth\\.check_cus_access\\(claims, cus, mode=_demo_mode\\(ctx\\)\\)"
+        ],
+        "policy_decision": "conditional",
+        "default_condition": "not_enforced",
+        "client_can_weaken": true,
+        "conditions": [
+          "MCP_INVEST_AUTH_MODE=vulnerable (compose default): check_cus_access returns without checking",
+          "X-Demo-Auth-Mode selects the mode per request"
+        ],
+        "statement": "Проверка принадлежности cus выполняется только в режиме protected; по умолчанию любой валидный токен даёт доступ к данным любого клиента."
+      },
+      {
+        "id": "T3-mcp-backend",
+        "input_principal": "end_user",
+        "executing_component": "invest-server",
+        "operation": "READ",
+        "resource": "client_data(cus)",
+        "next_component": "postgres",
+        "auth_scheme": "jwt",
+        "boundary": "B-mcp-backend",
+        "enforcement_point": "invest-server",
+        "path": "invest-server/main.py",
+        "symbol": "get_client",
+        "patterns": [
+          "_check_access\\(claims, cus, x_demo_auth_mode\\)"
+        ],
+        "policy_decision": "conditional",
+        "default_condition": "not_enforced",
+        "client_can_weaken": true,
+        "conditions": [
+          "INVEST_SERVER_AUTH_MODE=vulnerable (compose default)",
+          "X-Demo-Auth-Mode forwarded by mcp-invest"
+        ],
+        "statement": "Бэкенд доверяет сервисному токену mcp-invest-service вслепую в режиме vulnerable."
+      },
+      {
+        "id": "T3b-account-owner",
+        "input_principal": "end_user",
+        "executing_component": "invest-server",
+        "operation": "READ",
+        "resource": "account_data(account_id)",
+        "next_component": "postgres",
+        "auth_scheme": "jwt",
+        "boundary": "B-mcp-backend",
+        "enforcement_point": "invest-server",
+        "path": "invest-server/main.py",
+        "symbol": "get_tax",
+        "patterns": [
+          "owner_cus = db\\.get_account_owner\\(account_id\\) or account_id",
+          "_check_access\\(claims, owner_cus, x_demo_auth_mode\\)"
+        ],
+        "policy_decision": "conditional",
+        "default_condition": "not_enforced",
+        "client_can_weaken": true,
+        "conditions": [
+          "INVEST_SERVER_AUTH_MODE=vulnerable (compose default)"
+        ],
+        "statement": "Требование принадлежности распространяется на связанные объекты (счёт → владелец), но действует только в protected."
+      },
+      {
+        "id": "T4-agent-token",
+        "input_principal": "agent-service",
+        "executing_component": "agent",
+        "operation": "READ",
+        "resource": "client_data(cus)",
+        "next_component": "mcp-invest",
+        "auth_scheme": "jwt",
+        "boundary": "B-agent-mcp",
+        "path": "app/agent/runner.py",
+        "symbol": "_mcp_headers",
+        "patterns": [
+          "_get_agent_token\\(settings\\)"
+        ],
+        "policy_decision": "n/a",
+        "delegation": "service_account_unrestricted",
+        "subject_bound": false,
+        "conditions": [
+          "auth_mode=vulnerable (default)"
+        ],
+        "statement": "В режиме vulnerable агент ходит в MCP по токену технической УЗ без привязки к пользователю."
+      },
+      {
+        "id": "T5-token-exchange",
+        "input_principal": "end_user",
+        "executing_component": "agent",
+        "operation": "READ",
+        "resource": "client_data(cus)",
+        "next_component": "mcp-invest",
+        "auth_scheme": "jwt",
+        "boundary": "B-agent-mcp",
+        "path": "app/agent/runner.py",
+        "symbol": "_exchange_token",
+        "patterns": [
+          "urn:ietf:params:oauth:grant-type:token-exchange"
+        ],
+        "policy_decision": "enforced",
+        "delegation": "token_exchange",
+        "subject_bound": true,
+        "conditions": [
+          "auth_mode=protected"
+        ],
+        "statement": "В режиме protected используется Token Exchange с сохранением claim cus."
+      }
+    ],
+    "token_validation": [
+      {
+        "component": "mcp-invest",
+        "path": "mcp-invest/auth.py",
+        "symbol": "validate_token",
+        "scheme": "jwt",
+        "checks": {
+          "signature": {
+            "pattern": "get_signing_key_from_jwt",
+            "found_means": true
+          },
+          "issuer": {
+            "pattern": "issuer=ISSUER",
+            "found_means": true
+          },
+          "audience": {
+            "pattern": "\"verify_aud\": False",
+            "found_means": false
+          },
+          "expiry": {
+            "pattern": "jwt\\.decode\\(",
+            "found_means": true
+          },
+          "algorithm": {
+            "pattern": "algorithms=\\[\"RS256\"\\]",
+            "found_means": true
+          }
+        }
+      },
+      {
+        "component": "invest-server",
+        "path": "invest-server/auth.py",
+        "symbol": "validate_token",
+        "scheme": "jwt",
+        "checks": {
+          "signature": {
+            "pattern": "get_signing_key_from_jwt",
+            "found_means": true
+          },
+          "issuer": {
+            "pattern": "issuer=ISSUER",
+            "found_means": true
+          },
+          "audience": {
+            "pattern": "\"verify_aud\": False",
+            "found_means": false
+          },
+          "expiry": {
+            "pattern": "jwt\\.decode\\(",
+            "found_means": true
+          },
+          "algorithm": {
+            "pattern": "algorithms=\\[\"RS256\"\\]",
+            "found_means": true
+          }
+        }
+      },
+      {
+        "component": "agent-api",
+        "path": "app/api_server.py",
+        "symbol": "_current_identity",
+        "scheme": "jwt",
+        "checks": {
+          "signature": {
+            "pattern": "get_signing_key_from_jwt",
+            "found_means": true
+          },
+          "issuer": {
+            "pattern": "\"verify_iss\": False",
+            "found_means": false
+          },
+          "audience": {
+            "pattern": "\"verify_aud\": False",
+            "found_means": false
+          },
+          "expiry": {
+            "pattern": "jwt\\.decode\\(",
+            "found_means": true
+          },
+          "algorithm": {
+            "pattern": "algorithms=\\[\"RS256\"\\]",
+            "found_means": true
+          }
+        }
+      }
+    ],
+    "background_jobs": [
+      {
+        "id": "J-finalize",
+        "component": "session-finalizer",
+        "path": "app/orchestrator/graph.py",
+        "symbol": "finalize_session",
+        "patterns": [
+          "_orchestrator\\.ainvoke"
+        ],
+        "trigger": "POST /v1/sessions/{id}/finalize or the 'finalize' chat command",
+        "effects": [
+          "persist dialog",
+          "insert episodes",
+          "insert semantic facts",
+          "publish shared policy",
+          "clear working memory"
+        ],
+        "carries_identity": true,
+        "idempotent": false,
+        "checks_policy_revision": false,
+        "statement": "Финализация сессии вставляет эпизоды/факты/политику заново при каждом запуске и не знает о ревизии политики."
+      }
+    ],
+    "break_points": [
+      {
+        "id": "BP-truncation-3000",
+        "kind": "truncation",
+        "path": "app/agent/runner.py",
+        "symbol": "run_research",
+        "patterns": [
+          "memory_context\\[:3000\\]"
+        ],
+        "durable_control": false,
+        "note": "Память обрезается до 3000 символов при формировании системного сообщения: ограничивает наблюдаемый путь в конкретном запуске, но не является устойчивым контролем."
+      },
+      {
+        "id": "BP-trusted-filter",
+        "kind": "filter",
+        "path": "app/memory/mongo.py",
+        "symbol": "_doc_trusted",
+        "patterns": [
+          "allow_global and doc\\.get\\(\"scope\"\\) == \"global\""
+        ],
+        "durable_control": true,
+        "note": "Фильтр отбрасывает чужие user_id, но пропускает любую запись scope=global."
+      }
+    ]
+  },
+  "chains": [
+    {
+      "id": "trifecta-search-exfil",
+      "title": "Недоверенный веб-контент → агент → данные клиента (MCP) → внешний поисковый запрос",
+      "nodes": [
+        "duckduckgo",
+        "agent",
+        "mcp-invest",
+        "agent",
+        "duckduckgo"
+      ],
+      "rule_refs": [
+        "EGRESS-01",
+        "LETHAL_TRIFECTA"
+      ],
+      "legs_present": true
+    },
+    {
+      "id": "tool-result-to-policy",
+      "title": "Результат инструмента → ответ → рабочая память → финализация → общая политика",
+      "nodes": [
+        "duckduckgo",
+        "agent",
+        "redis:working",
+        "session-finalizer",
+        "mongo:agent_policy_memories"
+      ],
+      "rule_refs": [
+        "TOOL-04"
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "id": "B-user-api",
+      "from": "end_user",
+      "to": "agent-api",
+      "rule": "principal from API key / SSO token",
+      "enforcement_point": "agent-api"
+    },
+    {
+      "id": "B-agent-mcp",
+      "from": "agent",
+      "to": "mcp-invest",
+      "rule": "resource authorization for cus on every call",
+      "enforcement_point": "mcp-invest"
+    },
+    {
+      "id": "B-mcp-backend",
+      "from": "mcp-invest",
+      "to": "invest-server",
+      "rule": "resource authorization for cus/account on every call",
+      "enforcement_point": "invest-server"
+    },
+    {
+      "id": "B-mem-publish",
+      "from": "session-finalizer",
+      "to": "mongo:agent_policy_memories",
+      "rule": "only a trusted publisher may write shared policy",
+      "enforcement_point": "application + DB rights"
+    },
+    {
+      "id": "B-context",
+      "from": "memory-store",
+      "to": "agent",
+      "rule": "context blocks carry authority; data is not presented as rules",
+      "enforcement_point": "MemoryStore.build_context"
+    }
+  ]
+}
