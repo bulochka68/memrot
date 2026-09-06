@@ -87,7 +87,11 @@ STAND_URL=... ATTACKER_KEY=... VICTIM_KEY=... \
 
 1. Реализуйте `AttackTarget` (4 метода: `principals`, `new_session`, `deliver`,
    `trigger_persist`, `observe`) под её ручки — это аналог профиля аудита.
-2. Сценарии и таксономия (`attack_taxonomy.py`) не меняются.
+2. Сценарии и таксономия не меняются. Таксономия доменов теперь живёт в
+   библиотеке (`mcp_attack.audit_domains`), а `attack_taxonomy.py` — тонкий
+   реэкспорт над ней; ранжирование по severity берётся из
+   `mcp_attack.audit_plan` (`SEV_RANK`, `effective_severity`) — единый источник,
+   без второй копии в `redteam/`.
 3. Раннер тот же; `_make_target()` подменяется на ваш адаптер.
 
 Что переносится: `target.py`, `scenarios/`, `run_attacks.py`, таксономия, оракул.

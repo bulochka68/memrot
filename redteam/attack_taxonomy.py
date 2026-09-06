@@ -1,39 +1,38 @@
-"""Общая таксономия атак для скриптов ранжирования и выбора.
+"""Тонкий шим: общая таксономия доменов атак живёт в mcp_attack.
 
-Категория атаки = осмысленный подкласс правил аудита, а не весь домен.
-Держится в одном месте, чтобы rank_targets.py и select_attacks.py не расходились.
-Ключ — стабильный slug категории; значение — правила и человекочитаемое имя.
+Раньше здесь лежал собственный словарь категорий (rule_id -> домен). Теперь он
+переехал в `mcp_attack.audit_domains` — единый источник, чтобы rank_targets.py и
+select_attacks.py не расходились с библиотекой. `mcp_attack` — базовый пакет,
+`redteam` — его потребитель, поэтому определение живёт в библиотеке, а здесь
+остаются только реэкспорты для обратной совместимости импортов
+(`from attack_taxonomy import CATEGORIES, categories_for, title, known_slugs`).
 """
 from __future__ import annotations
 
-# slug -> (заголовок, множество rule_id)
-CATEGORIES = {
-    "memory-poisoning": ("Отравление памяти (впрыск в общую политику без авторитета)",
-                          {"MEM-02", "MEM-03", "MEM-04", "MEM-06"}),
-    "tool-poisoning":   ("Отравление инструментов (инъекция в описании/результате инструмента)",
-                          {"TOOL-04", "TOOL-05"}),
-    "idor-bac":         ("IDOR / нарушение авторизации ресурса",
-                          {"AUTH-02", "AUTH-03"}),
-    "token-validation": ("Слабая валидация токена",
-                          {"AUTH-04"}),
-    "delegation":       ("Обход ограничений пользователя через делегирование",
-                          {"AUTH-05"}),
-    "exfiltration":     ("Неконтролируемый вывод данных наружу",
-                          {"EGRESS-01"}),
-    "memory-hygiene":   ("Гигиена памяти (происхождение, retention, консистентность)",
-                          {"MEM-05", "MEM-09", "MEM-10", "MEM-08"}),
-    "infrastructure":   ("Инфраструктурная поверхность",
-                          {"INFRA-01", "INFRA-02"}),
-    "inventory":        ("Расхождения инвентаря / контрактов",
-                          {"INV-01", "INV-02", "TOOL-01", "TOOL-02"}),
-}
+import os
+import sys
 
-# обратная карта rule_id -> [slug, ...]
-def categories_for(rule_id: str) -> list[str]:
-    return [slug for slug, (_t, ids) in CATEGORIES.items() if rule_id in ids]
+# redteam-скрипты запускаются как `python3 redteam/rank_targets.py` (sys.path[0]
+# = redteam/), поэтому корень репозитория нужно добавить вручную, чтобы был
+# виден пакет mcp_attack.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
-def title(slug: str) -> str:
-    return CATEGORIES.get(slug, (slug, set()))[0]
+from mcp_attack.audit_domains import (  # noqa: E402,F401  (реэкспорт после bootstrap sys.path)
+    AUDIT_DOMAIN_CATEGORIES,
+    CATEGORIES,
+    DOMAIN_TO_OWASP_AMG,
+    categories_for,
+    known_slugs,
+    title,
+)
 
-def known_slugs() -> list[str]:
-    return list(CATEGORIES.keys())
+__all__ = [
+    "AUDIT_DOMAIN_CATEGORIES",
+    "CATEGORIES",
+    "DOMAIN_TO_OWASP_AMG",
+    "categories_for",
+    "known_slugs",
+    "title",
+]

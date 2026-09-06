@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from harness import StandClient  # переиспользуем готовый HTTP-клиент
+from harness import StandClient, global_facts  # переиспользуем готовый HTTP-клиент и фильтр scope=global
 from target import Principal
 
 
@@ -45,8 +45,7 @@ class StandTarget:
     def trigger_persist(self, principal: Principal, session: str) -> dict[str, Any]:
         raw = self._client(principal).finalize(session)
         # published = факты, помеченные моделью scope=global -> уходят в общую политику
-        published = [f for f in (raw.get("facts") or []) if f.get("scope") == "global"]
-        return {"published": published, "raw": raw}
+        return {"published": global_facts(raw), "raw": raw}
 
     def observe(self, principal: Principal, probe: str, session: str | None = None) -> str:
         c = self._client(principal)

@@ -19,18 +19,23 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+
+# redteam-скрипты запускаются как `python3 redteam/rank_targets.py` — добавляем
+# корень репозитория в sys.path, чтобы был виден пакет mcp_attack.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+# Единый источник правды о ранжировании по severity — в библиотеке mcp_attack,
+# а не в собственной копии здесь (rank_targets/audit_plan больше не расходятся).
+from mcp_attack.audit_plan import SEV_RANK, effective_severity as _sev  # noqa: E402
 
 try:
     from attack_taxonomy import categories_for
 except ImportError:  # запуск не из каталога redteam/
     from redteam.attack_taxonomy import categories_for
-
-SEV_RANK = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, None: 9, "": 9}
-
-
-def _sev(f: dict) -> str | None:
-    return f.get("effective_severity") or f.get("severity")
 
 
 def _locator(f: dict, ev: dict) -> str:

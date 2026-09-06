@@ -2,15 +2,17 @@
 
 ``audit_bridge.py``'s ``filter``/``prioritize`` modes do plain ``rule_id``
 set-intersection with no notion of severity -- a CRITICAL and a LOW finding
-tagged with the same rule_id are indistinguishable to it. The older
-``redteam/`` harness already solved this properly for its own, narrower
-scenario set (``redteam/rank_targets.py``'s ``SEV_RANK``/``extract``/``rank``);
-this module ports that same ranking logic (not an import -- ``redteam/``
-stays a separate, uncoupled harness) into a new, additive ``ranked`` mode for
-``mcp_attack``, and adds the piece ``redteam/`` never needed: a bridge table
-from ``mcp_audit``'s rule_id vocabulary to ``mcp_attack``'s own, target-
-agnostic OWASP Agent Memory Guard taxonomy (``taxonomy.py``) -- two
-independently-evolved vocabularies with no prior relationship.
+tagged with the same rule_id are indistinguishable to it. This module adds a
+severity-aware ``ranked`` mode, and owns the shared ranking primitives
+(``SEV_RANK``, :func:`effective_severity`) that ``redteam/rank_targets.py``
+imports from here rather than keeping its own copy -- one source of truth for
+how an audit report's severities become attack priorities (``mcp_attack`` is
+the library, ``redteam`` the consumer). On top of that it adds the piece
+``redteam/`` never needed: a bridge table from ``mcp_audit``'s rule_id
+vocabulary to ``mcp_attack``'s own, target-agnostic OWASP Agent Memory Guard
+taxonomy (``taxonomy.py``) -- two independently-evolved vocabularies with no
+prior relationship. (``audit_domains.py`` holds the complementary, coarser
+domain projection ``redteam``'s CLIs group findings by.)
 
 ``audit_bridge.py`` itself is untouched: existing ``--audit-mode
 filter/prioritize`` behavior, config fields and tests keep working exactly
@@ -24,7 +26,7 @@ from typing import Dict, List, Optional, Tuple
 
 from .models import AttackVariant
 
-SEV_RANK = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, None: 9, "": 9}   # ported verbatim from redteam/rank_targets.py
+SEV_RANK = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, None: 9, "": 9}   # canonical severity order (redteam/rank_targets.py imports this)
 
 # mcp_audit rule_id -> mcp_attack owasp_amg_category slug (taxonomy.py).
 # Deliberately partial: AUTH-*, INFRA-*, INV-*, TOOL-01/02 don't fit any of
@@ -48,11 +50,15 @@ RULE_ID_TO_OWASP_AMG_CATEGORY: Dict[str, str] = {
 }
 
 
-def _sev(finding: dict) -> Optional[str]:
-    """Ported verbatim from redteam/rank_targets.py's ``_sev``: a finding's
-    severity can be null (hypothesis-only, not yet verified), in which case
-    ``effective_severity`` (set once verified/reassessed) is authoritative."""
+def effective_severity(finding: dict) -> Optional[str]:
+    """A finding's authoritative severity: ``effective_severity`` (set once
+    verified/reassessed) wins over the raw ``severity`` (which may be null for
+    a hypothesis-only finding). Shared with ``redteam/rank_targets.py``, which
+    imports this rather than reimplementing it."""
     return finding.get("effective_severity") or finding.get("severity")
+
+
+_sev = effective_severity   # internal shorthand kept for readability below
 
 
 @dataclass

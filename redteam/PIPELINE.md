@@ -105,6 +105,8 @@ python3 redteam/attacks/run_attacks.py .audit/stand.json -c tool-poisoning,memor
 
 - Аудит: новый профиль (`profiles/<system>.json`) + привязки адаптеров в манифесте.
 - Атаки: новый адаптер `redteam/attacks/targets/<system>.py` (реализовать
-  `AttackTarget`). Сценарии, таксономия и раннер не меняются.
+  `AttackTarget`). Сценарии, таксономия и раннер не меняются. Таксономия доменов
+  и ранжирование по severity — общие с библиотекой (`mcp_attack.audit_domains`,
+  `mcp_attack.audit_plan`); `redteam/` их импортирует, а не дублирует.
 
 Только против своего стенда: live-режимы аудита и все атаки реально ходят по сети.
