@@ -8,19 +8,27 @@ from mcp_attack.catalog.schema import validate_catalog_file, validate_variant_di
 CATALOG_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             "mcp_attack", "catalog", "prompts")
 
-FOLDERS = ["mem02_global_policy_poisoning", "mem01_03_cross_session_semantic_poisoning",
-          "auth_tool_direct_bac_injection", "framing_diversity", "benign_control",
-          "generic_memory_prompt_injection", "generic_sensitive_data_leakage",
-          "generic_protected_key_tampering", "generic_memory_integrity_violation",
-          "generic_bulk_injection_anomaly", "generic_tool_output_instruction_injection"]
+FOLDERS = [
+    "domain/invest_bank/mem02_global_policy_poisoning",
+    "domain/invest_bank/mem01_03_cross_session_semantic_poisoning",
+    "domain/invest_bank/auth_tool_direct_bac_injection",
+    "domain/invest_bank/framing_diversity",
+    "domain/invest_bank/benign_control",
+    "generic/generic_memory_prompt_injection",
+    "generic/generic_sensitive_data_leakage",
+    "generic/generic_protected_key_tampering",
+    "generic/generic_memory_integrity_violation",
+    "generic/generic_bulk_injection_anomaly",
+    "generic/generic_tool_output_instruction_injection",
+]
 
 GENERIC_FOLDER_TO_CATEGORY = {
-    "generic_memory_prompt_injection": "memory_prompt_injection",
-    "generic_sensitive_data_leakage": "sensitive_data_leakage",
-    "generic_protected_key_tampering": "protected_key_tampering",
-    "generic_memory_integrity_violation": "memory_integrity_violation",
-    "generic_bulk_injection_anomaly": "bulk_injection_anomaly",
-    "generic_tool_output_instruction_injection": "tool_output_instruction_injection",
+    "generic/generic_memory_prompt_injection": "memory_prompt_injection",
+    "generic/generic_sensitive_data_leakage": "sensitive_data_leakage",
+    "generic/generic_protected_key_tampering": "protected_key_tampering",
+    "generic/generic_memory_integrity_violation": "memory_integrity_violation",
+    "generic/generic_bulk_injection_anomaly": "bulk_injection_anomaly",
+    "generic/generic_tool_output_instruction_injection": "tool_output_instruction_injection",
 }
 
 
@@ -40,12 +48,12 @@ def test_load_catalog_across_all_shipped_folders_has_unique_ids():
 
 
 def test_benign_control_variants_carry_no_rule_ids():
-    variants = load_catalog([os.path.join(CATALOG_ROOT, "benign_control")])
+    variants = load_catalog([os.path.join(CATALOG_ROOT, "domain", "invest_bank", "benign_control")])
     assert all(v.rule_ids == [] for v in variants)
 
 
 def test_discover_catalog_files_expands_directory():
-    files = discover_catalog_files([os.path.join(CATALOG_ROOT, "mem02_global_policy_poisoning")])
+    files = discover_catalog_files([os.path.join(CATALOG_ROOT, "domain", "invest_bank", "mem02_global_policy_poisoning")])
     assert len(files) == 1
     assert files[0].endswith("catalog.json")
 

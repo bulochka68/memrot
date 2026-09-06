@@ -17,7 +17,7 @@ def _base_config(**overrides):
             {"role": "attacker", "principal": {"principal_id": "1001", "credential_ref": "CUS_1001"}},
             {"role": "victim", "principal": {"principal_id": "1002", "credential_ref": "CUS_1002"}},
         ],
-        "catalog_paths": ["mcp_attack/catalog/prompts/benign_control"],
+        "catalog_paths": ["mcp_attack/catalog/prompts/domain/invest_bank/benign_control"],
     }
     cfg.update(overrides)
     return cfg

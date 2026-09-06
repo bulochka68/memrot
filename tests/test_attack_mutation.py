@@ -163,11 +163,12 @@ def test_build_technique_unknown_slug_raises():
         build_technique("not_a_real_technique")
 
 
-def test_registry_lists_all_nine_techniques():
+def test_registry_lists_all_techniques():
     assert set(MUTATION_TECHNIQUES) == {
         "prefix_injection", "base64_obfuscation", "persona_override",
         "state_toggle_override", "forced_output_shape",
         "paraphrase", "roleplay_framing", "translation", "escalation_rewrite",
+        "domain_adaptation",
     }
 
 

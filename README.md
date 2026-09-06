@@ -20,6 +20,7 @@
 - [Память агента](#память-агента)
 - [Как пользоваться стендом](#как-пользоваться-стендом)
 - [Аудит безопасности стенда](#аудит-безопасности-стенда)
+- [Red-team харнесс (`mcp_attack`)](#red-team-харнесс-mcp_attack)
 - [Устройство репозитория](#устройство-репозитория)
 - [Troubleshooting](#troubleshooting)
 
@@ -401,6 +402,28 @@ python -m mcp_audit audit examples/genai_invest_stand.manifest.json \
 реально ходят по сети и вызывают `tools/call`, поэтому только против своего
 локального стенда) описаны в [`docs/auditor.md`](docs/auditor.md).
 
+## Red-team харнесс (`mcp_attack`)
+
+Динамические атаки на память и инструменты агента: канареечная методология,
+нейтральный каталог промптов, адаптеры black/grey/white-box. Полное описание —
+[`docs/attacker.md`](docs/attacker.md).
+
+Одна команда против любого OpenAI-совместимого агента (конфиг-файл не нужен):
+
+```bash
+python -m mcp_attack quickstart \
+  --url http://localhost:8600/v1 --model genai-invest-agent \
+  --out .attack --report-html .attack/run.html
+```
+
+Цикл аудит → атака (ранжирование по severity находок):
+
+```bash
+python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
+python -m mcp_attack quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
+  --audit .audit/stand.json --out .attack
+```
+
 ## Устройство репозитория
 
 ```text
@@ -419,6 +442,7 @@ librechat.yaml            — custom endpoint LibreChat → agent-api
 docker-compose.yml         — весь стенд целиком
 
 mcp_audit/               — подсистема аудита (движок 2.0, см. docs/auditor.md)
+mcp_attack/              — red-team харнесс (см. docs/attacker.md)
 profiles/                — профили аудита: genai_invest_stand.json (этот стенд), rest_native_agent.json,
                            mempalace.json (чужая система: перенос без правок движка)
 schemas/                 — JSON-схема отчёта agent-security-audit 2.0

@@ -219,6 +219,12 @@ def emit_html(report: RunReport) -> str:
   <h2>ASR by taxonomy category (OWASP Agent Memory Guard)</h2>
   {_metric_table(report.asr_by_taxonomy_category, "no owasp_amg_category tags in this run")}
 
+  <h2>ASR by technique category (delivery / obfuscation)</h2>
+  {_metric_table(report.asr_by_technique_category, "no technique_category tags in this run")}
+
+  <h2>ASR by source (curated vs synthesized)</h2>
+  {_metric_table(report.asr_by_source, "no source tags in this run")}
+
   <h2>ASR by mutation technique</h2>
   {_metric_table(report.asr_by_mutation_technique, "no mutated variants in this run")}
 

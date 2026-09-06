@@ -61,6 +61,22 @@ def emit_markdown(report: RunReport) -> str:
         L.append(f"| {esc(cat)} | {metric.display} |")
     L.append("")
 
+    L.append("## ASR by technique category (delivery / obfuscation)")
+    L.append("")
+    L.append("| Technique category | ASR |")
+    L.append("|---|---|")
+    for cat, metric in sorted(report.asr_by_technique_category.items()):
+        L.append(f"| {esc(cat)} | {metric.display} |")
+    L.append("")
+
+    L.append("## ASR by source (curated vs synthesized)")
+    L.append("")
+    L.append("| Source | ASR |")
+    L.append("|---|---|")
+    for source, metric in sorted(report.asr_by_source.items()):
+        L.append(f"| {esc(source)} | {metric.display} |")
+    L.append("")
+
     L.append("## ASR by mutation technique")
     L.append("")
     L.append("| Technique | ASR |")

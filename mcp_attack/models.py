@@ -120,6 +120,8 @@ LAYER_VALUES = ("policy_global", "semantic", "episodic", "none")
 PROPAGATION_VALUES = ("cross-user", "cross-session-same-user", "single-turn")
 DELIVERY_CHANNEL_VALUES = ("chat_direct", "tool_result", "document_ingestion")
 THREAT_MODEL_VALUES = ("memory_poisoning", "llm_jailbreak_susceptibility")
+TOOL_VECTOR_VALUES = ("web_search", "email", "document", "calendar", "crm", "custom")
+DOMAIN_VALUES = ("neutral", "invest_bank")
 
 
 @dataclass
@@ -136,6 +138,8 @@ class AttackVariant:
     rule_ids: List[str] = field(default_factory=list)     # loose string-tag link to mcp_audit's rule catalogue
     taxonomy: List[str] = field(default_factory=list)      # MITRE ATLAS ids, e.g. "AML.T0051"
     owasp_amg_category: str = ""                            # target-agnostic slug, see taxonomy.py; "" = untagged
+    technique_category: str = ""                             # delivery/obfuscation slug, see taxonomy.ATTACK_TECHNIQUE_CATEGORIES
+    domain: str = "neutral"                                   # 'neutral' | 'invest_bank'
     access_profile_required: str = "black_box"
     attacker_role: str = "attacker"
     victim_role: str = "victim"
@@ -199,9 +203,11 @@ class AttackResult:
     rule_ids: List[str] = field(default_factory=list)
     taxonomy: List[str] = field(default_factory=list)
     owasp_amg_category: str = ""
+    technique_category: str = ""
     mutation_technique: str = ""
     delivery_channel: str = ""
     threat_model: str = ""
+    source: str = ""
     laundering_detected: Optional[bool] = None   # diagnostic only for tool_result flows, not the verdict itself
     framing: str = ""
     payload: str = ""
@@ -261,8 +267,10 @@ class RunReport:
     asr_by_rule_id: Dict[str, GroupMetric] = field(default_factory=dict)
     asr_by_axis: Dict[str, Dict[str, GroupMetric]] = field(default_factory=dict)
     asr_by_taxonomy_category: Dict[str, GroupMetric] = field(default_factory=dict)
+    asr_by_technique_category: Dict[str, GroupMetric] = field(default_factory=dict)
     asr_by_mutation_technique: Dict[str, GroupMetric] = field(default_factory=dict)
     asr_by_threat_model: Dict[str, GroupMetric] = field(default_factory=dict)
+    asr_by_source: Dict[str, GroupMetric] = field(default_factory=dict)
     counts_by_verdict: Dict[str, int] = field(default_factory=dict)
     limitations: List[str] = field(default_factory=list)
     trace_path: Optional[str] = None
@@ -280,8 +288,10 @@ class RunReport:
             "asr_by_axis": {axis: {k: v.to_dict() for k, v in groups.items()}
                            for axis, groups in self.asr_by_axis.items()},
             "asr_by_taxonomy_category": {k: v.to_dict() for k, v in self.asr_by_taxonomy_category.items()},
+            "asr_by_technique_category": {k: v.to_dict() for k, v in self.asr_by_technique_category.items()},
             "asr_by_mutation_technique": {k: v.to_dict() for k, v in self.asr_by_mutation_technique.items()},
             "asr_by_threat_model": {k: v.to_dict() for k, v in self.asr_by_threat_model.items()},
+            "asr_by_source": {k: v.to_dict() for k, v in self.asr_by_source.items()},
             "counts_by_verdict": dict(self.counts_by_verdict),
             "limitations": list(self.limitations),
             "trace_path": self.trace_path,

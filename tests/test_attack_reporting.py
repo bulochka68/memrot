@@ -136,6 +136,19 @@ def test_emit_html_escapes_untrusted_content():
     assert "&lt;script&gt;" in doc
 
 
+def test_aggregate_by_technique_category_and_source():
+    report = _report([
+        _result(Verdict.CONFIRMED, technique_category="obfuscation_encoding", source="llm_synthesis"),
+        _result(Verdict.CLEAN, technique_category="obfuscation_encoding", source="static_catalog"),
+        _result(Verdict.CONFIRMED, technique_category="", source=""),
+    ])
+    aggregate(report)
+    assert report.asr_by_technique_category["obfuscation_encoding"].display == "1/2 (50.0%)"
+    assert report.asr_by_technique_category["(untagged)"].display == "1/1 (100.0%)"
+    assert report.asr_by_source["llm_synthesis"].display == "1/1 (100.0%)"
+    assert report.asr_by_source["static_catalog"].display == "0/1 (0.0%)"
+
+
 def test_emit_html_handles_zero_denominator_groups_without_crashing():
     report = _report([_result(Verdict.ERROR)])
     aggregate(report)

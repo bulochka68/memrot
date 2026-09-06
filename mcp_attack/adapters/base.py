@@ -30,6 +30,8 @@ class AdapterCapabilities:
     supports_ground_truth: bool = False
     supports_reset: bool = False
     supports_tool_staging: bool = False
+    supports_document_ingestion: bool = False
+    supported_tool_vectors: List[str] = field(default_factory=list)
     notes: List[str] = field(default_factory=list)
 
 
@@ -69,16 +71,26 @@ class TargetAdapter(abc.ABC):
         cross-run contamination safety net)."""
         return False
 
-    def stage_tool_response(self, tool_name: str, content: str) -> None:
+    def stage_tool_response(self, tool_name: str, content: str, *, vector: str = "web_search") -> None:
         """Make the target's *next* matching tool call return ``content``
         instead of its real result (one-shot: consumed then reverts to real
         behavior). Models indirect prompt injection delivered via a tool
         result (e.g. a poisoned web-search snippet) rather than a direct
-        chat turn. No-op default: an adapter that can't stage a tool result
+        chat turn. ``vector`` is a semantic label of the delivery channel
+        (``web_search`` / ``email`` / ``document`` / ``calendar`` / ``crm`` /
+        ``custom``); the adapter decides which of its tools should return
+        ``content``. No-op default: an adapter that can't stage a tool result
         should not silently do nothing and claim success -- pair this with
         ``AdapterCapabilities.supports_tool_staging = False`` so the runner
         reports ``NOT_EVALUATED`` instead of a false ``CLEAN``."""
         return None
+
+    def ingest_document(self, principal: Principal, session_id: str, document_text: str) -> str:
+        """Feed a document the way the agent would receive an attachment or
+        RAG context; return the assistant's reply. No-op default -- pair
+        with ``supports_document_ingestion=False`` so the runner reports
+        ``NOT_EVALUATED`` instead of a false ``CLEAN``."""
+        return ""
 
     def capabilities(self) -> AdapterCapabilities:
         return AdapterCapabilities(access_profile="black_box")

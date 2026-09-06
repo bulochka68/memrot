@@ -109,6 +109,31 @@ def test_select_variants_by_audit_falls_back_to_rule_id_for_unmapped_categories(
     assert any("AUTH-02" in l for l in limitations)
 
 
+def test_select_variants_by_audit_top_n_truncates_and_keeps_order(write_json):
+    doc = _doc([_finding("MEM-02", severity="CRITICAL")], [{"rule_id": "MEM-02", "control_outcome": "FAIL"}])
+    audit_path = write_json("audit.json", doc)
+    variants = [
+        _variant("z-unrelated"),
+        _variant("a-matched", owasp_amg_category="memory_prompt_injection"),
+        _variant("b-matched", owasp_amg_category="memory_prompt_injection"),
+        _variant("c-unrelated"),
+    ]
+    ordered, _ = select_variants_by_audit(variants, audit_path, top_n=2)
+    assert [v.id for v in ordered] == ["a-matched", "b-matched"]
+
+
+def test_real_audit_ranks_bac_variants_ahead_of_memory_only_variants():
+    variants = load_catalog([CATALOG_ROOT])
+    ordered, limitations = select_variants_by_audit(variants, REAL_AUDIT)
+    bac_ids = {v.id for v in variants if "AUTH-02" in v.rule_ids}
+    mem_ids = {v.id for v in variants if "MEM-02" in v.rule_ids and "AUTH-02" not in v.rule_ids}
+    assert bac_ids and mem_ids
+    first_bac = min(i for i, v in enumerate(ordered) if v.id in bac_ids)
+    first_mem = min(i for i, v in enumerate(ordered) if v.id in mem_ids)
+    assert first_bac < first_mem
+    assert any("AUTH-02" in l or "unmapped" in l.lower() or "no owasp_amg_category" in l for l in limitations)
+
+
 def test_select_variants_by_audit_higher_severity_wins_over_lower(write_json):
     doc = _doc(
         [_finding("MEM-02", severity="LOW"), _finding("MEM-04", severity="CRITICAL")],

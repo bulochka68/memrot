@@ -29,8 +29,7 @@ SEV_RANK = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, None: 9, "": 9}   #
 # mcp_audit rule_id -> mcp_attack owasp_amg_category slug (taxonomy.py).
 # Deliberately partial: AUTH-*, INFRA-*, INV-*, TOOL-01/02 don't fit any of
 # the 6 memory/tool-poisoning-focused categories -- left unmapped rather than
-# forced, so an unbridged rule_id degrades to direct rule_id matching only
-# (see select_variants_by_audit), not a wrong category.
+# forced. Those classes are ranked via RULE_ID_TO_TECHNIQUE_CATEGORY instead.
 RULE_ID_TO_OWASP_AMG_CATEGORY: Dict[str, str] = {
     "MEM-02": "memory_prompt_injection",
     "MEM-04": "memory_prompt_injection",
@@ -47,6 +46,14 @@ RULE_ID_TO_OWASP_AMG_CATEGORY: Dict[str, str] = {
     "TOOL-05": "tool_output_instruction_injection",
 }
 
+# mcp_audit rule_id -> mcp_attack technique_category slug (delivery/obfuscation).
+RULE_ID_TO_TECHNIQUE_CATEGORY: Dict[str, str] = {
+    "AUTH-02": "direct_instruction_override",
+    "AUTH-03": "direct_instruction_override",
+    "TOOL-04": "tool_result_injection",
+    "TOOL-05": "tool_result_injection",
+}
+
 
 def _sev(finding: dict) -> Optional[str]:
     """Ported verbatim from redteam/rank_targets.py's ``_sev``: a finding's
@@ -61,6 +68,7 @@ class RankedFinding:
     severity: Optional[str]
     control_outcome: Optional[str]
     owasp_amg_category: str   # "" when RULE_ID_TO_OWASP_AMG_CATEGORY has no entry
+    technique_category: str = ""  # "" when RULE_ID_TO_TECHNIQUE_CATEGORY has no entry
 
 
 def extract_ranked_findings(audit_doc: dict, *, only_failed: bool = True,
@@ -79,19 +87,41 @@ def extract_ranked_findings(audit_doc: dict, *, only_failed: bool = True,
         if min_severity is not None and SEV_RANK.get(sev, 9) > SEV_RANK.get(min_severity, 9):
             continue
         out.append(RankedFinding(rule_id=rule_id, severity=sev, control_outcome=outcome,
-                                 owasp_amg_category=RULE_ID_TO_OWASP_AMG_CATEGORY.get(rule_id, "")))
+                                 owasp_amg_category=RULE_ID_TO_OWASP_AMG_CATEGORY.get(rule_id, ""),
+                                 technique_category=RULE_ID_TO_TECHNIQUE_CATEGORY.get(rule_id, "")))
     return sorted(out, key=lambda rf: (SEV_RANK.get(rf.severity, 9), rf.rule_id))
 
 
+def _campaign_boost(audit_doc: dict) -> Dict[str, int]:
+    """Negative rank offset for categories the audit grouped into a P3 campaign."""
+    boost: Dict[str, int] = {}
+    corpus = (audit_doc.get("downstream") or {}).get("P3_corpus") or []
+    for item in corpus:
+        campaign = str(item.get("campaign") or "")
+        keys: List[str] = []
+        if campaign.startswith("C2"):
+            keys = ["memory_prompt_injection", "memory_integrity_violation", "sensitive_data_leakage",
+                    "protected_key_tampering", "bulk_injection_anomaly"]
+        elif "IDOR" in campaign:
+            keys = ["direct_instruction_override"]
+        elif campaign.startswith("C4"):
+            keys = ["tool_output_instruction_injection", "tool_result_injection"]
+        for key in keys:
+            boost[key] = min(boost.get(key, 0), -1)
+    return boost
+
+
 def select_variants_by_audit(variants: List[AttackVariant], audit_path: str, *,
-                             mode: str = "ranked", min_severity: Optional[str] = None
+                             mode: str = "ranked", min_severity: Optional[str] = None,
+                             top_n: Optional[int] = None
                              ) -> Tuple[List[AttackVariant], List[str]]:
     """Never filters -- like audit_bridge.filter_variants_by_audit's
     "prioritize" mode, not its "filter" mode -- it orders ALL variants by the
     best (lowest-rank) severity among findings whose bridged
-    owasp_amg_category matches the variant's ``owasp_amg_category``, falling
+    owasp_amg_category (or technique_category) matches the variant, falling
     back to direct ``rule_id`` matching for variants/findings the bridge
-    table doesn't cover, so nothing silently drops out of consideration.
+    tables don't cover, so nothing silently drops out of consideration.
+    ``top_n`` optionally truncates to the N highest-priority variants.
     ``mode`` is accepted for symmetry with ``audit_bridge``'s signature and
     for future modes; only "ranked" is implemented here.
     """
@@ -105,27 +135,40 @@ def select_variants_by_audit(variants: List[AttackVariant], audit_path: str, *,
         return list(variants), [f"audit {audit_path!r} has no FAIL findings matching the given filters; "
                                 "variant order is unchanged"]
 
+    campaign_boost = _campaign_boost(audit_doc)
     best_rank_by_category: Dict[str, int] = {}
+    best_rank_by_technique: Dict[str, int] = {}
     best_rank_by_rule_id: Dict[str, int] = {}
     for rf in ranked:
         rank = SEV_RANK.get(rf.severity, 9)
         if rf.owasp_amg_category:
             best_rank_by_category[rf.owasp_amg_category] = min(rank, best_rank_by_category.get(rf.owasp_amg_category, 9))
+        if rf.technique_category:
+            best_rank_by_technique[rf.technique_category] = min(rank, best_rank_by_technique.get(rf.technique_category, 9))
         best_rank_by_rule_id[rf.rule_id] = min(rank, best_rank_by_rule_id.get(rf.rule_id, 9))
 
     def variant_rank(v: AttackVariant) -> int:
         candidates = [9]
         if v.owasp_amg_category in best_rank_by_category:
             candidates.append(best_rank_by_category[v.owasp_amg_category])
+        if v.technique_category in best_rank_by_technique:
+            candidates.append(best_rank_by_technique[v.technique_category])
         for rule_id in v.rule_ids:
             if rule_id in best_rank_by_rule_id:
                 candidates.append(best_rank_by_rule_id[rule_id])
-        return min(candidates)
+        rank = min(candidates)
+        if v.owasp_amg_category in campaign_boost:
+            rank += campaign_boost[v.owasp_amg_category]
+        if v.technique_category in campaign_boost:
+            rank += campaign_boost[v.technique_category]
+        return rank
 
     ordered = sorted(variants, key=lambda v: (variant_rank(v), v.id))
     limitations: List[str] = []
     unmapped = sorted({rf.rule_id for rf in ranked if not rf.owasp_amg_category})
     if unmapped:
         limitations.append(f"no owasp_amg_category bridge for rule_id(s) {unmapped}; "
-                           "ranking for these falls back to direct rule_id matching only")
+                           "ranking for these falls back to technique_category and direct rule_id matching only")
+    if top_n is not None:
+        ordered = ordered[: max(0, int(top_n))]
     return ordered, limitations
