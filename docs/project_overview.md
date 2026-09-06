@@ -184,7 +184,10 @@ python -m mcp_attack quickstart --url http://localhost:8600/v1 --model genai-inv
 
 `--pool auto` (по умолчанию в `quickstart`) подключает overlay `domain/invest_bank`,
 если `meta.profile.id` — инвестиционный стенд; для `mempalace` и прочих профилей
-остаётся нейтральный `generic/` каталог. Подробности: [`docs/attacker.md`](attacker.md).
+остаётся нейтральный `generic/` каталог. У чужой системы MemPalace есть свой
+overlay `domain/mempalace/` и готовый конфиг `examples/mempalace.attack.config.json`
+(цель `mcp_client` к общему HTTP-хабу), подключаемые явно, а не через `auto` —
+тот же перенос данными, что и на стороне аудита. Подробности: [`docs/attacker.md`](attacker.md).
 
 ```mermaid
 flowchart LR
