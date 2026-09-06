@@ -460,7 +460,8 @@ profiles/                — профили аудита: genai_invest_stand.jso
 schemas/                 — JSON-схема отчёта agent-security-audit 2.0
 examples/                — манифесты, снимки, эталонные отчёты аудита и attack-конфиги
                            (genai_invest_stand.*, mempalace.* — аудит и атака на чужую систему)
-docs/                    — архитектура аудита, каталог правил, форматы адаптеров
+docs/                    — архитектура аудита, каталог правил, форматы адаптеров,
+                           продуктовая мотивация (product_motivation.md)
 tests/                   — тесты подсистемы аудита (python -m pytest -q)
 ```
 
