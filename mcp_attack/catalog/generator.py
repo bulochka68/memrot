@@ -14,10 +14,13 @@ from __future__ import annotations
 import abc
 import hashlib
 import json
+import logging
 import os
 import random
 from dataclasses import dataclass
 from typing import Iterable, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from ..models import AttackVariant
 from ..mutation.domain import DomainProfile
@@ -60,7 +63,16 @@ class LLMMutationGenerator(AttackGenerator):
     generation -- the seed and every other technique/seed combination still
     run. ``keep_seeds`` controls whether the unmutated originals are also
     included in the output (default: yes, so a mutation run's ASR-by-axis
-    breakdown still has an unmutated baseline to compare against)."""
+    breakdown still has an unmutated baseline to compare against).
+
+    A skipped failure is never silent: it is logged via the stdlib
+    ``logging`` module *and* appended to :attr:`failures` (populated fresh on
+    every :meth:`generate` call), so a caller that silently got fewer
+    mutated variants than ``len(seed_variants) * len(techniques)`` can tell
+    "the technique didn't apply / the LLM call errored" apart from "a
+    genuine CLEAN verdict" -- see the incident that motivated this: a whole
+    ``generate()`` call silently degraded to just the kept, unmutated seeds
+    because all 4 real LLM-mutation calls failed inside a Jupyter kernel."""
     kind = "llm_mutation"
 
     def __init__(self, seed_variants: Iterable[AttackVariant], *, techniques: Iterable[str] = ("prefix_injection",),
@@ -75,6 +87,7 @@ class LLMMutationGenerator(AttackGenerator):
             self.techniques.append(build_technique(slug, **kwargs))
         self.max_mutations_per_seed = max_mutations_per_seed
         self.keep_seeds = keep_seeds
+        self.failures: List[str] = []
 
         self.llm: Optional[LLMClient] = None
         if any(t.requires_llm for t in self.techniques):
@@ -85,6 +98,7 @@ class LLMMutationGenerator(AttackGenerator):
 
     def generate(self) -> List[AttackVariant]:
         out: List[AttackVariant] = list(self.seed_variants) if self.keep_seeds else []
+        self.failures = []
         for seed in self.seed_variants:
             produced = 0
             for technique in self.techniques:
@@ -93,8 +107,16 @@ class LLMMutationGenerator(AttackGenerator):
                 try:
                     out.append(technique.mutate(seed, llm=self.llm))
                     produced += 1
-                except Exception:
-                    continue   # a single technique/seed mismatch or LLM failure must not abort the whole run
+                except Exception as exc:
+                    # a single technique/seed mismatch or LLM failure must not abort the whole run,
+                    # but it must never disappear either -- see docstring.
+                    msg = f"mutation technique {technique.slug!r} failed on seed {seed.id!r}: {type(exc).__name__}: {exc}"
+                    logger.warning(msg)
+                    self.failures.append(msg)
+                    continue
+        if self.failures:
+            logger.warning("LLMMutationGenerator: %d/%d requested mutations failed and were skipped",
+                           len(self.failures), len(self.seed_variants) * len(self.techniques))
         return out
 
 

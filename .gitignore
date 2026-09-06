@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 .venv/
+.venv311/
 CLAUDE.md
 attack-run-*/
 ATTACK_HARNESS_PROGRESS.md

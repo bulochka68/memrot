@@ -126,6 +126,41 @@ def test_run_with_mutate_flag_multiplies_variants(http_server, monkeypatch, tmp_
     assert techniques_seen == {"", "prefix_injection", "persona_override"}
 
 
+def test_run_with_mutate_surfaces_failures_in_report_limitations(http_server, monkeypatch, tmp_path, write_json):
+    """Regression guard: a mutation technique that raises on every seed must
+    not silently degrade a run to "just the kept seeds" with no trace in the
+    report -- see LLMMutationGenerator.failures (mcp_attack/catalog/generator.py)
+    and its wiring into cli.py's ``limitations``. Forces PrefixInjectionTechnique
+    (cheap, no LLM required) to always raise, so this test needs no LLM stub
+    beyond the plain echo http_server already used for the target itself."""
+    from mcp_attack.mutation.techniques import PrefixInjectionTechnique
+
+    def _always_raise(self, variant, *, llm=None):
+        raise RuntimeError("forced failure for test")
+
+    monkeypatch.setattr(PrefixInjectionTechnique, "mutate", _always_raise)
+
+    port = http_server.server_address[1]
+    monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")
+    config_path = write_json("cli_mutate_fail.config.json", {
+        "schema_version": "1.0",
+        "target": {"kind": "openai_compat",
+                  "binding": {"base_url": f"http://127.0.0.1:{port}", "model": "test-model", "timeout": 5.0}},
+        "channels": [{"role": "attacker", "principal": {"principal_id": "1001", "credential_ref": "CUS_TEST"}}],
+        "catalog_paths": [BENIGN],
+    })
+    out_dir = str(tmp_path / "out")
+    rc = main(["run", "--config", config_path, "--out", out_dir, "--mutate", "prefix_injection"])
+    assert rc == 0
+    with open(os.path.join(out_dir, "run.json"), encoding="utf-8") as fh:
+        report = json.load(fh)
+    # keep_seeds defaults to True: all 3 mutations fail, only the 3 kept seeds run.
+    assert len(report["results"]) == 3
+    assert all(r["mutation_technique"] == "" for r in report["results"])
+    assert len(report["limitations"]) == 3
+    assert all("prefix_injection" in lim and "forced failure for test" in lim for lim in report["limitations"])
+
+
 def test_run_with_taxonomy_filter_restricts_to_one_category(http_server, monkeypatch, tmp_path, write_json):
     port = http_server.server_address[1]
     monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")

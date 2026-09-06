@@ -276,8 +276,14 @@ def test_generator_keep_seeds_includes_the_unmutated_originals():
 
 def test_generator_skips_a_technique_that_fails_without_aborting_the_run():
     """escalation_rewrite doesn't apply to a single-turn seed; the generator
-    must silently skip that combination and still produce the other
-    technique's mutation."""
+    must skip that combination and still produce the other technique's
+    mutation -- but the skip itself must be recorded on ``.failures``, not
+    disappear. Regression guard for the incident where a whole
+    ``generate()`` call silently degraded to just the kept seeds because
+    every real LLM-mutation call failed inside a Jupyter kernel and nothing
+    downstream (CLI report, notebook print) had any way to tell "0 mutations
+    because everything failed" apart from "0 mutations, none were asked
+    for"."""
     single_turn_seed = _seed(propagation="single-turn", inject_turns=[], probe="hi [{canary}]",
                              canary_template="{canary}")
     gen = LLMMutationGenerator.__new__(LLMMutationGenerator)
@@ -291,6 +297,31 @@ def test_generator_skips_a_technique_that_fails_without_aborting_the_run():
     out = gen.generate()
     assert len(out) == 1
     assert out[0].mutation_technique == "prefix_injection"
+    assert len(gen.failures) == 1
+    assert "escalation_rewrite" in gen.failures[0]
+    assert single_turn_seed.id in gen.failures[0]
+
+
+def test_generator_failures_reset_between_generate_calls():
+    """.failures must reflect only the most recent generate() call, not
+    accumulate silently across repeated calls on the same instance."""
+    seed = _seed()
+    gen = LLMMutationGenerator([seed], techniques=["prefix_injection"], keep_seeds=False)
+    gen.generate()
+    assert gen.failures == []
+    # force one failure by swapping in a technique that always raises
+    class _AlwaysFails:
+        slug = "always_fails"
+        requires_llm = False
+
+        def mutate(self, variant, *, llm=None):
+            raise RuntimeError("boom")
+
+    gen.techniques = [_AlwaysFails()]
+    out = gen.generate()
+    assert out == []
+    assert len(gen.failures) == 1
+    assert "always_fails" in gen.failures[0] and "boom" in gen.failures[0]
 
 
 def test_generator_max_mutations_per_seed_caps_output():

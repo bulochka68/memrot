@@ -72,6 +72,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                 args.catalog_bank, bank_source,
                 sample_size=args.catalog_bank_sample_size, seed=args.catalog_bank_seed,
             ).generate()
+        mutation_failures: List[str] = []
         if generator_kind == "llm_mutation":
             gen_options = dict(config.generator.options)
             if args.mutate:
@@ -82,7 +83,9 @@ def cmd_run(args: argparse.Namespace) -> int:
                 gen_options["model"] = args.mutation_model
             if args.mutation_api_key_env:
                 gen_options["api_key_env"] = args.mutation_api_key_env
-            variants = LLMMutationGenerator(seed_variants, **gen_options).generate()
+            mutation_generator = LLMMutationGenerator(seed_variants, **gen_options)
+            variants = mutation_generator.generate()
+            mutation_failures = mutation_generator.failures
         else:
             variants = seed_variants
 
@@ -106,7 +109,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ERROR
 
-    limitations: List[str] = []
+    limitations: List[str] = list(mutation_failures)
     audit_path = args.audit or config.audit_path
     if audit_path:
         audit_mode = args.audit_mode or config.audit_mode
