@@ -86,7 +86,7 @@ Audit then attack (ranked by finding severity, trifecta, P3 campaigns; same
 `path_state` vocabulary as `mcp_audit` / `redteam/`):
 
 ```bash
-python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
+python -m mcp_audit audit examples/genai_invest_stand.manifest.json --json .audit/stand.json
 python -m memrot quickstart --url http://localhost:8600/v1 --model my-agent \
   --audit .audit/stand.json --out .attack
 ```
@@ -121,7 +121,25 @@ requires AMG on every `memory_poisoning` variant and ATLAS **or**
 | Domain overlay `catalog/prompts/domain/mempalace` | memory-palace-flavored; each variant attacks a control audit flagged FAIL on the [MemPalace](https://github.com/MemPalace/mempalace) build (MEM-01/03/07, AUTH-01, EGRESS-01) |
 | Imported banks (`garak_dan`, `trustairlab_jailbreak`) | `threat_model=llm_jailbreak_susceptibility` (separate ASR axis) |
 
-Path map: [`docs/catalog_paths.md`](catalog_paths.md).
+The neutral core also has pools with no bank-specific equivalent:
+`generic_obfuscation_encoding`, `generic_payload_splitting`, `generic_many_shot`,
+`generic_refusal_suppression`, `generic_context_ignore`, `generic_low_resource_language`,
+`generic_tool_email_injection`, `generic_tool_document_injection`,
+`generic_tool_websearch_injection`.
+
+The MemPalace overlay (see "Worked example" below), path by path:
+
+| Path | Attacks (rule_ids) | AMG category |
+|---|---|---|
+| `domain/mempalace/mem_cross_agent_drawer_poisoning` | MEM-03, MEM-01 | memory_prompt_injection / sensitive_data_leakage |
+| `domain/mempalace/mem_audience_bypass_recall` | MEM-01, MEM-07 | sensitive_data_leakage |
+| `domain/mempalace/auth_identity_spoofing` | AUTH-01, MEM-03 | memory_prompt_injection |
+| `domain/mempalace/peer_sync_exfiltration` | EGRESS-01, MEM-01 | sensitive_data_leakage |
+| `domain/mempalace/benign_control` | — | — |
+
+It stays out of `--pool auto` (a mempalace audit resolves to the generic pool,
+same portability split as the auditor); load it explicitly via
+`examples/mempalace.attack.config.json`'s `catalog_paths` or `--pool all`.
 
 ## Do / don't (ASR invariants)
 

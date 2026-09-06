@@ -7,11 +7,12 @@ capabilities, definitions and context, identity and authorization, memory,
 observed behaviour and infrastructure. MCP is one supported interface among
 REST, native functions, background jobs, memory stores and traces.
 
-The auditor lives in the same repository as the stand it audits: `mcp_audit/`,
-`profiles/`, `schemas/`, `examples/`, `docs/` and `tests/` sit next to `app/`,
-`mcp-invest/`, `invest-server/` and `docker-compose.yml`. Every command below is
-run from the repository root, so profile paths such as `app/api_server.py`
-resolve directly and no `..` is needed.
+The auditor lives in this repository (`mcp_audit/`, `profiles/`, `schemas/`,
+`examples/`, `docs/`, `tests/`); the stand it originally audited
+(`genai-invest-agent-memory-stand`) is a separate, sibling repository now,
+not vendored here — the checked-in `examples/genai_invest_stand.*` files are
+static snapshots taken from it, not a live local source tree. Every command
+below is run from this repository's root.
 
 ## What an audit answers
 
@@ -53,10 +54,6 @@ names are accepted as aliases.
 ## Usage
 
 ```bash
-# the stand in this checkout: sources + compose are read live, nothing is started
-python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json \
-  --json .audit/stand.json --md .audit/stand.md --gate
-
 # a plain MCP client config is wrapped into a manifest automatically (offline)
 python -m mcp_audit audit examples/mcp_config.example.json --json audit.json --md report.md
 

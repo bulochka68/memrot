@@ -261,7 +261,16 @@ def test_build_pattern_accepts_the_shorthand():
 # P0-3  lint-profile
 # --------------------------------------------------------------------------- #
 
-@pytest.mark.parametrize("name,root", [("genai_invest_stand", ROOT), ("rest_native_agent", os.path.join(HERE, "fixtures", "rest_native_agent", "src"))])
+@pytest.mark.parametrize("name,root", [
+    pytest.param("genai_invest_stand", ROOT,
+                marks=pytest.mark.skipif(
+                    not os.path.isdir(os.path.join(ROOT, "app")),
+                    reason="genai_invest_stand's source (app/, mcp-invest/, invest-server/) is no longer "
+                          "vendored in this repo -- it lives in the sibling genai-invest-agent-memory-stand "
+                          "repo now; this profile can't lint clean against ROOT without it.",
+                )),
+    ("rest_native_agent", os.path.join(HERE, "fixtures", "rest_native_agent", "src")),
+])
 def test_reference_profiles_lint_clean(name, root):
     with open(os.path.join(ROOT, "profiles", f"{name}.json"), encoding="utf-8") as fh:
         profile = json.load(fh)

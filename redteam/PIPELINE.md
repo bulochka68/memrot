@@ -11,7 +11,7 @@
 Портативный happy path:
 
 ```bash
-python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
+python -m mcp_audit audit examples/genai_invest_stand.manifest.json --json .audit/stand.json
 python -m memrot quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
   --audit .audit/stand.json --out .attack
 ```
@@ -31,15 +31,14 @@ mcp_audit audit ──> stand.json ──> rank_targets ──> select_attacks
 
 ```bash
 cd /home/user/aith_redteaming
-pip install -r requirements.txt          # движок аудита
-pip install pytest httpx                 # харнесс атак
+pip install pytest httpx                 # харнесс атак (mcp_audit/memrot сами -- stdlib only)
 mkdir -p .audit                          # отчёты (в .gitignore)
 ```
 
 ## 1. Offline-аудит (статика, ничего не поднимается)
 
 ```bash
-python3 -m mcp_audit audit examples/genai_invest_stand.local.manifest.json \
+python3 -m mcp_audit audit examples/genai_invest_stand.manifest.json \
   --json .audit/stand.json --md .audit/stand.md --gate
 ```
 Читает исходники + compose + политику → `.audit/stand.json`. Exit 1 = есть
@@ -73,7 +72,7 @@ python3 run_attacks.py ../../.audit/stand.json -c tool-poisoning,memory-poisonin
 ## 5. Поднять стенд и завести принципалов
 
 ```bash
-cd /home/user/aith_redteaming
+cd ../genai-invest-agent-memory-stand     # стенд больше не вендорится в этом репо
 docker compose up -d                     # agent-api на :8600
 export STAND_URL=http://localhost:8600
 export ATTACKER_KEY=<ключ пользователя A> # со страницы аккаунта стенда
@@ -112,7 +111,7 @@ control_violation_observed → маркер дошёл до жертвы (меж
 
 ```bash
 mkdir -p .audit && \
-python3 -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json --gate; \
+python3 -m mcp_audit audit examples/genai_invest_stand.manifest.json --json .audit/stand.json --gate; \
 python3 redteam/attacks/run_attacks.py .audit/stand.json -c tool-poisoning,memory-poisoning --dry-run
 ```
 
