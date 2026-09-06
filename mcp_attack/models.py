@@ -146,7 +146,7 @@ PROPAGATION_VALUES = ("cross-user", "cross-session-same-user", "single-turn")
 DELIVERY_CHANNEL_VALUES = ("chat_direct", "tool_result", "document_ingestion")
 THREAT_MODEL_VALUES = ("memory_poisoning", "llm_jailbreak_susceptibility")
 TOOL_VECTOR_VALUES = ("web_search", "email", "document", "calendar", "crm", "custom")
-DOMAIN_VALUES = ("neutral", "invest_bank")
+DOMAIN_VALUES = ("neutral", "invest_bank", "mempalace")
 
 
 @dataclass

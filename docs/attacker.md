@@ -118,6 +118,7 @@ requires AMG on every `memory_poisoning` variant and ATLAS **or**
 |---|---|
 | Neutral core `catalog/prompts/generic` | 6 AMG categories + 10 technique categories (direct, authority, obfuscation, splitting, many-shot, refusal, roleplay, low-resource language, tool-result, context-ignore) |
 | Domain overlay `catalog/prompts/domain/invest_bank` | same AMG set, bank-flavored wording |
+| Domain overlay `catalog/prompts/domain/mempalace` | memory-palace-flavored; each variant attacks a control audit flagged FAIL on the [MemPalace](https://github.com/MemPalace/mempalace) build (MEM-01/03/07, AUTH-01, EGRESS-01) |
 | Imported banks (`garak_dan`, `trustairlab_jailbreak`) | `threat_model=llm_jailbreak_susceptibility` (separate ASR axis) |
 
 Path map: [`docs/catalog_paths.md`](catalog_paths.md).
@@ -138,6 +139,37 @@ Path map: [`docs/catalog_paths.md`](catalog_paths.md).
    (`generator.options.domain_profile`, or `profile_from_audit(audit.json)`).
 3. Keep bank-specific overlays under `catalog/prompts/domain/<name>/` rather than
    mixing them into the generic tree.
+
+## Worked example: a foreign system (MemPalace)
+
+The audit half of this stand is ported to [MemPalace](https://github.com/MemPalace/mempalace)
+by data alone (`profiles/mempalace.json`, see
+[`porting_to_a_new_stand.md`](porting_to_a_new_stand.md)). The attack half is
+the same shape — a config plus a domain overlay, no engine change beyond one
+additive `DOMAIN_VALUES` entry:
+
+- **Transport.** MemPalace's team mode is one MCP-over-HTTP hub behind a shared
+  bearer (`deploy/docker-compose.server.yml`), so the target is `mcp_client`
+  (grey-box) at `http://HOST:8765/mcp`. The shared static token with a
+  self-asserted identity — audit's AUTH-01/AUTH-04 findings — is modeled by
+  giving every channel the *same* `credential_ref` but a *different*
+  `principal_id`.
+- **Overlay.** `catalog/prompts/domain/mempalace/` attacks the exact controls
+  audit reports FAIL on the recorded build (MEM-01/03/07, AUTH-01, EGRESS-01);
+  each variant's `notes` cite the located source fact (`tool_add_drawer`,
+  `tool_event_list`, `tool_event_append`, `_http_serve_sync`).
+- **Audit-driven.** The config sets `audit_path: examples/mempalace.audit.json`
+  and `audit_mode: ranked`, so the committed audit snapshot reorders the catalog
+  to its own FAIL controls.
+
+```bash
+export MCP_ATTACK_CRED_MEMPALACE_TEAM_TOKEN=<hub bearer token>
+python -m mcp_attack run --config examples/mempalace.attack.config.json --out .attack
+```
+
+Offline (no hub) the config still loads, the overlay validates
+(`--strict-taxonomy`), and ranking runs against the committed snapshot; a live
+run needs the hub reachable. Regression: `tests/test_mempalace_attack.py`.
 
 Net-new prompts: `LLMSynthesisGenerator` (`kind=llm_synthesis`). Adaptive
 retries: `python -m mcp_attack run --adaptive --attacker-base-url … --attacker-model …`.

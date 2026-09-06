@@ -424,6 +424,18 @@ python -m mcp_attack quickstart --url http://localhost:8600/v1 --model genai-inv
   --audit .audit/stand.json --out .attack
 ```
 
+Тот же харнесс, прикрученный к чужой системе
+[MemPalace](https://github.com/MemPalace/mempalace) (общий MCP-хаб поверх HTTP):
+цель `mcp_client`, доменный оверлей `mcp_attack/catalog/prompts/domain/mempalace/`
+бьёт по контролам, которые аудит показал FAIL (MEM-01/03/07, AUTH-01, EGRESS-01),
+а `examples/mempalace.audit.json` ранжирует каталог. Перенос — только данными, см.
+[`docs/porting_to_a_new_stand.md`](docs/porting_to_a_new_stand.md) (Шаг 7).
+
+```bash
+export MCP_ATTACK_CRED_MEMPALACE_TEAM_TOKEN=<bearer-токен хаба>
+python -m mcp_attack run --config examples/mempalace.attack.config.json --out .attack
+```
+
 ## Устройство репозитория
 
 ```text
@@ -442,11 +454,12 @@ librechat.yaml            — custom endpoint LibreChat → agent-api
 docker-compose.yml         — весь стенд целиком
 
 mcp_audit/               — подсистема аудита (движок 2.0, см. docs/auditor.md)
-mcp_attack/              — red-team харнесс (см. docs/attacker.md)
+mcp_attack/              — red-team харнесс, каталог: generic + domain/{invest_bank,mempalace} (см. docs/attacker.md)
 profiles/                — профили аудита: genai_invest_stand.json (этот стенд), rest_native_agent.json,
                            mempalace.json (чужая система: перенос без правок движка)
 schemas/                 — JSON-схема отчёта agent-security-audit 2.0
-examples/                — манифесты, снимки и эталонные отчёты аудита
+examples/                — манифесты, снимки, эталонные отчёты аудита и attack-конфиги
+                           (genai_invest_stand.*, mempalace.* — аудит и атака на чужую систему)
 docs/                    — архитектура аудита, каталог правил, форматы адаптеров
 tests/                   — тесты подсистемы аудита (python -m pytest -q)
 ```

@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "note": "Attack-сторона стенда, прикрученная к чужой системе MemPalace (https://github.com/MemPalace/mempalace, commit d9f0590). Транспорт — общий хаб MCP поверх HTTP (deploy/docker-compose.server.yml): http://HOST:8765/mcp, общий bearer-токен MEMPALACE_MCP_HTTP_TOKEN. Адаптер mcp_client (grey-box) шлёт tools/call и ставит Authorization: Bearer из credential_ref принципала. Общий токен смоделирован одним credential_ref MEMPALACE_TEAM_TOKEN на всех каналах при РАЗНЫХ principal_id — это и есть суть находок AUTH-01 (личность самозаявлена) и AUTH-04 (статический токен без субъекта и отзыва). Секрет не хранится здесь: экспортируйте MCP_ATTACK_CRED_MEMPALACE_TEAM_TOKEN=<токен>. Команды запускаются из корня репозитория (audit_path и пути README резолвятся оттуда). Живой прогон требует поднятого хаба; без него офлайн проверяется загрузка конфига, валидность каталога и audit-driven ранжирование (см. tests/test_mempalace_attack.py).",
+  "target": {
+    "kind": "mcp_client",
+    "binding": {
+      "base_url": "http://mempalace-hub.internal:8765/mcp"
+    },
+    "options": {
+      "timeout": 30.0
+    }
+  },
+  "access_profile": "grey_box",
+  "channels": [
+    {"role": "attacker", "principal": {"principal_id": "guest-9", "credential_ref": "MEMPALACE_TEAM_TOKEN", "label": "untrusted teammate (shared token, self-asserted identity)"}},
+    {"role": "victim", "principal": {"principal_id": "worker-1", "credential_ref": "MEMPALACE_TEAM_TOKEN", "label": "coordination worker that consumes events/drawers"}},
+    {"role": "victim", "principal": {"principal_id": "analyst-7", "credential_ref": "MEMPALACE_TEAM_TOKEN", "label": "agent whose to_agent-scoped events are targeted"}},
+    {"role": "benign_control", "principal": {"principal_id": "scribe-1", "credential_ref": "MEMPALACE_TEAM_TOKEN", "label": "ordinary teammate that never attacks"}}
+  ],
+  "detector": {"kind": "literal", "options": {"case_sensitive": false}},
+  "catalog_paths": [
+    "../mcp_attack/catalog/prompts/domain/mempalace/mem_cross_agent_drawer_poisoning",
+    "../mcp_attack/catalog/prompts/domain/mempalace/mem_audience_bypass_recall",
+    "../mcp_attack/catalog/prompts/domain/mempalace/auth_identity_spoofing",
+    "../mcp_attack/catalog/prompts/domain/mempalace/peer_sync_exfiltration",
+    "../mcp_attack/catalog/prompts/domain/mempalace/benign_control",
+    "../mcp_attack/catalog/prompts/generic/generic_memory_prompt_injection",
+    "../mcp_attack/catalog/prompts/generic/generic_sensitive_data_leakage",
+    "../mcp_attack/catalog/prompts/generic/generic_protected_key_tampering",
+    "../mcp_attack/catalog/prompts/generic/generic_memory_integrity_violation"
+  ],
+  "generator": {"kind": "static_catalog"},
+  "audit_path": "examples/mempalace.audit.json",
+  "audit_mode": "ranked",
+  "reset_between_variants": false,
+  "reporting": {"formats": ["json", "markdown", "html"]}
+}
