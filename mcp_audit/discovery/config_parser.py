@@ -11,7 +11,9 @@ Audit-only extensions (ignored by real clients):
     ``operations``, ``ddl``, ``network_access``, ``kind``, ``native``) - they are
     recorded as *policy expected by the config author*, never as an enforced ACL;
   * ``tools``: an offline tools snapshot (``configured`` inventory) so an offline
-    audit can run without spawning anything;
+    audit can run without spawning anything; a tool entry may carry its own
+    ``x_audit`` block declaring that tool's operations / egress / sensitivity
+    (declared > annotation > heuristic, see :mod:`mcp_audit.classification.declared`);
   * ``capture``: how the snapshot was obtained (method, time, identity).
 
 A config never fabricates a live handshake: ``handshake.performed`` stays False.
@@ -22,34 +24,28 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
+from ..classification.lexicon import Lexicon, base_lexicon
 from ..models import ServerRecord, ToolDefinition, ToolRecord, Handshake
 
-_KNOWN_KINDS = (
-    ("filesystem", re.compile(r"server-filesystem|mcp-filesystem|filesystem", re.I)),
-    ("postgres", re.compile(r"server-postgres|postgres|pg-mcp|mcp-postgres", re.I)),
-    ("sqlite", re.compile(r"server-sqlite|sqlite", re.I)),
-    ("github", re.compile(r"server-github|github-mcp|github", re.I)),
-    ("gitlab", re.compile(r"server-gitlab|gitlab", re.I)),
-    ("git", re.compile(r"server-git(?![a-z])|mcp-server-git", re.I)),
-    ("shell", re.compile(r"shell|server-commands|mcp-exec|terminal|bash|run-command", re.I)),
-    ("fetch", re.compile(r"server-fetch|fetch|http|browser|puppeteer|playwright|web", re.I)),
-    ("memory", re.compile(r"server-memory|memory|knowledge", re.I)),
-    ("slack", re.compile(r"slack", re.I)),
-    ("email", re.compile(r"mail|smtp|imap", re.I)),
-)
+
+def known_kinds(lexicon: Optional[Lexicon] = None) -> List[Tuple[str, "re.Pattern[str]"]]:
+    """Server kinds are data: ``lexicon.server_kinds`` (profiles may extend them)."""
+    return (lexicon or base_lexicon()).server_kinds()
 
 
-def infer_kind(name: str, command: Optional[str], args: List[str], url: Optional[str]) -> str:
+def infer_kind(name: str, command: Optional[str], args: List[str], url: Optional[str],
+               lexicon: Optional[Lexicon] = None) -> str:
     haystack = " ".join([name or "", command or "", *(args or []), url or ""])
-    for kind, rx in _KNOWN_KINDS:
+    for kind, rx in known_kinds(lexicon):
         if rx.search(haystack):
             return kind
     return "generic"
 
 
-def _server_from_entry(name: str, entry: Dict[str, Any], origin: str = "config") -> ServerRecord:
+def _server_from_entry(name: str, entry: Dict[str, Any], origin: str = "config",
+                       lexicon: Optional[Lexicon] = None) -> ServerRecord:
     command = entry.get("command")
     args = [str(a) for a in (entry.get("args") or [])]
     url = entry.get("url") or entry.get("serverUrl")
@@ -71,7 +67,7 @@ def _server_from_entry(name: str, entry: Dict[str, Any], origin: str = "config")
         kind = overrides["kind"]
         field_sources["kind"] = "x_audit"
     else:
-        kind = infer_kind(name, command, args, url)
+        kind = infer_kind(name, command, args, url, lexicon)
         field_sources["kind"] = "inferred"
     for key in ("command", "args", "url", "env"):
         if entry.get(key) is not None:
@@ -101,7 +97,7 @@ def _server_from_entry(name: str, entry: Dict[str, Any], origin: str = "config")
     return rec
 
 
-def parse_config(data: Any, origin: str = "config") -> List[ServerRecord]:
+def parse_config(data: Any, origin: str = "config", lexicon: Optional[Lexicon] = None) -> List[ServerRecord]:
     """Parse an already-loaded config object into ServerRecords."""
     servers: List[ServerRecord] = []
     if isinstance(data, dict):
@@ -116,11 +112,11 @@ def parse_config(data: Any, origin: str = "config") -> List[ServerRecord]:
         for name, entry in mapping.items():
             if not isinstance(entry, dict) or entry.get("disabled") is True:
                 continue
-            servers.append(_server_from_entry(str(name), entry, origin))
+            servers.append(_server_from_entry(str(name), entry, origin, lexicon))
     elif isinstance(data, list):
         for entry in data:
             if isinstance(entry, dict) and entry.get("name"):
-                servers.append(_server_from_entry(str(entry["name"]), entry, origin))
+                servers.append(_server_from_entry(str(entry["name"]), entry, origin, lexicon))
     return servers
 
 
@@ -134,11 +130,11 @@ def looks_like_mcp_config(data: Any) -> bool:
     return False
 
 
-def load_config_file(path: str) -> List[ServerRecord]:
+def load_config_file(path: str, lexicon: Optional[Lexicon] = None) -> List[ServerRecord]:
     with open(path, "r", encoding="utf-8") as fh:
         text = fh.read()
     text = _strip_json_comments(text)
-    return parse_config(json.loads(text), origin=f"config:{os.path.basename(path)}")
+    return parse_config(json.loads(text), origin=f"config:{os.path.basename(path)}", lexicon=lexicon)
 
 
 def parse_snapshot(path: str) -> Dict[str, Dict[str, Any]]:

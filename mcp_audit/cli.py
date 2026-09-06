@@ -9,6 +9,9 @@ audit error from "no violations" and incompleteness from violations:
     2  assessment partial / undetermined (an unknown mandatory control is never an allow)
     3  drift detected (baseline comparison)
     4  audit error / invalid input
+
+``lint-profile`` uses the same scale on the profile itself: 0 clean, 1 problems
+found, 4 the profile could not be read.
 """
 from __future__ import annotations
 
@@ -21,11 +24,12 @@ from typing import Any, Dict, List, Optional
 from . import AUDIT_SCHEMA_VERSION, ENGINE_VERSION, RULESET_VERSION
 from .models import AccessProfile, RunMode, coerce_mode
 from .adapters import AdapterBinding
+from .adapters.registry import load_plugin
 from .manifest import load_manifest, wrap_legacy_config
 from .orchestrator import Orchestrator
 from .active import IsolationGuard
 from .reporting import emit_json, emit_markdown, emit_jsonl, emit_obsec, save_baseline, load_baseline
-from .validation import validate_document
+from .validation import lint_profile, validate_document
 from .control_rules import catalog_dict
 from .migration import load_legacy_audit
 
@@ -49,6 +53,8 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--deployment", help="bind a deployment adapter to this compose/JSON file")
     p.add_argument("--fixtures", help="bind a control_fixtures adapter to this file")
     p.add_argument("--required-controls", help="comma-separated rule ids to evaluate (default: all)")
+    p.add_argument("--adapter-plugin", action="append", default=[], metavar="MODULE:CLASS",
+                   help="register an adapter that lives outside the package (repeatable)")
     p.add_argument("--timeout", type=float, default=20.0)
     p.add_argument("--cwd", help="working directory for spawned stdio servers")
     p.add_argument("--identity", help="label of the identity/role used for live inventory")
@@ -91,6 +97,10 @@ def _load_target(args: argparse.Namespace):
         manifest.profile_ref = os.path.abspath(args.profile)
     if args.required_controls:
         manifest.required_controls = [r.strip() for r in args.required_controls.split(",") if r.strip()]
+    if getattr(args, "adapter_plugin", None):
+        manifest.adapter_plugins = list(dict.fromkeys(list(manifest.adapter_plugins) + list(args.adapter_plugin)))
+        for spec in args.adapter_plugin:
+            load_plugin(spec)          # fail loudly here: a missing plugin must not look like a missing binding
     manifest.adapters.extend(_extra_adapters(args))
     return manifest
 
@@ -270,6 +280,26 @@ def cmd_rules(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_lint_profile(args: argparse.Namespace) -> int:
+    """Check a profile before the first audit: structure, locators, regexes, rule refs, references."""
+    from .manifest import load_profile
+    try:
+        profile = load_profile(args.profile, os.getcwd())
+    except (FileNotFoundError, ValueError, RuntimeError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return EXIT_ERROR
+    sources = [s.strip() for s in (args.sources or "").split(",") if s.strip()]
+    required = [r.strip() for r in (args.required_controls or "").split(",") if r.strip()] or None
+    report = lint_profile(profile, root=args.root, path=profile.get("_path") or args.profile,
+                          sources=sources, required_controls=required)
+    if args.json_out:
+        print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+    else:
+        print(report.text(strict=args.strict), end="")
+    problems = report.problems if args.strict else report.errors
+    return EXIT_FINDINGS if problems else EXIT_OK
+
+
 def cmd_source_snapshot(args: argparse.Namespace) -> int:
     from .adapters.source_snapshot import extract_facts
     from .manifest import load_profile
@@ -334,6 +364,16 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--markdown", action="store_true", help="print the catalogue as Markdown (docs/rules_catalog.md)")
     pr.add_argument("-v", "--verbose", action="store_true")
     pr.set_defaults(func=cmd_rules)
+
+    pl = sub.add_parser("lint-profile", help="check a system profile: structure, locators, regexes, rule refs, references")
+    pl.add_argument("profile", help="profile file (JSON/YAML) or a bare id resolved from profiles/")
+    pl.add_argument("--root", help="source tree the profile describes; without it paths and symbols are not checked")
+    pl.add_argument("--sources", help="comma-separated adapter kinds the manifest will bind (mcp_inventory, policy_snapshot, "
+                                      "deployment, control_fixtures, trace, memory_event_snapshot, baseline)")
+    pl.add_argument("--required-controls", help="comma-separated rule ids for the coverage summary (default: all)")
+    pl.add_argument("--strict", action="store_true", help="treat warnings as problems too")
+    pl.add_argument("--json", dest="json_out", action="store_true", help="print the report as JSON")
+    pl.set_defaults(func=cmd_lint_profile)
 
     ps = sub.add_parser("source-snapshot", help="extract portable source facts from a source tree using a profile")
     ps.add_argument("--root", required=True)

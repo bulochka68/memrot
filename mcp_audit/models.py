@@ -478,6 +478,7 @@ class ToolDefinition:
     output_schema: Optional[Dict[str, Any]] = None
     title: Optional[str] = None
     raw: Dict[str, Any] = field(default_factory=dict)            # original bytes preserved (TZ §6.6)
+    declared: Dict[str, Any] = field(default_factory=dict)       # x_audit block of *this tool*: declared, not observed
 
     @classmethod
     def from_mcp(cls, obj: Dict[str, Any]) -> "ToolDefinition":
@@ -489,6 +490,7 @@ class ToolDefinition:
             output_schema=obj.get("outputSchema") or obj.get("output_schema"),
             title=obj.get("title"),
             raw=obj,
+            declared=dict(obj.get("x_audit") or obj.get("x-audit") or {}),
         )
 
     def parameters(self) -> Dict[str, Dict[str, Any]]:
@@ -628,6 +630,7 @@ class ToolRecord:
             "definition_hash": self.definition_hash,
             "provenance": self.provenance,
             "declared_hints": self.declared_hints,
+            "declared_capabilities": dict(self.definition.declared),
             "claim_refs": self.claim_refs,
             "contract": self.contract,
         }
@@ -919,6 +922,19 @@ class AuditDocument:
             if s.name == name:
                 return s
         return None
+
+    def server_refs(self, server: ServerRecord) -> List[str]:
+        """Every name this server is referenced by: its inventory name, its component id and the
+        profile's ``servers`` alias (``{"mcp name": "component id"}``).  Source facts, policies and
+        profiles name the same server differently; matching on one name only loses the link."""
+        aliases = self.profile.get("servers") or {}
+        refs = [server.name, server.component_id]
+        if isinstance(aliases, dict):
+            target = aliases.get(server.name) or aliases.get(server.component_id)
+            if isinstance(target, str):
+                refs.append(target)
+            refs += [k for k, v in aliases.items() if v in (server.name, server.component_id)]
+        return [r for r in dict.fromkeys(refs) if r]
 
     def server_by_kind(self, kind: str) -> Optional[ServerRecord]:
         for s in self.servers:

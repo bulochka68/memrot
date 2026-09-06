@@ -1,0 +1,378 @@
+{
+  "lexicon_version": "1.0",
+  "note": "Lexicon of the classifier: verbs and signal terms per category. A profile may extend or override any category; the words list is wrapped in a word boundary group, the patterns list is appended as raw regular expressions.",
+  "operations": {
+    "exec": {
+      "words": [
+        "exec",
+        "execute",
+        "command",
+        "shell",
+        "spawn",
+        "eval",
+        "bash",
+        "subprocess",
+        "terminal",
+        "run_command",
+        "выполн\\w+",
+        "исполн\\w+"
+      ]
+    },
+    "delete": {
+      "words": [
+        "delete",
+        "remove",
+        "rm",
+        "unlink",
+        "drop",
+        "truncate",
+        "purge",
+        "destroy",
+        "erase",
+        "rmdir",
+        "wipe"
+      ],
+      "patterns": [
+        "удал\\w+",
+        "стере\\w+",
+        "очист\\w+",
+        "сброс\\w+",
+        "уничтож\\w+"
+      ]
+    },
+    "create": {
+      "words": [
+        "create",
+        "insert",
+        "add",
+        "mkdir",
+        "upload",
+        "post",
+        "publish",
+        "new"
+      ],
+      "patterns": [
+        "созда\\w+",
+        "добав\\w+",
+        "загруз\\w+",
+        "опублик\\w+"
+      ]
+    },
+    "write": {
+      "words": [
+        "write",
+        "create",
+        "update",
+        "edit",
+        "modify",
+        "append",
+        "put",
+        "post",
+        "insert",
+        "set",
+        "save",
+        "upload",
+        "patch",
+        "move",
+        "rename",
+        "mkdir",
+        "chmod",
+        "push",
+        "commit",
+        "merge",
+        "send",
+        "publish",
+        "comment"
+      ],
+      "patterns": [
+        "созда\\w+",
+        "запис\\w+",
+        "измен\\w+",
+        "обнов\\w+",
+        "добав\\w+",
+        "сохран\\w+",
+        "отправ\\w+",
+        "установ\\w+",
+        "переимен\\w+",
+        "перемест\\w+",
+        "редактир\\w+"
+      ]
+    },
+    "read": {
+      "words": [
+        "read",
+        "get",
+        "list",
+        "search",
+        "find",
+        "fetch",
+        "query",
+        "show",
+        "describe",
+        "cat",
+        "view",
+        "stat",
+        "info",
+        "head",
+        "tail",
+        "grep",
+        "resolve",
+        "check",
+        "scan",
+        "analyze",
+        "inspect"
+      ],
+      "patterns": [
+        "получ\\w+",
+        "прочит\\w+",
+        "чтен\\w+",
+        "список",
+        "списки",
+        "показ\\w+",
+        "найти",
+        "найд\\w+",
+        "поиск\\w*",
+        "искать",
+        "запрос\\w+",
+        "провер\\w+",
+        "узна\\w+",
+        "верн\\w+",
+        "отобрази\\w+",
+        "вывес\\w+"
+      ]
+    },
+    "update": {
+      "words": [
+        "update",
+        "edit",
+        "modify",
+        "patch",
+        "set"
+      ]
+    }
+  },
+  "signals": {
+    "exec_description": {
+      "words": [
+        "execute",
+        "run)\\b[^.\\n]{0,30}\\b(command",
+        "shell",
+        "script",
+        "code",
+        "binary",
+        "process",
+        "program)\\b",
+        "\\b(shell\\s+command",
+        "arbitrary\\s+(code",
+        "command)"
+      ],
+      "patterns": [
+        "выполн\\w+",
+        "запуст\\w+",
+        "исполн\\w+)[^.\\n]{0,30}(команд\\w+",
+        "скрипт\\w+",
+        "код\\b",
+        "shell"
+      ]
+    },
+    "publish": {
+      "words": [
+        "publish",
+        "broadcast",
+        "announce"
+      ],
+      "patterns": [
+        "опублик\\w+",
+        "разослат\\w+"
+      ]
+    },
+    "transmit": {
+      "words": [
+        "send",
+        "post",
+        "upload",
+        "email",
+        "mail",
+        "transmit",
+        "forward",
+        "webhook",
+        "notify",
+        "slack"
+      ],
+      "patterns": [
+        "отправ\\w+",
+        "переда\\w+",
+        "уведом\\w+"
+      ]
+    },
+    "sensitive": {
+      "words": [
+        "secret",
+        "credential",
+        "token",
+        "key",
+        "password",
+        "env",
+        "environment",
+        "config",
+        "\\.ssh",
+        "private",
+        "billing",
+        "payment",
+        "customer",
+        "user",
+        "personal",
+        "pii",
+        "email",
+        "message",
+        "dm",
+        "inbox",
+        "portfolio",
+        "holdings",
+        "positions?",
+        "balance",
+        "tax",
+        "broker",
+        "account",
+        "dividend",
+        "transaction",
+        "order",
+        "trade",
+        "financial"
+      ],
+      "patterns": [
+        "портфел\\w+",
+        "позици\\w+",
+        "остат\\w+",
+        "баланс\\w+",
+        "налог\\w+",
+        "брокер\\w+",
+        "счёт\\w*",
+        "счет\\w*",
+        "клиент\\w+",
+        "дивиденд\\w+",
+        "операц\\w+",
+        "истори\\w+\\s+операц\\w+",
+        "сдел\\w+",
+        "владел\\w+",
+        "персональн\\w+"
+      ]
+    },
+    "untrusted": {
+      "words": [
+        "read",
+        "fetch",
+        "get",
+        "list",
+        "search",
+        "query",
+        "web",
+        "http",
+        "url",
+        "browse",
+        "issue",
+        "pull",
+        "comment",
+        "review",
+        "message",
+        "email",
+        "inbox",
+        "log",
+        "stdout",
+        "output",
+        "page",
+        "content",
+        "document",
+        "file"
+      ]
+    },
+    "egress": {
+      "words": [
+        "http",
+        "https",
+        "url",
+        "fetch",
+        "request",
+        "post",
+        "upload",
+        "send",
+        "email",
+        "mail",
+        "slack",
+        "webhook",
+        "publish",
+        "create_pull",
+        "create_issue",
+        "comment",
+        "push",
+        "forward",
+        "transmit",
+        "net",
+        "network",
+        "browse",
+        "dns",
+        "web",
+        "internet"
+      ],
+      "patterns": [
+        "поиск\\s+в\\s+интернет\\w*",
+        "веб-поиск",
+        "интернет"
+      ]
+    },
+    "destructive": {
+      "patterns": [
+        "truncate",
+        "drop",
+        "purge",
+        "force"
+      ]
+    }
+  },
+  "server_kinds": {
+    "filesystem": "server-filesystem|mcp-filesystem|filesystem",
+    "postgres": "server-postgres|postgres|pg-mcp|mcp-postgres",
+    "sqlite": "server-sqlite|sqlite",
+    "github": "server-github|github-mcp|github",
+    "gitlab": "server-gitlab|gitlab",
+    "git": "server-git(?![a-z])|mcp-server-git",
+    "shell": "shell|server-commands|mcp-exec|terminal|bash|run-command",
+    "fetch": "server-fetch|fetch|http|browser|puppeteer|playwright|web",
+    "memory": "server-memory|memory|knowledge",
+    "slack": "slack",
+    "email": "mail|smtp|imap"
+  },
+  "network_kinds": [
+    "fetch",
+    "github",
+    "gitlab",
+    "slack",
+    "email"
+  ],
+  "kind_roles": {
+    "exec": [
+      "shell"
+    ],
+    "transmit": [
+      "fetch",
+      "native",
+      "email",
+      "slack"
+    ],
+    "sensitive_source": [
+      "filesystem",
+      "postgres",
+      "sqlite",
+      "memory",
+      "email",
+      "slack"
+    ],
+    "untrusted_input": [
+      "fetch",
+      "github",
+      "gitlab",
+      "slack",
+      "email"
+    ]
+  }
+}

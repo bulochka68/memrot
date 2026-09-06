@@ -1,0 +1,251 @@
+{
+  "profile_id": "registry-stand",
+  "profile_version": "1.0.0",
+  "description": "Третья топология: чужой MCP-сервер, объявляющий инструменты словарём-реестром, с доменным лексиконом, явными объявлениями возможностей и фронтендом на TypeScript. Ни одного изменения в mcp_audit не требуется.",
+  "servers": {
+    "vault": "vault-server"
+  },
+  "components": [
+    {
+      "id": "vault-server",
+      "type": "mcp_server",
+      "name": "vault MCP server",
+      "role": "external_tool_host",
+      "source_paths": [
+        "server.py"
+      ]
+    },
+    {
+      "id": "palace-store",
+      "type": "memory_store",
+      "name": "palace drawers",
+      "role": "memory_store",
+      "source_paths": [
+        "palace.py"
+      ]
+    },
+    {
+      "id": "web-ui",
+      "type": "rest_service",
+      "name": "digest front-end",
+      "role": "user_session_handler",
+      "source_paths": [
+        "ui/client.ts"
+      ]
+    },
+    {
+      "id": "digest-provider",
+      "type": "external_provider",
+      "name": "external digest hook",
+      "role": "external_provider"
+    }
+  ],
+  "principals": [
+    {
+      "id": "end_user",
+      "type": "human",
+      "identity_source": "authentication"
+    }
+  ],
+  "memory_stores": [
+    {
+      "component_id": "palace-store",
+      "store_type": "relational",
+      "memory_types": [
+        {
+          "type": "drawer",
+          "table": "drawers",
+          "audience": "user",
+          "authority": "data",
+          "derived": false
+        }
+      ]
+    }
+  ],
+  "tool_routing": {
+    "namespace": "qualified",
+    "router": "registry lookup by tool name"
+  },
+  "lexicon": {
+    "extend": {
+      "operations": {
+        "write": [
+          "mine",
+          "checkpoint"
+        ],
+        "read": [
+          "traverse",
+          "hallway"
+        ],
+        "delete": [
+          "dissolve"
+        ]
+      },
+      "server_kinds": {
+        "palace": "vault|palace"
+      },
+      "kind_roles": {
+        "sensitive_source": [
+          "palace"
+        ]
+      }
+    }
+  },
+  "capabilities": {
+    "vault/vault_traverse": {
+      "operations": [
+        "READ"
+      ],
+      "egress": false,
+      "sensitive_source": true
+    },
+    "vault-server/vault_export_wing": {
+      "operations": [
+        "READ",
+        "TRANSMIT"
+      ],
+      "egress": true
+    }
+  },
+  "source_facts": {
+    "tool_declarations": [
+      {
+        "component": "vault-server",
+        "path": "server.py",
+        "kind": "mcp",
+        "strategy": "registry_dict",
+        "symbol": "TOOLS",
+        "description_key": "description",
+        "schema_key": "input_schema"
+      },
+      {
+        "component": "vault-server",
+        "path": "server.py",
+        "kind": "mcp",
+        "strategy": "list_literal",
+        "symbol": "EXTRA_TOOLS",
+        "description_key": "description",
+        "schema_key": "input_schema"
+      },
+      {
+        "component": "vault-server",
+        "path": "definitions/extra_tools.json",
+        "kind": "mcp",
+        "strategy": "json_file",
+        "pointer": "tools"
+      }
+    ],
+    "flows": [
+      {
+        "id": "R-drawer-write",
+        "kind": "memory_write",
+        "from": "vault-server",
+        "to": "palace-store",
+        "path": "palace.py",
+        "symbol": "Palace.mine_note",
+        "patterns": [
+          "INSERT INTO drawers",
+          "source_refs"
+        ],
+        "memory_type": "drawer",
+        "audience": "user",
+        "writer_principal": "vault-server",
+        "provenance_kept": true,
+        "provenance_fields": [
+          "source_refs"
+        ],
+        "statement": "Запись ящика сохраняет ссылку на источник.",
+        "rule_refs": [
+          "MEM-05"
+        ]
+      },
+      {
+        "id": "R-drawer-scope",
+        "kind": "scope_decision",
+        "from": "vault-server",
+        "to": "palace-store",
+        "path": "palace.py",
+        "symbol": "Palace.mine_note",
+        "patterns": [
+          "audience, source_refs\\) VALUES \\(%s, %s, 'user', %s\\)"
+        ],
+        "decision_source": "server",
+        "memory_type": "drawer",
+        "rule_refs": [
+          "MEM-03"
+        ]
+      },
+      {
+        "id": "R-drawer-read",
+        "kind": "memory_read",
+        "from": "palace-store",
+        "to": "vault-server",
+        "path": "palace.py",
+        "symbol": "Palace.traverse",
+        "patterns": [
+          "WHERE subject_id = %s"
+        ],
+        "memory_type": "drawer",
+        "audience": "user",
+        "filter_by": [
+          "subject_id"
+        ],
+        "subject_bound": true,
+        "audience_filter_before_context": true,
+        "rule_refs": [
+          "MEM-01",
+          "MEM-07"
+        ]
+      },
+      {
+        "id": "R-context",
+        "kind": "context_include",
+        "from": "palace-store",
+        "to": "web-ui",
+        "path": "palace.py",
+        "symbol": "Palace.build_context",
+        "patterns": [
+          "\\[drawer\\] "
+        ],
+        "memory_type": "drawer",
+        "presented_as": "drawers",
+        "context_role": "data",
+        "publisher_trusted": false,
+        "subject_bound": true,
+        "rule_refs": [
+          "MEM-04"
+        ]
+      },
+      {
+        "id": "R-digest-transmit",
+        "kind": "transmit",
+        "from": "web-ui",
+        "to": "digest-provider",
+        "path": "ui/client.ts",
+        "strategy": "regex_only",
+        "patterns": [
+          "fetch\\(\"https://digest\\.example\\.invalid"
+        ],
+        "destination": "digest-provider",
+        "data_categories_possible": [
+          "drawer_text"
+        ],
+        "category_filter": false,
+        "composed_by": "model",
+        "statement": "Фронтенд отправляет дайджест во внешний хук.",
+        "rule_refs": [
+          "EGRESS-01"
+        ]
+      }
+    ]
+  },
+  "boundaries": [
+    {
+      "id": "VB-subject",
+      "from": "end_user",
+      "to": "palace-store",
+      "rule": "drawers are read for the requesting subject only",
+      "enforcement_point": "Palace.traverse"
+    }
+  ]
+}

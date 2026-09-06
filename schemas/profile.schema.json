@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aith-redteaming/schemas/profile.schema.json",
+  "title": "mcp_audit system profile",
+  "description": "System-specific input of the audit: components, memory, boundaries, capability declarations, the classifier lexicon and the source_facts extraction spec. Rules stay system-independent; everything named after a concrete stand lives here.",
+  "type": "object",
+  "required": ["profile_id"],
+  "properties": {
+    "profile_id": {"type": "string", "minLength": 1},
+    "profile_version": {"type": "string"},
+    "description": {"type": "string"},
+    "concepts": {"type": ["object", "array"]},
+    "servers": {
+      "type": "object",
+      "description": "alias map: MCP server name -> component id",
+      "additionalProperties": {"type": "string"}
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "type": {"type": "string"},
+          "name": {"type": "string"},
+          "role": {"type": "string"},
+          "source_paths": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "principals": {
+      "type": "array",
+      "items": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "minLength": 1}}}
+    },
+    "memory_stores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["component_id"],
+        "properties": {
+          "component_id": {"type": "string"},
+          "store_type": {"type": "string"},
+          "memory_types": {
+            "type": "array",
+            "items": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string"}}}
+          }
+        }
+      }
+    },
+    "memory_field_map": {"type": "object"},
+    "memory_cases": {"type": "array", "items": {"type": "object"}},
+    "boundaries": {
+      "type": "array",
+      "items": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "minLength": 1}}}
+    },
+    "tool_routing": {"type": "object", "properties": {"namespace": {"type": "string"}, "router": {"type": "string"}}},
+    "reference_inventory": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}},
+    "inventory_differences": {"type": ["object", "array"]},
+    "side_effects": {"type": "array", "items": {"type": "object"}},
+    "revocation": {"type": "object"},
+    "chains": {"type": "array", "items": {"type": "object", "required": ["id"]}},
+    "capabilities": {
+      "type": "object",
+      "description": "declared tool properties: 'server/tool', 'server/*', '*/tool' or a bare tool name",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "classification": {"enum": ["READ", "WRITE", "EXEC", "DELETE", "UNKNOWN"]},
+          "operations": {
+            "type": "array",
+            "items": {"enum": ["READ", "CREATE", "UPDATE", "DELETE", "EXECUTE", "PUBLISH", "TRANSMIT"]}
+          },
+          "egress": {"type": "boolean"},
+          "destructive": {"type": "boolean"},
+          "sensitive_source": {"type": "boolean"},
+          "untrusted_input": {"type": "boolean"},
+          "executing_principal": {"type": "string"},
+          "phase": {"type": "string"},
+          "target_scope": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "lexicon": {
+      "type": "object",
+      "properties": {"extend": {"type": "object"}, "override": {"type": "object"}},
+      "additionalProperties": false
+    },
+    "source_facts": {
+      "type": "object",
+      "properties": {
+        "tool_declarations": {"type": "array", "items": {"$ref": "#/$defs/tool_declaration"}},
+        "flows": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
+        "auth_transitions": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
+        "background_jobs": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
+        "break_points": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
+        "token_validation": {"type": "array", "items": {"$ref": "#/$defs/token_validation"}},
+        "components": {"type": "array", "items": {"type": "object", "required": ["id"]}}
+      },
+      "additionalProperties": false
+    },
+    "_path": {"type": "string"}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "tool_declaration": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "component": {"type": "string"},
+        "path": {"type": "string", "minLength": 1},
+        "kind": {"type": "string"},
+        "strategy": {"enum": ["decorator", "registry_dict", "list_literal", "json_file"]},
+        "decorator": {"type": "string"},
+        "symbol": {"type": "string"},
+        "pointer": {"type": "string"},
+        "name_key": {"type": "string"},
+        "description_key": {"type": "string"},
+        "schema_key": {"type": "string"},
+        "annotations_key": {"type": "string"},
+        "capabilities_key": {"type": "string"}
+      }
+    },
+    "fact": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {"type": "string"},
+        "path": {"type": "string", "minLength": 1},
+        "symbol": {"type": "string"},
+        "strategy": {"enum": ["symbol", "regex_only"]},
+        "lines": {"type": "array", "items": {"type": "integer"}, "minItems": 1, "maxItems": 2},
+        "patterns": {"type": "array", "items": {"type": "string"}},
+        "negate_patterns": {"type": "array", "items": {"type": "string"}},
+        "rule_refs": {"type": "array", "items": {"type": "string"}},
+        "limitations": {"type": "array", "items": {"type": "string"}},
+        "statement": {"type": "string"}
+      }
+    },
+    "token_validation": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "component": {"type": "string"},
+        "path": {"type": "string", "minLength": 1},
+        "symbol": {"type": "string"},
+        "scheme": {"type": "string"},
+        "strategy": {"enum": ["symbol", "regex_only"]},
+        "lines": {"type": "array", "items": {"type": "integer"}, "minItems": 1, "maxItems": 2},
+        "checks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {"pattern": {"type": "string"}, "found_means": {}, "absent_means": {}}
+          }
+        }
+      }
+    }
+  }
+}

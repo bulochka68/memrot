@@ -1,0 +1,139 @@
+{
+  "server_kinds": {
+    "agent-native": "fetch",
+    "mcp-invest": "generic"
+  },
+  "tools": {
+    "agent-native/duckduckgo_search": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": true,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ",
+        "TRANSMIT"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": false,
+      "untrusted_input": true
+    },
+    "mcp-invest/client_operation_history_list": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": false,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": true,
+      "untrusted_input": true
+    },
+    "mcp-invest/client_training_list": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": false,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": true,
+      "untrusted_input": true
+    },
+    "mcp-invest/fin_instrument_prices_get": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": false,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": false,
+      "untrusted_input": true
+    },
+    "mcp-invest/ideas_list": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": false,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": false,
+      "untrusted_input": true
+    },
+    "mcp-invest/instruments_search": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": false,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": false,
+      "untrusted_input": true
+    },
+    "mcp-invest/margin_instruments_list": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": false,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": true,
+      "untrusted_input": true
+    },
+    "mcp-invest/portfolio_get_positions_valuation": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": false,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": true,
+      "untrusted_input": true
+    },
+    "mcp-invest/portfolio_presence_get": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": false,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": true,
+      "untrusted_input": true
+    },
+    "mcp-invest/register_tax_get": {
+      "classification": "READ",
+      "classification_basis": "source_inference",
+      "destructive": false,
+      "egress": false,
+      "knowledge_state": "assumed",
+      "operations": [
+        "READ"
+      ],
+      "provenance_classification": "definition:name",
+      "sensitive_source": true,
+      "untrusted_input": true
+    }
+  }
+}

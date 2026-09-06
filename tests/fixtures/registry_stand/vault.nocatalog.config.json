@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "vault": {
+      "url": "http://vault.internal:8765/mcp",
+      "transport": "http",
+      "note": "A remote endpoint: the client config names the server but lists no tools."
+    }
+  }
+}

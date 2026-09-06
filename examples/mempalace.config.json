@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "mempalace": {
+      "url": "http://mempalace-hub.internal:8765/mcp",
+      "transport": "http",
+      "x_audit": {
+        "capture": {
+          "method": "клиентская конфигурация подключения к общему хабу по инструкции deploy/docker-compose.server.yml",
+          "identity": "общий bearer-токен MEMPALACE_MCP_HTTP_TOKEN (значение не хранится в конфигурации аудита)"
+        }
+      },
+      "note": "Каталог инструментов в конфигурации не перечислен: у хаба он берётся из объявлений сборки (source_snapshot), рукопожатие не выполнялось."
+    }
+  }
+}

@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 from ..models import (AuditDocument, Method, RunMode, ServerRecord, SourceType, ToolDefinition,
                       ToolRecord, digest as _digest)
 from ..evidence import EvidenceStore
+from ..classification.lexicon import load_lexicon
 from ..discovery.config_parser import load_config_file, parse_snapshot
 from ..discovery.introspector import introspect_server, apply_snapshot
 from ..discovery.context_parser import discover_context_files, parse_context_file
@@ -57,7 +58,7 @@ class MCPInventoryAdapter(Adapter):
         cfg_path = self.binding.path("path")
         if not cfg_path or not os.path.isfile(cfg_path):
             return AdapterResult(self.status("unavailable", [f"config not found: {cfg_path}"]))
-        servers = load_config_file(cfg_path)
+        servers = load_config_file(cfg_path, lexicon=load_lexicon(doc.profile))
         cfg_ev = store.add(SourceType.CONFIG, Method.PARSING, {"path": os.path.relpath(cfg_path), "kind": "mcp_config"},
                            digest=_file_digest(cfg_path), adapter=self.kind, adapter_version=self.adapter_version,
                            summary=f"MCP client config with {len(servers)} server entr(ies)")
