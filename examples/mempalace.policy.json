@@ -1,0 +1,72 @@
+{
+  "schema": "access-policy",
+  "policy_id": "mempalace-hub-expected",
+  "version": "1.0.0",
+  "owner": "команда, разворачивающая общий хаб памяти",
+  "note": "Ожидания владельца развёртывания, а не описание реализации. Политика написана для режима общего хаба (deploy/docker-compose.server.yml), где к одной палате подключаются MCP-клиенты нескольких агентов.",
+  "principals": [
+    {"id": "agent", "type": "agent", "identity_source": "authentication",
+     "expectation": "каждый агент аутентифицируется отдельно, а не общим секретом"},
+    {"id": "hub-operator", "type": "service", "identity_source": "deployment"},
+    {"id": "peer-node", "type": "service", "identity_source": "shared_secret"}
+  ],
+  "access_rules": [
+    {"subject": "agent", "operation": "READ", "resource": "event(to_agent)",
+     "condition": "event.to_agent == subject or event.to_agent == '*'", "enforcement": ["mcp-server"]},
+    {"subject": "agent", "operation": "CREATE", "resource": "drawer", "condition": "authenticated",
+     "enforcement": ["mcp-server"]},
+    {"subject": "peer-node", "operation": "READ", "resource": "logstream(origin)",
+     "condition": "origin в списке, разрешённом для этого пира", "enforcement": ["mcp-server"]}
+  ],
+  "mandatory_server_checks": ["authorization_per_object", "agent_identity_from_authentication"],
+  "memory_policy": {
+    "scope_decision_authority": "server",
+    "memory_types": [
+      {"type": "drawer", "audience": "shared", "authority": "data", "derived": true,
+       "allowed_writers": ["mcp-server", "miner"],
+       "note": "общая память команды: изоляция по субъекту не ожидается, ожидается решение сервера о том, кто записан автором"},
+      {"type": "kg_fact", "audience": "shared", "authority": "data", "derived": true,
+       "allowed_writers": ["mcp-server"]},
+      {"type": "event", "audience": "agent", "authority": "data", "derived": false,
+       "allowed_writers": ["mcp-server", "peer-node"],
+       "retention": {"ttl_days": 90, "note": "координационный журнал не хранится вечно"}},
+      {"type": "artifact", "audience": "agent", "authority": "data", "derived": false,
+       "allowed_writers": ["mcp-server", "peer-node"],
+       "retention": {"ttl_days": 90}}
+    ]
+  },
+  "authentication": {
+    "mcp-server": {"scheme": "api_key", "expected_binding": "отдельный ключ на агента с возможностью отзыва",
+                   "expected_transport": "TLS-терминация перед сервисом"}
+  },
+  "service_rights": {
+    "mcp-server": {"palace-store": ["read", "write", "delete", "create_collection"],
+                   "logstream": ["read", "write"]},
+    "miner": {"palace-store": ["read", "write"]}
+  },
+  "network": {"storage_publication": "forbidden",
+              "note": "векторное хранилище не публикуется на хост; наружу смотрит только MCP-порт"},
+  "egress": {
+    "allowed_destinations": [
+      {"id": "peer-node", "categories_allowed": ["event_body"],
+       "categories_forbidden": ["artifact_content", "patch"],
+       "note": "с пиром синхронизируется координационный журнал; содержимое артефактов и патчей уезжать не должно"}
+    ],
+    "controls_required": ["category_filter"]
+  },
+  "authorized_tools": {
+    "mempalace": ["mempalace_status", "mempalace_list_wings", "mempalace_list_rooms", "mempalace_get_taxonomy",
+                  "mempalace_get_aaak_spec", "mempalace_kg_query", "mempalace_kg_add", "mempalace_kg_invalidate",
+                  "mempalace_kg_supersede", "mempalace_kg_timeline", "mempalace_kg_stats", "mempalace_traverse",
+                  "mempalace_find_tunnels", "mempalace_graph_stats", "mempalace_mesh_peers", "mempalace_create_tunnel",
+                  "mempalace_list_tunnels", "mempalace_delete_tunnel", "mempalace_list_hallways",
+                  "mempalace_delete_hallway", "mempalace_follow_tunnels", "mempalace_search",
+                  "mempalace_check_duplicate", "mempalace_add_drawer", "mempalace_checkpoint",
+                  "mempalace_delete_drawer", "mempalace_mine", "mempalace_delete_by_source", "mempalace_sync",
+                  "mempalace_get_drawer", "mempalace_list_drawers", "mempalace_update_drawer",
+                  "mempalace_diary_write", "mempalace_diary_read", "mempalace_hook_settings",
+                  "mempalace_memories_filed_away", "mempalace_reconnect", "mempalace_event_append",
+                  "mempalace_task_create", "mempalace_event_list", "mempalace_event_wait", "mempalace_event_ack",
+                  "mempalace_artifact_put", "mempalace_artifact_get", "mempalace_patch_submit"]
+  }
+}

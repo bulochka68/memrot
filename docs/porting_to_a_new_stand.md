@@ -8,6 +8,12 @@
 Трогать `mcp_audit/` при переносе не нужно. Если правило не выражается через
 профиль — это повод обсудить новое правило, а не хардкодить имя стенда.
 
+Проверено на чужой системе: [MemPalace](https://github.com/MemPalace/mempalace)
+(45 инструментов в словаре `TOOLS`, свой доменный словарь, hub поверх HTTP с
+общим bearer-токеном) подключён тремя файлами — `profiles/mempalace.json`,
+`examples/mempalace.policy.json`, `examples/mempalace.manifest.json` — без единой
+правки пакета; `git diff --stat mcp_audit/` после подключения пуст.
+
 ## Что пишется руками, а что генерируется
 
 | Файл | Кто создаёт |
@@ -23,7 +29,23 @@
 
 Готовые образцы: `profiles/rest_native_agent.json` (56 строк, агент без MCP —
 берите как шаблон), `profiles/genai_invest_stand.json` (1104 строки, полный
-пример), `examples/genai_invest_stand.*` (манифест, политика, снимки, отчёт).
+пример), `profiles/mempalace.json` (чужая система: реестр-словарь вместо
+декораторов, доменный лексикон, объявленные возможности),
+`examples/genai_invest_stand.*` и `examples/mempalace.*` (манифест, политика,
+снимки, отчёт).
+
+**Первым делом — `lint-profile`.** Профиль проверяется до аудита:
+
+```bash
+python -m mcp_audit lint-profile profiles/<стенд>.json --root /путь/к/коду \
+    --sources mcp_inventory,policy_snapshot,deployment
+```
+
+Он ловит ровно то, что иначе молча превращается в `unknown`: несуществующий
+`path`, ненайденный `symbol`, невалидную регулярку, опечатку в `rule_refs`,
+ссылку на необъявленный компонент или границу, незнакомую секцию профиля. И
+печатает, **какие правила профиль вообще открывает** с этим набором источников.
+Коды возврата: `0` чисто, `1` есть проблемы, `4` профиль не читается.
 
 ## Сколько правил даёт каждый источник
 
@@ -89,14 +111,47 @@
 Группы: `tool_declarations`, `flows`, `auth_transitions`, `token_validation`,
 `background_jobs`, `break_points`.
 
-**Объявления инструментов** — AST-скан по декоратору:
+**Объявления инструментов** — способ извлечения задаётся полем `strategy`:
 
 ```json
 "tool_declarations": [
   {"component": "native-tools", "path": "app/tools.py", "decorator": "tool", "kind": "native"},
-  {"component": "mcp-invest",   "path": "mcp-invest/server.py", "decorator": "mcp.tool", "kind": "mcp"}
+  {"component": "mcp-invest",   "path": "mcp-invest/server.py", "decorator": "mcp.tool", "kind": "mcp"},
+  {"component": "mcp-server",   "path": "mempalace/mcp_server.py", "kind": "mcp",
+   "strategy": "registry_dict", "symbol": "TOOLS",
+   "description_key": "description", "schema_key": "input_schema"}
 ]
 ```
+
+| `strategy` | Форма объявления | Как читается |
+|---|---|---|
+| `decorator` (по умолчанию) | `@tool` / `@mcp.tool` над функцией | AST-скан; поведение прежних профилей не меняется |
+| `registry_dict` | модульный словарь `{имя: {описание, схема, handler}}` | `symbol` находится в AST, значения читаются `ast.literal_eval` |
+| `list_literal` | модульный список словарей-определений | то же, имя берётся из `name_key` |
+| `json_file` | определения вынесены в JSON/YAML рядом с кодом | читается файл, фиксируется его `sha256`; `pointer` — путь внутри документа |
+
+Ключи-настройки: `name_key` (`name`), `description_key` (`description`),
+`schema_key` (`inputSchema` / `input_schema` / `schema` / `parameters`),
+`annotations_key` (`annotations`), `capabilities_key` (`x_audit`).
+
+Запись, значение которой собирается во время импорта (`"tool": build_def(...)`),
+получает статус `unknown` с причиной, а не пропускается молча: аудитор не
+угадывает то, что нельзя прочитать без выполнения кода. Если стенд сам
+размечает свои инструменты, положите `x_audit` прямо в запись реестра — эти
+объявления попадут в классификацию (см. «Объявленные возможности»).
+
+**Языки без AST.** Символы ищутся только в Python. Для остальных языков
+объявите `"strategy": "regex_only"` — факт привязывается к файлу и диапазону
+строк (`"lines": [10, 40]`, по умолчанию весь файл):
+
+```json
+{"id": "R-digest", "kind": "transmit", "from": "web-ui", "to": "digest-provider",
+ "path": "ui/client.ts", "strategy": "regex_only",
+ "patterns": ["fetch\\(\"https://digest\\."]}
+```
+
+Попытка найти `symbol` в не-Python файле даёт `unknown` с явной причиной
+(`language not supported: .ts`), а не безмолвный пропуск.
 
 **Поток** — символ плюс регулярные выражения по его телу:
 
@@ -142,6 +197,89 @@
               "algorithm": {"pattern": "algorithms=\\[\"RS256\"\\]", "found_means": true}}}
 ]
 ```
+
+### Объявленные возможности — `capabilities`
+
+Свойства инструмента разрешаются в порядке **declared > annotation > heuristic >
+unknown**. Объявить их можно в трёх местах, и все три — данные:
+
+* в MCP-конфиге, рядом с определением инструмента:
+
+```json
+{"name": "vault_traverse", "description": "…", "inputSchema": {…},
+ "x_audit": {"operations": ["READ"], "egress": false, "sensitive_source": true}}
+```
+
+* в реестре самого стенда (`x_audit` внутри записи `registry_dict`/`json_file`);
+* в профиле, если конфиг стенда трогать нельзя:
+
+```json
+"capabilities": {
+  "mempalace/mempalace_reconnect": {"operations": ["UPDATE"], "egress": false},
+  "mempalace/mempalace_event_wait": {"operations": ["READ"], "egress": false},
+  "mempalace/*": {"untrusted_input": true},
+  "vault_traverse": {"operations": ["READ"]}
+}
+```
+
+Ключ — `сервер/инструмент`, `компонент/инструмент`, `сервер/*`, `*/инструмент`
+или голое имя инструмента; более специфичный ключ перекрывает менее
+специфичный, а профиль перекрывает конфиг и реестр.
+
+Объявляемые свойства: `classification`, `operations` (`READ`, `CREATE`,
+`UPDATE`, `DELETE`, `EXECUTE`, `PUBLISH`, `TRANSMIT`), `egress`, `destructive`,
+`sensitive_source`, `untrusted_input`, `executing_principal`, `phase`,
+`target_scope`.
+
+Что при этом остаётся честным:
+
+* `classification_basis` становится `declared`, а `provenance.classification` —
+  `declared:profile` / `declared:config` / `declared:source`: отчёт всегда
+  отличает «нам сказали» от «мы вывели из имени»;
+* `knowledge_state` остаётся `assumed` — автор конфига не является уликой;
+  `known` по-прежнему требует рукопожатия или кода;
+* объявление, противоречащее аннотации сервера (`readOnlyHint`,
+  `destructiveHint`), не выигрывает молча: расхождение попадает в
+  `contract.declaration_vs_annotation`, а `knowledge_state` становится
+  `contradictory`;
+* неизвестное значение (`"operations": ["TELEPORT"]`) не применяется, а
+  записывается в `provenance.declaration_problems`.
+
+Объявление — это вход, а не вывод: оно не понижает серьёзность находки.
+
+### Лексикон — `lexicon`
+
+Глаголы и сигнальные слова классификатора лежат в
+`mcp_audit/data/lexicon.json` (категории `operations`, `signals`,
+`server_kinds`, `network_kinds`, `kind_roles`). Профиль их дополняет или
+заменяет:
+
+```json
+"lexicon": {
+  "extend": {
+    "operations": {"write": ["add", "ack", "checkpoint", "supersede"],
+                   "read":  ["traverse", "follow", "taxonomy", "timeline"]},
+    "server_kinds": {"memory": "server-memory|memory|knowledge|mempalace"},
+    "kind_roles": {"sensitive_source": ["memory"]}
+  }
+}
+```
+
+`extend` добавляет термины (порядок сохраняется, дубли отбрасываются),
+`override` заменяет категорию целиком. Каждая категория — список слов
+(оборачивается в границу слова) либо объект `{"words": [...], "patterns": [...]}`,
+где `patterns` — сырые регулярные выражения. Виды серверов из профиля
+проверяются раньше встроенных, `x_audit.kind` в конфиге по-прежнему главнее
+всего.
+
+Версия лексикона попадает в `meta.reproducibility.lexicon`
+(`"1.0+mempalace:9d1e…"`): два прогона с разными словарями несравнимы, и отчёт
+об этом говорит.
+
+Что лексикон **не** делает: он не превращает `UNKNOWN` в догадку. Если стенд
+использует слово, которого нет ни в базовом словаре, ни в расширении профиля,
+инструмент остаётся `UNKNOWN` — это правильное поведение, а способ сообщить
+правду называется `capabilities`.
 
 ### Как это проверяется
 
@@ -206,6 +344,19 @@ enforcement"`. Она не доказывает, что правила дейс�
   Учётные данные передаются именем привязки: `binding.credential_binding = "NAME"`
   → переменная окружения `MCP_AUDIT_CRED_NAME`.
 
+Нужен источник, которого пакет не читает (systemd-юнит, Helm-чарт, свой сервис
+политик)? Адаптер пишется рядом, а не внутри:
+
+```json
+"adapter_plugins": ["my_pkg.systemd:SystemdAdapter"],
+"adapters": [{"id": "units", "kind": "systemd", "binding": {"path": "deploy/app.service"}}]
+```
+
+То же делает `--adapter-plugin my_pkg.systemd:SystemdAdapter` в командной
+строке и entry point в группе `mcp_audit.adapters`. Плагин, который не
+загрузился, попадает в `limitations` отчёта — незагруженный источник никогда не
+превращается в пустой список находок.
+
 Адаптер `deployment` принимает либо `docker-compose.yml` (нужен PyYAML), либо
 JSON-снимок `{"services": {name: {"image", "ports", "environment", …}}}`.
 Значения переменных окружения не сохраняются — только имена ключей.
@@ -216,6 +367,9 @@ JSON-снимок `{"services": {name: {"image", "ports", "environment", …}}}`
 ## Шаг 4. Прогон
 
 ```bash
+# 0. проверить профиль до аудита (иначе опечатка придёт в отчёт как unknown)
+python -m mcp_audit lint-profile profiles/мой-стенд.json --root . --sources mcp_inventory,policy_snapshot
+
 # 1. извлечь факты из кода по профилю
 python -m mcp_audit source-snapshot --profile profiles/мой-стенд.json \
     --root . --commit "$(git rev-parse HEAD)" -o examples/мой.source_facts.json
@@ -265,12 +419,49 @@ python -m mcp_audit validate .audit/мой.json
 | Симптом | Причина |
 |---|---|
 | правила массово `not_evaluated` | не привязан `source_snapshot`: в связке с одним лишь MCP-конфигом он открывает 16 правил, а 5 (MEM-10, AUTH-01, AUTH-03, AUTH-04, AUTH-05) без него не оцениваются ни при каком наборе остальных источников |
-| поток в статусе `unknown` | неверный `path` или `symbol` не найден в файле |
+| поток в статусе `unknown` | неверный `path` или `symbol` не найден в файле — `lint-profile` показывает это до аудита |
+| 0 инструментов из N найдено | стенд объявляет их не декоратором: задайте `strategy` (`registry_dict`, `list_literal`, `json_file`) |
+| инструмент классифицирован как `UNKNOWN` | доменный глагол неизвестен движку: добавьте его в `lexicon.extend` или объявите свойства в `capabilities` |
+| ложный `egress` у локального инструмента | объявите `{"egress": false}` в `capabilities` — по коду обработчика, а не по желанию |
+| весь `source_facts` в `unknown` на не-Python стенде | нужен `strategy: "regex_only"`; символы ищутся только в Python |
 | поток в статусе `contradicted` | паттерн не совпал: либо регулярка неточна, либо код действительно другой |
 | `assessment_state: partial` при всех зелёных контролях | какой-то адаптер `partial`/`stale` или есть `unresolved_controls` |
 | загрузка манифеста падает | `schema_version` не `"2.0"` либо в файле секретоподобное поле |
 | профиль не найден | `profile_ref` резолвится от каталога манифеста; голый id ищется в `profiles/` |
 | `inventory_completeness` = «не определено» | не задан `reference_inventory` в профиле и `authorized_tools` в политике |
+
+## Проверка на чужой системе: mempalace
+
+`profiles/mempalace.json` + `examples/mempalace.*` — перенос на систему, которая
+писалась без оглядки на этот аудитор
+([MemPalace](https://github.com/MemPalace/mempalace), коммит `d9f0590`):
+85 python-файлов, MCP-сервер на 8776 строк, 45 инструментов в словаре `TOOLS`,
+два режима работы. Аудируется режим общего хаба
+(`deploy/docker-compose.server.yml`); локальный stdio-режим исключён из scope
+манифеста — там границ доверия нет и правила памяти и идентичности ничего не
+значат.
+
+Что понадобилось из нового:
+
+| Механизм | Зачем на этом стенде |
+|---|---|
+| `strategy: "registry_dict"` | инструменты объявлены словарём `TOOLS`, декоратора нет: было бы 0 из 45 |
+| `lexicon.extend` | `add`, `ack`, `checkpoint`, `supersede` / `traverse`, `follow`, `taxonomy`, `timeline`: 11 инструментов из 45 без этого остаются `UNKNOWN`, включая главный путь записи `mempalace_add_drawer` |
+| `lexicon.extend.server_kinds` | `mempalace` не совпадал ни с одним встроенным видом сервера |
+| `capabilities` | 8 инструментов, чьи свойства из имени не выводятся (`reconnect`, `event_wait`, `artifact_get`, …); объявления сняты с собственного реестра стенда `mempalace/service.py` и с кода обработчиков |
+
+Результат прогона (`python -m mcp_audit audit examples/mempalace.manifest.json`):
+45 инструментов классифицированы без единого немотивированного `UNKNOWN`,
+17 правил оценено содержательно (8 `FAIL`, 6 `PASS`, 3 `INCONCLUSIVE`), ещё 2
+неприменимы и 9 не оценены из-за неподключённых источников — среди находок отсутствие
+привязки чтения координационных событий к аутентифицированному агенту (MEM-01),
+самозаявленная личность агента (AUTH-01), общий статический токен без отзыва и
+без субъекта (AUTH-04) и выдача содержимого артефактов любому предъявителю
+токена через `/sync/*` (EGRESS-01). Каждая находка привязана к локатору
+`{path, symbol, lines}` в зафиксированном коммите.
+
+Регресс закреплён в `tests/test_mempalace_profile.py`: тест работает от
+записанных снимков, поэтому не требует ни клона, ни сети.
 
 ## Смежные документы
 

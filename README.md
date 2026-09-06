@@ -419,7 +419,8 @@ librechat.yaml            — custom endpoint LibreChat → agent-api
 docker-compose.yml         — весь стенд целиком
 
 mcp_audit/               — подсистема аудита (движок 2.0, см. docs/auditor.md)
-profiles/                — профили аудита: genai_invest_stand.json (этот стенд), rest_native_agent.json
+profiles/                — профили аудита: genai_invest_stand.json (этот стенд), rest_native_agent.json,
+                           mempalace.json (чужая система: перенос без правок движка)
 schemas/                 — JSON-схема отчёта agent-security-audit 2.0
 examples/                — манифесты, снимки и эталонные отчёты аудита
 docs/                    — архитектура аудита, каталог правил, форматы адаптеров

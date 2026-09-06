@@ -365,6 +365,26 @@ def test_third_topology_is_audited_by_the_same_rules(registry_doc):
     assert validate_document(json.loads(emit_json(registry_doc))) == []
 
 
+def test_a_config_without_a_catalogue_gets_the_declarations_of_the_build():
+    """A remote endpoint named in the config, with the tool list living in its code."""
+    m = Manifest(target={"id": "registry-stand", "build_ref": "fixture-1", "environment": "fixture"},
+                 access_profile=AccessProfile.WHITE_BOX, mode=RunMode.OFFLINE,
+                 profile_ref=os.path.join(STAND, "profile.json"),
+                 adapters=[AdapterBinding("mcp-config", "mcp_inventory",
+                                          {"path": os.path.join(STAND, "vault.nocatalog.config.json"), "live": False}, base_dir=STAND),
+                           AdapterBinding("source", "source_snapshot", {"root": SRC}, base_dir=STAND)],
+                 base_dir=STAND)
+    doc = Orchestrator(m).run()
+    server = doc.server("vault")
+    assert server is not None and server.transport == "http"
+    assert {t.name for t in server.tools} == {"vault_mine_note", "vault_traverse", "vault_dissolve_wing",
+                                              "vault_hallway_map", "vault_export_wing"}
+    assert server.inventory_sources["source_defined"]["origin"] == "source_snapshot"
+    # a catalogue read from the code is never presented as a live handshake
+    assert server.handshake.performed is False
+    assert any("no handshake" in n for n in server.handshake.notes)
+
+
 def test_source_declared_tools_are_reconciled_with_the_configured_catalogue(registry_doc):
     pairs = {r["pair"] for r in registry_doc.inventory_reconciliation}
     assert "configured/source_defined" in pairs

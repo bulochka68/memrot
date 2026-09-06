@@ -1,0 +1,36 @@
+{
+  "schema": "deployment-snapshot",
+  "version": "1.0",
+  "captured_from": {
+    "path": "deploy/docker-compose.server.yml",
+    "repository": "MemPalace/mempalace",
+    "commit": "d9f059076c866fa6f29195679d75712436986024",
+    "method": "compose services with environment reduced to key names",
+    "captured_at": 1788700000.0
+  },
+  "note": "Значения переменных окружения, секреты и содержимое томов намеренно опущены — сохранены только имена ключей. Снимок сделан с чужого репозитория и зафиксирован коммитом.",
+  "services": {
+    "qdrant": {
+      "image": "qdrant/qdrant:latest",
+      "build": null,
+      "ports": [],
+      "environment": [],
+      "depends_on": [],
+      "note": "порт 6333 в файле закомментирован: хранилище доступно только внутри compose-сети"
+    },
+    "mempalace": {
+      "image": "ghcr.io/mempalace/mempalace:latest",
+      "build": null,
+      "command": ["serve", "--host", "0.0.0.0", "--port", "8765", "--backend", "qdrant"],
+      "ports": ["8765:8765"],
+      "environment": [
+        "MEMPALACE_MCP_HTTP_TOKEN",
+        "MEMPALACE_QDRANT_URL",
+        "MEMPALACE_QDRANT_API_KEY",
+        "MEMPALACE_EMBEDDING_DEVICE"
+      ],
+      "depends_on": ["qdrant"]
+    }
+  },
+  "volumes": {"qdrant-storage": {}, "mempalace-data": {}}
+}

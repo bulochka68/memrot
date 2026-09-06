@@ -1,0 +1,32 @@
+{
+  "schema_version": "2.0",
+  "target": {
+    "id": "mempalace-hub",
+    "build_ref": "d9f059076c866fa6f29195679d75712436986024",
+    "environment": "shared hub (deploy/docker-compose.server.yml)",
+    "repository": "https://github.com/MemPalace/mempalace",
+    "note": "Чужая система. Клон репозитория — вход адаптеров, а не часть этого репозитория: снимки зафиксированы build_ref и sha256 файлов. Проект распространяется под лицензией MIT; фрагменты кода в снимке фактов приведены как улики с указанием коммита."
+  },
+  "inspection": {
+    "access_profile": "white_box",
+    "mode": "offline",
+    "profile_ref": "../profiles/mempalace.json"
+  },
+  "scope": {
+    "included": ["режим общего хаба: MCP поверх HTTP, bearer-токен, qdrant-бэкенд, mesh-синхронизация с пирами"],
+    "excluded": ["локальный stdio-режим одного пользователя: границ доверия нет, MEM-правила про audience и все AUTH-* там схлопываются",
+                 "работающее развёртывание: рукопожатия, трасс и наблюдений времени выполнения нет"]
+  },
+  "adapters": [
+    {"id": "mcp-config", "kind": "mcp_inventory", "binding": {"path": "mempalace.config.json", "live": false}},
+    {"id": "source", "kind": "source_snapshot", "binding": {"path": "mempalace.source_facts.json"}},
+    {"id": "policy", "kind": "policy_snapshot", "binding": {"path": "mempalace.policy.json"}},
+    {"id": "deployment", "kind": "deployment", "binding": {"path": "mempalace.deployment.json"}}
+  ],
+  "reporting": {"formats": ["json", "markdown"]},
+  "reproducibility": {
+    "source_snapshot": {"repository": "MemPalace/mempalace", "commit": "d9f059076c866fa6f29195679d75712436986024"},
+    "model_versions": {},
+    "prompt_versions": {}
+  }
+}

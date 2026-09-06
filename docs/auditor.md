@@ -76,6 +76,10 @@ MCP_AUDIT_SANDBOX=1 python -m mcp_audit audit config.json --mode controlled-vali
 python -m mcp_audit baseline config.json -o baseline.json
 python -m mcp_audit drift config.json --baseline baseline.json --approvals approvals.json --fail-on-drift
 
+# check a profile before the first audit: structure, locators, regexes, rule refs, references
+python -m mcp_audit lint-profile profiles/mempalace.json --root /path/to/checkout \
+  --sources mcp_inventory,policy_snapshot,deployment
+
 # extract portable source facts for a profile, validate a report, migrate a legacy one
 python -m mcp_audit source-snapshot --root /path/to/checkout --profile profiles/genai_invest_stand.json --commit <sha> -o facts.json
 python -m mcp_audit validate stand.json
@@ -87,6 +91,39 @@ Exit codes: `0` completed without violations in scope, `1` confirmed findings,
 `2` partial / undetermined assessment (an unknown mandatory control is never an
 allow), `3` drift, `4` audit error. Incompleteness and violations have different
 machine codes.
+
+`lint-profile` uses the same scale on the profile itself: `0` clean, `1`
+problems found, `4` the profile could not be read. It checks five things — the
+profile schema, that every `path` exists and every `symbol` resolves in the
+source tree, that every regular expression compiles, that every `rule_refs`
+entry names a rule in the catalogue, and that `component` / `from` / `to` /
+`writer_principal` / `boundary` point at declared entities — and then prints
+**which rules the profile opens at all**, so the gap map is visible before the
+first audit instead of after reading a wall of `not_evaluated`. Warnings (an
+unknown section, a reference that may be a principal declared elsewhere) are
+printed but do not change the exit code unless `--strict` is given. Without
+`--root` the locator checks are skipped and the report says so.
+
+```
+$ python -m mcp_audit lint-profile profiles/mempalace.json --root ../mempalace
+profiles/mempalace.json: 1 problem(s)
+
+  flows[F-mine-derivation].symbol  '_build_metadata' not found in mempalace/miner.py
+
+planned rules with this profile: 18/28   (assumed sources: source_snapshot)
+  missing: EGRESS-02 INFRA-03 (control_fixtures), INFRA-02 (deployment), INV-01 INV-02 (mcp_inventory),
+           TOOL-01 (mcp_inventory+baseline), MEM-08 (memory_event_snapshot),
+           EGRESS-01 INFRA-01 MEM-10 (policy_snapshot)
+```
+
+(That is a real run: the symbol was renamed to `_build_drawer_metadata` upstream,
+and without the linter it would have surfaced as one `unknown` flow in the report,
+indistinguishable from "the code does not do this".)
+
+An adapter that lives outside the package is registered with
+`--adapter-plugin module:Class` (repeatable), with `"adapter_plugins"` in the
+manifest, or through the `mcp_audit.adapters` entry-point group; a plugin that
+fails to load is reported in `limitations`, never silently dropped.
 
 Python API:
 
@@ -116,7 +153,7 @@ another stand is described in
 | Adapter | Source |
 |---|---|
 | `mcp_inventory` | MCP client config (configured catalogue), snapshot, live handshake, agent context files |
-| `source_snapshot` | source tree (ast scan of `@…tool` declarations, regex-verified profile flows) or a pre-extracted facts file |
+| `source_snapshot` | source tree (tool declarations by the profile's extraction strategy — decorator, registry dict, list literal or JSON file — plus regex-verified profile flows) or a pre-extracted facts file |
 | `policy_snapshot` | expected access & memory policy |
 | `memory_event_snapshot` | normalized memory records and events (W / R / C / B) |
 | `trace` | JSONL execution events with causality and coverage |

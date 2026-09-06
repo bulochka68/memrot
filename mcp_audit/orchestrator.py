@@ -184,7 +184,19 @@ class Orchestrator:
             by_component.setdefault(d["component"], []).append(d)
         for comp, decls in by_component.items():
             server_name = next((k for k, v in aliases.items() if v == comp), comp)
-            if doc.server(server_name) or doc.server(comp):
+            existing = doc.server(server_name) or doc.server(comp)
+            if existing is not None:
+                if not existing.tools:
+                    # the config names the server but lists no tools (a remote MCP endpoint):
+                    # the declarations found in its build are then the only catalogue there is
+                    existing.tools = [ToolRecord(server=existing.name, definition=ToolDefinition.from_mcp(
+                        {"name": d["name"], "description": d.get("description") or "",
+                         "inputSchema": d.get("input_schema") or {}, "annotations": d.get("annotations") or {},
+                         "x_audit": d.get("declared") or {}})) for d in decls]
+                    existing.inventory_sources["source_defined"] = {"count": len(decls), "origin": "source_snapshot"}
+                    existing.handshake.notes.append(
+                        "catalogue taken from the source declarations of this build; no handshake was performed "
+                        "and the running server may advertise a different list")
                 continue
             ctype = (comp_types.get(comp) or {}).get("type", "native_function")
             rec = ServerRecord(name=server_name, transport="native", command=None, kind="native", is_mcp=False,
