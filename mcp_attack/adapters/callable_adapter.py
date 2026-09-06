@@ -21,6 +21,7 @@ ConsolidateFn = Callable[[str, str], None]
 InspectFn = Callable[[str], Optional[str]]
 GroundTruthFn = Callable[..., Optional[bool]]
 ResetFn = Callable[[], bool]
+StageToolFn = Callable[[str, str], None]
 
 
 class CallableAdapter(TargetAdapter):
@@ -32,6 +33,7 @@ class CallableAdapter(TargetAdapter):
                  inspect_fn: Optional[InspectFn] = None,
                  ground_truth_fn: Optional[GroundTruthFn] = None,
                  reset_fn: Optional[ResetFn] = None,
+                 stage_tool_fn: Optional[StageToolFn] = None,
                  access_profile: str = "black_box") -> None:
         self._send_fn = send_fn
         self._new_session_fn = new_session_fn
@@ -39,6 +41,7 @@ class CallableAdapter(TargetAdapter):
         self._inspect_fn = inspect_fn
         self._ground_truth_fn = ground_truth_fn
         self._reset_fn = reset_fn
+        self._stage_tool_fn = stage_tool_fn
         self._access_profile = access_profile
         self._session_counter = 0
 
@@ -70,6 +73,10 @@ class CallableAdapter(TargetAdapter):
             return bool(self._reset_fn())
         return False
 
+    def stage_tool_response(self, tool_name: str, content: str) -> None:
+        if self._stage_tool_fn is not None:
+            self._stage_tool_fn(tool_name, content)
+
     def capabilities(self) -> AdapterCapabilities:
         return AdapterCapabilities(
             access_profile=self._access_profile,
@@ -77,4 +84,5 @@ class CallableAdapter(TargetAdapter):
             supports_inspect_memory=self._inspect_fn is not None,
             supports_ground_truth=self._ground_truth_fn is not None,
             supports_reset=self._reset_fn is not None,
+            supports_tool_staging=self._stage_tool_fn is not None,
         )

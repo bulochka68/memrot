@@ -6,7 +6,8 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List
 
-from ..models import FRAMING_VALUES, LAYER_VALUES, PAYLOAD_VALUES, PROPAGATION_VALUES
+from ..models import (DELIVERY_CHANNEL_VALUES, FRAMING_VALUES, LAYER_VALUES, PAYLOAD_VALUES,
+                     PROPAGATION_VALUES, THREAT_MODEL_VALUES)
 from ..taxonomy import OWASP_AMG_CATEGORY_SLUGS
 
 REQUIRED_FIELDS = ("id", "title", "framing", "payload", "layer", "propagation", "probe", "rule_ids")
@@ -16,6 +17,8 @@ ALLOWED_LAYER = set(LAYER_VALUES)
 ALLOWED_PROPAGATION = set(PROPAGATION_VALUES)
 ALLOWED_ACCESS_PROFILE = {"black_box", "grey_box", "white_box"}
 ALLOWED_OWASP_AMG_CATEGORY = set(OWASP_AMG_CATEGORY_SLUGS)
+ALLOWED_DELIVERY_CHANNEL = set(DELIVERY_CHANNEL_VALUES)
+ALLOWED_THREAT_MODEL = set(THREAT_MODEL_VALUES)
 
 
 def validate_variant_dict(d: Dict[str, Any], where: str = "") -> List[str]:
@@ -41,6 +44,20 @@ def validate_variant_dict(d: Dict[str, Any], where: str = "") -> List[str]:
     owasp_amg_category = d.get("owasp_amg_category")
     if owasp_amg_category and owasp_amg_category not in ALLOWED_OWASP_AMG_CATEGORY:
         errors.append(f"{tag}owasp_amg_category={owasp_amg_category!r} not in {sorted(ALLOWED_OWASP_AMG_CATEGORY)}")
+
+    check_enum("delivery_channel", ALLOWED_DELIVERY_CHANNEL)
+    check_enum("threat_model", ALLOWED_THREAT_MODEL)
+
+    delivery_channel = d.get("delivery_channel", "chat_direct")
+    if delivery_channel == "tool_result":
+        tool_stage = d.get("tool_stage")
+        if not isinstance(tool_stage, dict) or not tool_stage.get("tool_name") or not tool_stage.get("content_template"):
+            errors.append(f"{tag}delivery_channel='tool_result' requires tool_stage.tool_name and "
+                          "tool_stage.content_template")
+        elif "{canary}" not in tool_stage["content_template"]:
+            errors.append(f"{tag}tool_stage.content_template must contain the '{{canary}}' placeholder")
+        if not d.get("trigger_message"):
+            errors.append(f"{tag}delivery_channel='tool_result' requires a non-empty trigger_message")
 
     propagation = d.get("propagation")
     inject_turns = d.get("inject_turns") or []

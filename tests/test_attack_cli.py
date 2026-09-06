@@ -166,6 +166,25 @@ def test_run_report_html_flag_writes_explicit_path(http_server, monkeypatch, tmp
     assert content.startswith("<!doctype html>")
 
 
+def test_run_with_catalog_bank_needs_no_catalog_paths(http_server, monkeypatch, tmp_path, write_json):
+    port = http_server.server_address[1]
+    monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")
+    config_path = write_json("cli_bank.config.json", {
+        "schema_version": "1.0",
+        "target": {"kind": "openai_compat",
+                  "binding": {"base_url": f"http://127.0.0.1:{port}", "model": "test-model", "timeout": 5.0}},
+        "channels": [{"role": "attacker", "principal": {"principal_id": "1001", "credential_ref": "CUS_TEST"}}],
+    })
+    out_dir = str(tmp_path / "out")
+    rc = main(["run", "--config", config_path, "--out", out_dir,
+              "--catalog-bank", "garak_dan", "--catalog-bank-sample-size", "3", "--catalog-bank-seed", "1"])
+    assert rc == 0
+    with open(os.path.join(out_dir, "run.json"), encoding="utf-8") as fh:
+        report = json.load(fh)
+    assert len(report["results"]) == 3
+    assert all(r["threat_model"] == "llm_jailbreak_susceptibility" for r in report["results"])
+
+
 def test_run_unknown_generator_kind_is_a_clean_error(http_server, monkeypatch, write_json):
     port = http_server.server_address[1]
     monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")

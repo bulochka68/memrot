@@ -20,7 +20,8 @@ from typing import List, Optional
 from . import ATTACK_ENGINE_VERSION, ATTACK_SCHEMA_VERSION
 from .adapters.registry import build_adapter
 from .audit_bridge import filter_variants_by_audit
-from .catalog.generator import LLMMutationGenerator, StaticCatalogGenerator
+from .audit_plan import select_variants_by_audit
+from .catalog.generator import ImportedBankGenerator, LLMMutationGenerator, StaticCatalogGenerator
 from .catalog.loader import discover_catalog_files, load_catalog
 from .catalog.schema import validate_catalog_file
 from .config import load_config
@@ -31,6 +32,12 @@ from .runner import run_matrix
 from .tracer import JSONLTracer
 
 _IMPLEMENTED_GENERATOR_KINDS = ("static_catalog", "llm_mutation")
+
+_PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
+_DEFAULT_BANK_SOURCES = {
+    "garak_dan": os.path.join(_PACKAGE_DIR, "catalog", "imported", "garak_dan"),
+    "trustairlab_jailbreak": os.path.join(_PACKAGE_DIR, "catalog", "imported", "trustairlab_jailbreak", "sample.json"),
+}
 
 EXIT_OK, EXIT_CONFIRMED, EXIT_INCOMPLETE, EXIT_DRIFT, EXIT_ERROR = 0, 1, 2, 3, 4
 
@@ -49,12 +56,21 @@ def cmd_run(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
     catalog_paths = args.catalog if args.catalog else config.resolve_catalog_paths()
-    if not catalog_paths:
-        print("error: no catalog_paths in config and no --catalog given", file=sys.stderr)
+    if not catalog_paths and not args.catalog_bank:
+        print("error: no catalog_paths in config, no --catalog, and no --catalog-bank given", file=sys.stderr)
         return EXIT_ERROR
 
     try:
-        seed_variants = StaticCatalogGenerator(catalog_paths).generate()
+        seed_variants = StaticCatalogGenerator(catalog_paths).generate() if catalog_paths else []
+        if args.catalog_bank:
+            bank_source = args.catalog_bank_source or _DEFAULT_BANK_SOURCES.get(args.catalog_bank)
+            if not bank_source:
+                raise ValueError(f"--catalog-bank {args.catalog_bank!r} has no default source; "
+                                 "pass --catalog-bank-source explicitly")
+            seed_variants = seed_variants + ImportedBankGenerator(
+                args.catalog_bank, bank_source,
+                sample_size=args.catalog_bank_sample_size, seed=args.catalog_bank_seed,
+            ).generate()
         if generator_kind == "llm_mutation":
             gen_options = dict(config.generator.options)
             if args.mutate:
@@ -92,7 +108,12 @@ def cmd_run(args: argparse.Namespace) -> int:
     limitations: List[str] = []
     audit_path = args.audit or config.audit_path
     if audit_path:
-        variants, audit_limitations = filter_variants_by_audit(variants, audit_path, mode=args.audit_mode or config.audit_mode)
+        audit_mode = args.audit_mode or config.audit_mode
+        if audit_mode == "ranked":
+            variants, audit_limitations = select_variants_by_audit(variants, audit_path, mode="ranked",
+                                                                    min_severity=args.audit_min_severity)
+        else:
+            variants, audit_limitations = filter_variants_by_audit(variants, audit_path, mode=audit_mode)
         limitations.extend(audit_limitations)
 
     out_dir = args.out
@@ -197,8 +218,13 @@ def build_parser() -> argparse.ArgumentParser:
     pr = sub.add_parser("run", help="run an attack matrix against a configured target")
     pr.add_argument("--config", required=True, help="run config JSON (target + channels + catalog_paths)")
     pr.add_argument("--catalog", action="append", help="catalog file/dir (repeatable); overrides config.catalog_paths")
-    pr.add_argument("--audit", help="an mcp_audit report JSON; filters/prioritizes the catalog by matched rule_ids")
-    pr.add_argument("--audit-mode", choices=["filter", "prioritize"], default=None)
+    pr.add_argument("--audit", help="an mcp_audit report JSON; filters/prioritizes/ranks the catalog by matched "
+                    "rule_ids or owasp_amg_category")
+    pr.add_argument("--audit-mode", choices=["filter", "prioritize", "ranked"], default=None,
+                    help="'ranked' orders the whole catalog by the audit findings' severity (never drops variants), "
+                        "bridged from rule_id to owasp_amg_category where possible (see audit_plan.py)")
+    pr.add_argument("--audit-min-severity", choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"], default=None,
+                    help="with --audit-mode ranked: only consider findings at or above this severity")
     pr.add_argument("--out", help="directory to write run.json / run.md / run.html / trace.jsonl into")
     pr.add_argument("--gate", action="store_true", help="exit 1 on a CONFIRMED verdict, 2 on incomplete coverage")
     pr.add_argument("--taxonomy-filter", help="only run variants tagged with this owasp_amg_category")
@@ -213,6 +239,14 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--judge-model", help="model name for the LLM-judge detector")
     pr.add_argument("--judge-api-key-env", help="env var holding the judge LLM's API key (optional)")
     pr.add_argument("--report-html", help="also write a self-contained HTML dashboard report to this path")
+    pr.add_argument("--catalog-bank", choices=["garak_dan", "trustairlab_jailbreak"],
+                    help="also load an external, vendored jailbreak-prompt bank (threat_model="
+                        "llm_jailbreak_susceptibility) alongside any --catalog/config catalog_paths")
+    pr.add_argument("--catalog-bank-source", help="path override for --catalog-bank (defaults to the "
+                    "vendored copy under mcp_attack/catalog/imported/)")
+    pr.add_argument("--catalog-bank-sample-size", type=int, default=None,
+                    help="randomly (deterministically, see --catalog-bank-seed) subsample the bank to N variants")
+    pr.add_argument("--catalog-bank-seed", type=int, default=0, help="seed for --catalog-bank-sample-size")
     pr.set_defaults(func=cmd_run)
 
     pl = sub.add_parser("list-catalog", help="print the loaded catalog's variant inventory")

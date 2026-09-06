@@ -14,7 +14,7 @@ from typing import Dict, List
 
 from ..models import GroupMetric, RunReport, Verdict
 
-AXES = ("framing", "payload", "layer", "propagation")
+AXES = ("framing", "payload", "layer", "propagation", "delivery_channel")
 _COUNTED = (Verdict.CONFIRMED, Verdict.CLEAN)
 
 
@@ -32,6 +32,7 @@ def aggregate(report: RunReport) -> RunReport:
     by_axis: Dict[str, Dict[str, GroupMetric]] = {axis: {} for axis in AXES}
     by_taxonomy: Dict[str, GroupMetric] = {}
     by_mutation: Dict[str, GroupMetric] = {}
+    by_threat_model: Dict[str, GroupMetric] = {}
 
     for r in report.results:
         counts[r.verdict.value] = counts.get(r.verdict.value, 0) + 1
@@ -48,6 +49,7 @@ def aggregate(report: RunReport) -> RunReport:
             _bump(by_axis[axis], value, confirmed)
         _bump(by_taxonomy, r.owasp_amg_category or "(untagged)", confirmed)
         _bump(by_mutation, r.mutation_technique or "(none)", confirmed)
+        _bump(by_threat_model, r.threat_model or "memory_poisoning", confirmed)
 
     report.counts_by_verdict = counts
     report.overall_asr = overall
@@ -55,4 +57,5 @@ def aggregate(report: RunReport) -> RunReport:
     report.asr_by_axis = by_axis
     report.asr_by_taxonomy_category = by_taxonomy
     report.asr_by_mutation_technique = by_mutation
+    report.asr_by_threat_model = by_threat_model
     return report

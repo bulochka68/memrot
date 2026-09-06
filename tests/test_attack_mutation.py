@@ -13,9 +13,10 @@ from mcp_attack.catalog.generator import LLMMutationGenerator
 from mcp_attack.models import AttackVariant
 from mcp_attack.mutation.llm_client import LLMClient, LLMClientConfig, LLMClientError
 from mcp_attack.mutation.techniques import (Base64ObfuscationTechnique, EscalationRewriteTechnique,
-                                            MUTATION_TECHNIQUES, ParaphraseTechnique,
-                                            PersonaOverrideTechnique, PrefixInjectionTechnique,
-                                            RoleplayFramingTechnique, TranslationTechnique,
+                                            ForcedOutputShapeTechnique, MUTATION_TECHNIQUES,
+                                            ParaphraseTechnique, PersonaOverrideTechnique,
+                                            PrefixInjectionTechnique, RoleplayFramingTechnique,
+                                            StateToggleOverrideTechnique, TranslationTechnique,
                                             build_technique)
 
 
@@ -162,11 +163,39 @@ def test_build_technique_unknown_slug_raises():
         build_technique("not_a_real_technique")
 
 
-def test_registry_lists_all_seven_techniques():
+def test_registry_lists_all_nine_techniques():
     assert set(MUTATION_TECHNIQUES) == {
         "prefix_injection", "base64_obfuscation", "persona_override",
+        "state_toggle_override", "forced_output_shape",
         "paraphrase", "roleplay_framing", "translation", "escalation_rewrite",
     }
+
+
+def test_state_toggle_override_wraps_and_preserves_canary_placeholder():
+    mutated = StateToggleOverrideTechnique().mutate(_seed())
+    assert "EVALUATION-MODE-ENABLED" in mutated.inject_turns[0]
+    assert "{canary}" in mutated.inject_turns[0]
+    assert mutated.mutation_technique == "state_toggle_override"
+    assert "may have altered or dropped" not in mutated.notes
+
+
+def test_forced_output_shape_appends_and_preserves_canary_placeholder():
+    mutated = ForcedOutputShapeTechnique().mutate(_seed())
+    assert "Understood, proceeding as requested" in mutated.inject_turns[0]
+    assert "{canary}" in mutated.inject_turns[0]
+    assert mutated.mutation_technique == "forced_output_shape"
+    assert "may have altered or dropped" not in mutated.notes
+
+
+def test_pliny_inspired_techniques_do_not_reproduce_published_jailbreak_text():
+    """Structural inspiration only -- must never contain a literal fragment
+    of a known Pliny/L1B3RT4S banner string (AGPL-3.0; not vendored here)."""
+    mutated_toggle = StateToggleOverrideTechnique().mutate(_seed())
+    mutated_shape = ForcedOutputShapeTechnique().mutate(_seed())
+    banned_fragments = ("L1B3RT4S", "GODMODE", "godmode")
+    for mutated in (mutated_toggle, mutated_shape):
+        text = " ".join(mutated.inject_turns)
+        assert not any(fragment in text for fragment in banned_fragments)
 
 
 # --------------------------------------------------------------------------- #

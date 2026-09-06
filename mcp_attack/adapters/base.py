@@ -29,6 +29,7 @@ class AdapterCapabilities:
     supports_inspect_memory: bool = False
     supports_ground_truth: bool = False
     supports_reset: bool = False
+    supports_tool_staging: bool = False
     notes: List[str] = field(default_factory=list)
 
 
@@ -67,6 +68,17 @@ class TargetAdapter(abc.ABC):
         unsupported (the mandatory per-variant baseline phase is then the
         cross-run contamination safety net)."""
         return False
+
+    def stage_tool_response(self, tool_name: str, content: str) -> None:
+        """Make the target's *next* matching tool call return ``content``
+        instead of its real result (one-shot: consumed then reverts to real
+        behavior). Models indirect prompt injection delivered via a tool
+        result (e.g. a poisoned web-search snippet) rather than a direct
+        chat turn. No-op default: an adapter that can't stage a tool result
+        should not silently do nothing and claim success -- pair this with
+        ``AdapterCapabilities.supports_tool_staging = False`` so the runner
+        reports ``NOT_EVALUATED`` instead of a false ``CLEAN``."""
+        return None
 
     def capabilities(self) -> AdapterCapabilities:
         return AdapterCapabilities(access_profile="black_box")

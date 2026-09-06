@@ -118,6 +118,8 @@ PAYLOAD_VALUES = ("formatting_marker", "false_citation_policy", "disclaimer_supp
                   "access_control_adjacent", "none")
 LAYER_VALUES = ("policy_global", "semantic", "episodic", "none")
 PROPAGATION_VALUES = ("cross-user", "cross-session-same-user", "single-turn")
+DELIVERY_CHANNEL_VALUES = ("chat_direct", "tool_result", "document_ingestion")
+THREAT_MODEL_VALUES = ("memory_poisoning", "llm_jailbreak_susceptibility")
 
 
 @dataclass
@@ -143,6 +145,12 @@ class AttackVariant:
     rule_semantic: Optional[str] = None               # phase-2 LLM-judge rubric text
     source: str = "static_catalog"                     # static_catalog | mutation:<technique> | imported:<bank>
     mutation_technique: str = ""                          # slug of the technique that produced this variant, if any
+    delivery_channel: str = "chat_direct"                 # chat_direct | tool_result | document_ingestion
+    tool_stage: Optional[Dict[str, str]] = None            # {"tool_name": ..., "content_template": "...{canary}..."}
+    trigger_message: str = ""                               # normal victim turn expected to invoke tool_stage's tool
+    second_client_principal: Optional[str] = None           # tool_result flows: probe THIS principal instead of
+                                                                # the one who triggered, to check cross-user leakage
+    threat_model: str = "memory_poisoning"                    # memory_poisoning | llm_jailbreak_susceptibility
     notes: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
@@ -192,6 +200,9 @@ class AttackResult:
     taxonomy: List[str] = field(default_factory=list)
     owasp_amg_category: str = ""
     mutation_technique: str = ""
+    delivery_channel: str = ""
+    threat_model: str = ""
+    laundering_detected: Optional[bool] = None   # diagnostic only for tool_result flows, not the verdict itself
     framing: str = ""
     payload: str = ""
     layer: str = ""
@@ -251,6 +262,7 @@ class RunReport:
     asr_by_axis: Dict[str, Dict[str, GroupMetric]] = field(default_factory=dict)
     asr_by_taxonomy_category: Dict[str, GroupMetric] = field(default_factory=dict)
     asr_by_mutation_technique: Dict[str, GroupMetric] = field(default_factory=dict)
+    asr_by_threat_model: Dict[str, GroupMetric] = field(default_factory=dict)
     counts_by_verdict: Dict[str, int] = field(default_factory=dict)
     limitations: List[str] = field(default_factory=list)
     trace_path: Optional[str] = None
@@ -269,6 +281,7 @@ class RunReport:
                            for axis, groups in self.asr_by_axis.items()},
             "asr_by_taxonomy_category": {k: v.to_dict() for k, v in self.asr_by_taxonomy_category.items()},
             "asr_by_mutation_technique": {k: v.to_dict() for k, v in self.asr_by_mutation_technique.items()},
+            "asr_by_threat_model": {k: v.to_dict() for k, v in self.asr_by_threat_model.items()},
             "counts_by_verdict": dict(self.counts_by_verdict),
             "limitations": list(self.limitations),
             "trace_path": self.trace_path,

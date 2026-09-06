@@ -69,6 +69,14 @@ def emit_markdown(report: RunReport) -> str:
         L.append(f"| {esc(technique)} | {metric.display} |")
     L.append("")
 
+    L.append("## ASR by threat model")
+    L.append("")
+    L.append("| Threat model | ASR |")
+    L.append("|---|---|")
+    for tm, metric in sorted(report.asr_by_threat_model.items()):
+        L.append(f"| {esc(tm)} | {metric.display} |")
+    L.append("")
+
     L.append("## ASR by diversity axis")
     L.append("")
     for axis, groups in report.asr_by_axis.items():

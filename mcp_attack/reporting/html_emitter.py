@@ -222,6 +222,9 @@ def emit_html(report: RunReport) -> str:
   <h2>ASR by mutation technique</h2>
   {_metric_table(report.asr_by_mutation_technique, "no mutated variants in this run")}
 
+  <h2>ASR by threat model</h2>
+  {_metric_table(report.asr_by_threat_model, "no results in this run")}
+
   <h2>ASR by rule id</h2>
   {_metric_table(report.asr_by_rule_id, "no rule_ids tagged in this run")}
 

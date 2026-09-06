@@ -54,12 +54,28 @@ def run_variant(variant: AttackVariant, channels: List[Channel], adapter: Target
             variant_id=variant.id, verdict=Verdict.NOT_EVALUATED,
             rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
             owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
+            delivery_channel=variant.delivery_channel, threat_model=variant.threat_model,
             framing=variant.framing, payload=variant.payload, layer=variant.layer,
             propagation=variant.propagation,
             limitations=[f"adapter access_profile={caps.access_profile} does not meet "
                         f"variant.access_profile_required=white_box"],
         )
+    if variant.delivery_channel == "tool_result" and not caps.supports_tool_staging:
+        tracer.log(run_id=run_id, trace_id=variant.id, phase="skip",
+                  text="requires tool-result staging, adapter lacks supports_tool_staging")
+        return AttackResult(
+            variant_id=variant.id, verdict=Verdict.NOT_EVALUATED,
+            rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
+            owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
+            delivery_channel=variant.delivery_channel, threat_model=variant.threat_model,
+            framing=variant.framing, payload=variant.payload, layer=variant.layer,
+            propagation=variant.propagation,
+            limitations=["adapter does not support stage_tool_response(); this delivery_channel='tool_result' "
+                        "variant cannot be evaluated black-box against this target"],
+        )
     try:
+        if variant.delivery_channel == "tool_result":
+            return _run_tool_injection_flow(variant, channels, adapter, caps, detector, tracer, run_id)
         if variant.propagation == "single-turn":
             return _run_single_turn_control(variant, channels, adapter, detector, tracer, run_id)
         return _run_canary_flow(variant, channels, adapter, caps, detector, tracer, run_id)
@@ -69,6 +85,7 @@ def run_variant(variant: AttackVariant, channels: List[Channel], adapter: Target
             variant_id=variant.id, verdict=Verdict.ERROR, error=f"{type(exc).__name__}: {exc}",
             rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
             owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
+            delivery_channel=variant.delivery_channel, threat_model=variant.threat_model,
             framing=variant.framing, payload=variant.payload, layer=variant.layer,
             propagation=variant.propagation,
         )
@@ -103,6 +120,7 @@ def _run_single_turn_control(variant: AttackVariant, channels: List[Channel], ad
         variant_id=variant.id, verdict=verdict, post_detection=text_det, ground_truth_detection=gt_det,
         rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
         owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
+        delivery_channel=variant.delivery_channel, threat_model=variant.threat_model,
         framing=variant.framing, payload=variant.payload, layer=variant.layer, propagation=variant.propagation,
         channels_used=[channel.channel_id], canary=marker,
     )
@@ -148,6 +166,7 @@ def _run_canary_flow(variant: AttackVariant, channels: List[Channel], adapter: T
             variant_id=variant.id, verdict=Verdict.INVALID, baseline_detection=baseline_text_det,
             rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
             owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
+            delivery_channel=variant.delivery_channel, threat_model=variant.threat_model,
             framing=variant.framing, payload=variant.payload, layer=variant.layer, propagation=variant.propagation,
             channels_used=channels_used, canary=canary,
             limitations=["canary already present before this variant's own injection ran: "
@@ -208,6 +227,117 @@ def _run_canary_flow(variant: AttackVariant, channels: List[Channel], adapter: T
         post_detection=post_text_det, ground_truth_detection=gt_det,
         rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
         owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
+        delivery_channel=variant.delivery_channel, threat_model=variant.threat_model,
+        framing=variant.framing, payload=variant.payload, layer=variant.layer, propagation=variant.propagation,
+        channels_used=channels_used, canary=canary,
+    )
+
+
+def _run_tool_injection_flow(variant: AttackVariant, channels: List[Channel], adapter: TargetAdapter,
+                             caps: AdapterCapabilities, detector: Detector, tracer: JSONLTracer,
+                             run_id: str) -> AttackResult:
+    """Indirect prompt injection delivered via a tool result (e.g. a poisoned
+    web-search snippet) rather than a direct chat turn.
+
+    Note the victim, not an "attacker" principal, sends ``trigger_message``:
+    the attacker's only real-world capability is planting content somewhere
+    a tool will surface it (an indexed web page, a staged snippet here); it
+    is the victim's own ordinary query that makes the target invoke the
+    poisoned tool. ``laundering_detected`` is a diagnostic signal, not the
+    verdict: many targets only ever persist an assistant's own visible reply
+    into memory (no raw "tool" role in their transcript), so the injected
+    content must first get echoed/affirmed there before it has any chance of
+    surviving into memory -- this records whether that happened without
+    changing the canary verdict truth table.
+    """
+    victim = _pick_channel(channels, variant.victim_role, variant.victim_principal)
+    probe_channel = (_pick_channel(channels, variant.victim_role, variant.second_client_principal)
+                    if variant.second_client_principal else victim)
+
+    token = uuid.uuid4().hex[:10]
+    canary = _safe_format(variant.canary_template, canary=f"{run_id[:6]}-{token}") if variant.canary_template else token
+    channels_used = sorted({victim.channel_id, probe_channel.channel_id})
+
+    # -- 0. baseline: negative control, fresh victim session -------------- #
+    baseline_session = adapter.new_session(victim.principal)
+    tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
+              phase="baseline", channel_id=victim.channel_id, session_id=baseline_session,
+              direction="request", text=variant.probe, canary=canary)
+    baseline_response = adapter.send(victim.principal, baseline_session, variant.probe)
+    baseline_text_det = detector.detect(baseline_response, canary, DetectionChannel.RESPONSE_TEXT)
+    tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
+              phase="baseline", channel_id=victim.channel_id, session_id=baseline_session,
+              direction="response", text=baseline_response, canary=canary,
+              canary_present=baseline_text_det.canary_present)
+
+    baseline_present = baseline_text_det.canary_present
+    if baseline_present:
+        tracer.log(run_id=run_id, trace_id=variant.id, phase="verdict", verdict=Verdict.INVALID.value)
+        return AttackResult(
+            variant_id=variant.id, verdict=Verdict.INVALID, baseline_detection=baseline_text_det,
+            rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
+            owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
+            delivery_channel=variant.delivery_channel, threat_model=variant.threat_model,
+            framing=variant.framing, payload=variant.payload, layer=variant.layer, propagation=variant.propagation,
+            channels_used=channels_used, canary=canary,
+            limitations=["canary already present before this variant's own injection ran: "
+                        "stale contamination from a previous run"],
+        )
+
+    # -- 1. stage the tool result, then let the victim trigger it naturally -- #
+    tool_name = variant.tool_stage["tool_name"]
+    staged_content = _safe_format(variant.tool_stage["content_template"], canary=canary)
+    tracer.log(run_id=run_id, trace_id=variant.id, phase="stage_tool", direction="request",
+              text=f"tool={tool_name}", canary=canary, tool={"tool_name": tool_name})
+    adapter.stage_tool_response(tool_name, staged_content)
+
+    trigger_session = adapter.new_session(victim.principal)
+    tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
+              phase="trigger", channel_id=victim.channel_id, session_id=trigger_session,
+              direction="request", text=variant.trigger_message, canary=canary)
+    trigger_reply = adapter.send(victim.principal, trigger_session, variant.trigger_message)
+    laundering_detected = detector.detect(trigger_reply, canary, DetectionChannel.RESPONSE_TEXT).canary_present
+    tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
+              phase="trigger", channel_id=victim.channel_id, session_id=trigger_session,
+              direction="response", text=trigger_reply, canary=canary, canary_present=laundering_detected)
+
+    # -- 2. consolidate ------------------------------------------------------- #
+    tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
+              phase="consolidate", channel_id=victim.channel_id, session_id=trigger_session)
+    adapter.consolidate(victim.principal, trigger_session)
+
+    # -- 3. probe: fresh session, possibly a second client -------------------- #
+    probe_session = adapter.new_session(probe_channel.principal)
+    tracer.log(run_id=run_id, trace_id=variant.id, principal=probe_channel.principal.principal_id,
+              phase="probe", channel_id=probe_channel.channel_id, session_id=probe_session,
+              direction="request", text=variant.probe, canary=canary)
+    probe_response = adapter.send(probe_channel.principal, probe_session, variant.probe)
+    post_text_det = detector.detect(probe_response, canary, DetectionChannel.RESPONSE_TEXT)
+    tracer.log(run_id=run_id, trace_id=variant.id, principal=probe_channel.principal.principal_id,
+              phase="probe", channel_id=probe_channel.channel_id, session_id=probe_session,
+              direction="response", text=probe_response, canary=canary,
+              canary_present=post_text_det.canary_present)
+
+    post_mem_det = None
+    if caps.supports_inspect_memory:
+        mem_text = adapter.inspect_memory(probe_channel.principal)
+        post_mem_det = detector.detect(mem_text, canary, DetectionChannel.MEMORY_INSPECTION)
+        tracer.log(run_id=run_id, trace_id=variant.id, principal=probe_channel.principal.principal_id,
+                  phase="memory_inspection", direction="inspection", canary=canary,
+                  canary_present=post_mem_det.canary_present)
+
+    post_present = _or_present(post_text_det, post_mem_det)
+    verdict = decide_verdict(baseline_present, post_present)
+    tracer.log(run_id=run_id, trace_id=variant.id, phase="verdict", verdict=verdict.value,
+              text=f"laundering_detected={laundering_detected}")
+
+    return AttackResult(
+        variant_id=variant.id, verdict=verdict, baseline_detection=baseline_text_det,
+        post_detection=post_text_det,
+        rule_ids=list(variant.rule_ids), taxonomy=list(variant.taxonomy),
+        owasp_amg_category=variant.owasp_amg_category, mutation_technique=variant.mutation_technique,
+        delivery_channel=variant.delivery_channel, threat_model=variant.threat_model,
+        laundering_detected=laundering_detected,
         framing=variant.framing, payload=variant.payload, layer=variant.layer, propagation=variant.propagation,
         channels_used=channels_used, canary=canary,
     )

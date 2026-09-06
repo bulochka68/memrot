@@ -64,5 +64,10 @@ def load_catalog(paths: Iterable[str], strict: bool = True) -> List[AttackVarian
                 attacker_principal=v.get("attacker_principal"), victim_principal=v.get("victim_principal"),
                 target_ref=v.get("target_ref"), rule_semantic=v.get("rule_semantic"),
                 source=v.get("source", "static_catalog"), notes=v.get("notes", ""),
+                delivery_channel=v.get("delivery_channel", "chat_direct"),
+                tool_stage=dict(v["tool_stage"]) if v.get("tool_stage") else None,
+                trigger_message=v.get("trigger_message", ""),
+                second_client_principal=v.get("second_client_principal"),
+                threat_model=v.get("threat_model", "memory_poisoning"),
             ))
     return variants
