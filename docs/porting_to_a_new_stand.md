@@ -465,6 +465,7 @@ python -m mcp_audit validate .audit/мой.json
 
 ## Смежные документы
 
+* [`mempalace_runbook.md`](mempalace_runbook.md) — этот перенос как пошаговый сценарий: что уже сделано, как воспроизвести, что осталось закрыть
 * [`auditor.md`](auditor.md) — режимы, команды, формат отчёта
 * [`adapters_and_formats.md`](adapters_and_formats.md) — форматы входов всех адаптеров
 * [`rules_catalog.md`](rules_catalog.md) — что требует и что проверяет каждое из 28 правил
