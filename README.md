@@ -370,7 +370,8 @@ OpenAI-формы, снятые заголовком UI-тоггла из пре
 схема отчёта `agent-security-audit` 2.0). Она разбирает стенд по конфигурации,
 исходникам, политике и compose-файлу и выдаёт отчёт, где у каждого утверждения
 свой источник, метод и статус подтверждения. Полное описание —
-[`docs/auditor.md`](docs/auditor.md), каталог правил — [`docs/rules_catalog.md`](docs/rules_catalog.md).
+[`docs/auditor.md`](docs/auditor.md), каталог правил — [`docs/rules_catalog.md`](docs/rules_catalog.md),
+перенос аудита на другой стенд — [`docs/porting_to_a_new_stand.md`](docs/porting_to_a_new_stand.md).
 
 Прогон по этому чекауту (стенд поднимать не нужно, ничего не запускается и никуда
 не подключается):

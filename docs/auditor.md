@@ -109,7 +109,9 @@ identity, inspection profile and bound adapters; secrets are never embedded
 **profile** holds the names of a concrete system (components, memory stores,
 flows to verify in source, authorization transitions, token validation,
 routing) so that the rules stay generic. Formats of all adapter inputs are in
-[`docs/adapters_and_formats.md`](adapters_and_formats.md).
+[`docs/adapters_and_formats.md`](adapters_and_formats.md); porting the audit to
+another stand is described in
+[`docs/porting_to_a_new_stand.md`](porting_to_a_new_stand.md).
 
 | Adapter | Source |
 |---|---|
