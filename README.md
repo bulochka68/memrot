@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="memrot" width="420">
+  <img src="docs/assets/banner.png" alt="memrot" width="420">
 </p>
 
 <p align="center">
