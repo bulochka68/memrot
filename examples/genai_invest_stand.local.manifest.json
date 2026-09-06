@@ -3,9 +3,9 @@
   "target": {
     "id": "genai-invest-stand-local",
     "build_ref": "HEAD of this checkout",
-    "environment": "local checkout of the stand (this repository)",
+    "environment": "local checkout of the stand (a repository where the stand sources sit next to the auditor)",
     "boundaries": ["agent-api", "agent", "session-finalizer", "memory-store", "mcp-invest", "invest-server", "redis", "mongo", "postgres", "keycloak"],
-    "snapshot_note": "Источники и compose читаются из этого чекаута; стенд, MCP-процессы и модель не запускаются."
+    "snapshot_note": "Источники и compose читаются из рабочего дерева; стенд, MCP-процессы и модель не запускаются. Нужен чекаут, где рядом с аудитором лежат исходники стенда (app/, mcp-invest/, invest-server/, docker-compose.yml); в ветке только с инструментарием прогон вырождается в partial — берите genai_invest_stand.manifest.json со снимками."
   },
   "inspection": {
     "access_profile": "white_box",

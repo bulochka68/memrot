@@ -1,19 +1,9 @@
-fastapi>=0.115.0
-uvicorn[standard]>=0.30.0
-langgraph>=0.5.4
-langchain>=0.3.0
-langchain-openai>=0.3.28
-langchain-mcp-adapters>=0.1.6
-langchain-core>=0.3.0
-openai>=1.99.2
-duckduckgo-search>=6.0.0
-python-dotenv>=1.0.1
-httpx>=0.24.0
-mcp>=1.9.4
-redis>=5.0.0
-pymongo>=4.6.0
-pydantic>=2.0.0
-pyjwt[crypto]>=2.9.0
-python-multipart>=0.0.9
+# Аудитор (mcp_audit) работает на стандартной библиотеке Python 3.11+.
+# Ниже — только опциональные зависимости отдельных режимов.
 
-ddgs
+# deployment-адаптер: чтение docker-compose.yml (без PyYAML читается только JSON-снимок)
+PyYAML>=6.0
+
+# redteam/: HTTP-клиент к цели атаки и запуск сценариев
+httpx>=0.24.0
+pytest>=8.0.0

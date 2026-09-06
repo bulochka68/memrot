@@ -20,11 +20,12 @@ PyRIT/garak → доставку и оракул держит этот харн�
 
 ## Предпосылки
 
-1. Стенд поднят локально: `docker compose up` (agent-api на `:8600`).
+1. Цель поднята локально и доступна по `STAND_URL` (у genai-invest-стенда это
+   `agent-api` на `:8600`; сам стенд живёт в отдельном репозитории/ветке).
 2. Два API-ключа разных пользователей (страница аккаунта стенда):
    - `ATTACKER_KEY` — атакующий (user A)
    - `VICTIM_KEY` — жертва (user B)
-3. `pip install pytest httpx`
+3. `pip install -r requirements.txt` (httpx + pytest)
 
 ## Запуск
 

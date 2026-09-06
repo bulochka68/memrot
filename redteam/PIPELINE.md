@@ -16,19 +16,26 @@ mcp_audit audit ──> stand.json ──> rank_targets ──> select_attacks
 
 ```bash
 cd /home/user/aith_redteaming
-pip install -r requirements.txt          # движок аудита
-pip install pytest httpx                 # харнесс атак
+pip install -r requirements.txt          # PyYAML (compose/YAML) + httpx и pytest для атак
 mkdir -p .audit                          # отчёты (в .gitignore)
 ```
+
+Сам движок аудита работает на стандартной библиотеке — для стадий 1–4 установка
+не обязательна.
 
 ## 1. Offline-аудит (статика, ничего не поднимается)
 
 ```bash
-python3 -m mcp_audit audit examples/genai_invest_stand.local.manifest.json \
+python3 -m mcp_audit audit examples/genai_invest_stand.manifest.json \
   --json .audit/stand.json --md .audit/stand.md --gate
 ```
-Читает исходники + compose + политику → `.audit/stand.json`. Exit 1 = есть
-находки (норма). Дальше в работу идёт только `control_outcome=FAIL`.
+Читает снимки инвентаря, исходников, политики и деплоя → `.audit/stand.json`.
+Exit 1 = есть находки (норма). Дальше в работу идёт только `control_outcome=FAIL`.
+
+Если рядом с аудитором лежит чекаут самой системы, вместо снимков берётся
+`examples/genai_invest_stand.local.manifest.json` — он читает исходники и
+`docker-compose.yml` из рабочего дерева (в этой ветке стенда нет, и такой прогон
+вырождается в `partial`).
 
 ## 2. Ранжирование целей
 
@@ -57,9 +64,10 @@ python3 run_attacks.py ../../.audit/stand.json -c tool-poisoning,memory-poisonin
 
 ## 5. Поднять стенд и завести принципалов
 
+Стенд живёт в отдельном репозитории/ветке — поднимите его там (`docker compose up -d`,
+`agent-api` на :8600) и укажите харнессу адрес и двух **разных** принципалов:
+
 ```bash
-cd /home/user/aith_redteaming
-docker compose up -d                     # agent-api на :8600
 export STAND_URL=http://localhost:8600
 export ATTACKER_KEY=<ключ пользователя A> # со страницы аккаунта стенда
 export VICTIM_KEY=<ключ пользователя B>   # ДРУГОЙ пользователь
@@ -97,7 +105,7 @@ control_violation_observed → маркер дошёл до жертвы (меж
 
 ```bash
 mkdir -p .audit && \
-python3 -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json --gate; \
+python3 -m mcp_audit audit examples/genai_invest_stand.manifest.json --json .audit/stand.json --gate; \
 python3 redteam/attacks/run_attacks.py .audit/stand.json -c tool-poisoning,memory-poisoning --dry-run
 ```
 
