@@ -94,6 +94,66 @@ python -m pytest tests/ --ignore=tests/benchmarks \
 **73/73 passed**. На не-root раннерах CI (ubuntu / macos / windows) они зелёные.
 Это не дефект MemPalace, а следствие запуска под uid 0.
 
+## Запуск аудитора (`mcp_audit`)
+
+`mcp_audit` — подсистема аудита безопасности из этого репозитория (движок 2.0,
+схема отчёта `agent-security-audit` 2.0, 28 правил: MEM-*, AUTH-*, INFRA-*,
+TOOL-*, EGRESS-*, INV-*). Для MemPalace перенос сделан **только данными**: аудит
+не читает чужой чек-аут и ничего не запускает — он работает офлайн по
+зафиксированным снимкам (`examples/mempalace.*.json`), профиль —
+`profiles/mempalace.json`. Все команды выполняются из корня `aith_redteaming`.
+
+### 1. Проверить профиль до аудита (`lint-profile`)
+
+```bash
+python -m mcp_audit lint-profile profiles/mempalace.json \
+  --root /path/to/mempalace/checkout \
+  --sources mcp_inventory,source_snapshot,policy_snapshot,deployment
+```
+
+Проверяет структуру профиля, что все `path` / `symbol` резолвятся в дереве
+исходников, что регулярки компилируются и `rule_refs` ссылаются на реальные
+правила, и печатает карту покрытия. Ожидаемо: `clean`, `planned rules 25/28`
+(вне охвата: TOOL-01 — нужен baseline; EGRESS-02 / INFRA-03 — нужны
+control_fixtures). `--root` нужен только для проверки локаторов; без него эти
+проверки пропускаются, и сам офлайн-аудит (шаги 2–3) чек-аут MemPalace не
+требует вовсе.
+
+### 2. Прогнать аудит
+
+```bash
+mkdir -p .audit
+python -m mcp_audit audit examples/mempalace.manifest.json \
+  --json .audit/mempalace.json --md .audit/mempalace.md
+```
+
+Манифест `examples/mempalace.manifest.json` сшивает четыре снимка-адаптера
+(`mcp_inventory`, `source_snapshot`, `policy_snapshot`, `deployment`). Прогон
+воспроизводит эталонный отчёт `examples/mempalace.audit.json`: **14 находок
+(11 confirmed + 3 hypotheses)**, вывод `findings_present`, состояние `partial`
+(часть контролов не покрыта снимками — неизвестный обязательный контрол это
+никогда не «allow»).
+
+### 3. Гейт для CI и валидация отчёта
+
+```bash
+# гейт: exit 1 при подтверждённых находках, 2 при неполной оценке, 0 — чисто
+python -m mcp_audit audit examples/mempalace.manifest.json \
+  --json .audit/mempalace.json --gate
+
+# структурная валидация отчёта v2 (референтная целостность)
+python -m mcp_audit validate .audit/mempalace.json
+```
+
+Коды возврата `audit`: `0` — без нарушений в охвате, `1` — подтверждённые
+находки, `2` — оценка неполная, `3` — drift, `4` — ошибка аудита. На стенде
+MemPalace `--gate` даёт **exit 1** (есть находки), `validate` — **0 ошибок**.
+
+Полное описание режимов (`offline` / `live-inventory` / `trace-review` /
+`controlled-validation` / `baseline-comparison`), профилей и правил —
+в [`docs/auditor.md`](auditor.md) и
+[`docs/porting_to_a_new_stand.md`](porting_to_a_new_stand.md).
+
 ## Ограничения окружения
 
 **Docker-путь здесь не работает** из-за egress-политики прокси — blob-CDN
