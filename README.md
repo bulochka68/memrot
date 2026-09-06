@@ -106,6 +106,10 @@ flowchart TB
   launchctl setenv OLLAMA_HOST 0.0.0.0
   # перезапустить Ollama.app после этого
   ```
+- На **Windows / WSL 2** запуск и прогон атак вынесены в отдельный разбор:
+  [`docs/wsl2_attack_testing.md`](docs/wsl2_attack_testing.md) (доставка к Ollama через
+  `host.docker.internal`, различие Docker Desktop и нативного `dockerd`, helper-скрипт
+  `scripts/wsl2_attack_stand.sh`).
 
 ### Шаги
 
@@ -487,6 +491,10 @@ tests/                   — тесты подсистемы аудита (pytho
 - **Ollama не отвечает из контейнеров на macOS.** Ollama по умолчанию слушает только
   `127.0.0.1` — нужно `launchctl setenv OLLAMA_HOST 0.0.0.0` и перезапуск `Ollama.app`
   (см. [Быстрый запуск](#быстрый-запуск)).
+- **Windows / WSL 2: контейнеры не видят Ollama, `host.docker.internal` не резолвится,
+  права/CRLF на `/mnt/c`.** Разобрано в [`docs/wsl2_attack_testing.md`](docs/wsl2_attack_testing.md)
+  (матрица Docker Desktop / нативный `dockerd` × Ollama на Windows / в WSL) — либо
+  запустите `./scripts/wsl2_attack_stand.sh check` и `… env` для диагностики и обвязки.
 - **Нужно перейти на другой LLM-провайдер (например OpenRouter) с реальным бюджетом.**
   Ничего в коде менять не нужно — `app/config.py` уже провайдер-агностичен через
   `OPENAI_BASE_URL`/`OPENAI_API_KEY`. Правится только `.env`:

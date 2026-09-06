@@ -12,3 +12,14 @@ ATTACK_HARNESS_PROGRESS.md
 .ipynb_checkpoints/
 examples/notebooks/demo_report.html
 examples/notebooks/phase3_demo_report.html
+
+# Локальный конфиг с секретами провайдера (создаётся из .env.example).
+.env
+# Самоподписанный TLS-сертификат Keycloak (содержит приватный ключ) —
+# генерируется локально перед первым запуском, коммитить нельзя.
+keycloak/certs/
+# Вывод red-team харнесса (mcp_attack quickstart/run --out .attack).
+.attack/
+# Машинно-специфичный override (генерирует scripts/wsl2_attack_stand.sh
+# для нативного dockerd, чтобы контейнеры видели Ollama на WSL2-хосте).
+docker-compose.override.yml
