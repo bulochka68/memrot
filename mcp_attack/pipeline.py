@@ -16,6 +16,7 @@ from .config import TargetBinding
 from .detectors import build_detector
 from .detectors.base import Detector
 from .models import Channel, RunReport, default_run_id
+from .mutation.domain import audit_looks_like_invest_stand
 from .mutation.llm_client import LLMClient
 from .reporting.aggregate import aggregate
 from .runner.adaptive import run_adaptive
@@ -28,10 +29,16 @@ ALL_CATALOG = os.path.join(_PACKAGE_DIR, "catalog", "prompts")
 PLACEHOLDER_CREDENTIAL = "placeholder-unauthenticated"
 
 
-def resolve_pool(pool: str) -> List[str]:
-    if pool in ("", "neutral"):
+def resolve_pool(pool: str, audit_json_path: Optional[str] = None) -> List[str]:
+    """``neutral`` = generic prompts; ``all`` = generic + domain overlays;
+    ``auto`` (quickstart default) = ``all`` when the audit JSON is this
+    repo's invest stand, otherwise ``neutral`` (mempalace / unknown)."""
+    chosen = pool
+    if pool in ("", "auto"):
+        chosen = "all" if (audit_json_path and audit_looks_like_invest_stand(audit_json_path)) else "neutral"
+    if chosen in ("", "neutral"):
         return [GENERIC_CATALOG]
-    if pool == "all":
+    if chosen == "all":
         return [ALL_CATALOG]
     return [pool]
 
@@ -62,9 +69,15 @@ def audit_then_attack(audit_json_path: Optional[str], target: TargetBinding, cha
                       min_severity: Optional[str] = None) -> RunReport:
     """Load the chosen pool → optional ranked audit prioritization →
     ``run_matrix`` (or ``run_adaptive``) → ``RunReport``."""
-    variants = StaticCatalogGenerator(resolve_pool(pool)).generate()
+    resolved = resolve_pool(pool, audit_json_path)
+    variants = StaticCatalogGenerator(resolved).generate()
     limitations: List[str] = []
     limitations.extend(ensure_placeholder_credentials(channels))
+    if pool in ("", "auto"):
+        if resolved == [ALL_CATALOG]:
+            limitations.append("pool=auto: audit profile looks like the invest stand; loaded generic + domain overlay")
+        else:
+            limitations.append("pool=auto: using the generic catalog (no invest-stand overlay)")
     if audit_json_path:
         variants, audit_limitations = select_variants_by_audit(
             variants, audit_json_path, mode="ranked", min_severity=min_severity, top_n=top_n,

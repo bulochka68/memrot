@@ -73,6 +73,31 @@ class Verdict(str, enum.Enum):
     NOT_EVALUATED = "NOT_EVALUATED"    # required access profile not met by the bound adapter
 
 
+# Values match mcp_audit.models.PathState -- not imported, just aligned.
+# Same ladder redteam/attacks/target.py.AttackResult.path_state uses.
+PATH_STATE_CONTROL_VIOLATION = "control_violation_observed"
+PATH_STATE_RUNTIME_OBSERVED = "runtime_path_observed"
+PATH_STATE_STATIC_SUPPORTED = "static_path_supported"
+PATH_STATE_UNKNOWN = "unknown"
+
+
+def path_state_for(verdict: Verdict, propagation: str = "") -> str:
+    """Map a harness verdict onto the auditor's path_state vocabulary.
+
+    CONFIRMED + cross-user  -> control_violation_observed (payoff reached another principal)
+    CONFIRMED otherwise     -> runtime_path_observed (payload persisted / surfaced)
+    CLEAN                   -> static_path_supported (attempted, not reproduced this run)
+    INVALID/ERROR/NOT_EVALUATED -> unknown (do not pretend a static path was confirmed)
+    """
+    if verdict is Verdict.CONFIRMED:
+        if propagation == "cross-user":
+            return PATH_STATE_CONTROL_VIOLATION
+        return PATH_STATE_RUNTIME_OBSERVED
+    if verdict is Verdict.CLEAN:
+        return PATH_STATE_STATIC_SUPPORTED
+    return PATH_STATE_UNKNOWN
+
+
 class DetectionChannel(str, enum.Enum):
     RESPONSE_TEXT = "response_text"
     MEMORY_INSPECTION = "memory_inspection"
@@ -220,6 +245,7 @@ class AttackResult:
     error: Optional[str] = None
     limitations: List[str] = field(default_factory=list)
     trace_event_ids: List[str] = field(default_factory=list)
+    path_state: str = ""  # mcp_audit PathState string; set by the engine from verdict + propagation
 
     def to_dict(self) -> Dict[str, Any]:
         return plain({f.name: getattr(self, f.name) for f in fields(self)})

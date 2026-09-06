@@ -16,7 +16,7 @@ from ..adapters.base import AdapterCapabilities, TargetAdapter
 from ..detectors.base import Detector
 from ..detectors.ground_truth import GroundTruthDetector
 from ..models import (AttackResult, AttackVariant, Channel, ChannelRole, DetectionChannel,
-                      DetectionResult, RunReport, Verdict, default_run_id)
+                      DetectionResult, RunReport, Verdict, default_run_id, path_state_for)
 from ..tracer import JSONLTracer
 from .verdict import decide_verdict
 
@@ -40,7 +40,10 @@ def _tagged(variant: AttackVariant, **kwargs) -> AttackResult:
         propagation=variant.propagation,
     )
     base.update(kwargs)
-    return AttackResult(**base)
+    result = AttackResult(**base)
+    if not result.path_state:
+        result.path_state = path_state_for(result.verdict, result.propagation)
+    return result
 
 
 def _tool_vector(variant: AttackVariant) -> str:

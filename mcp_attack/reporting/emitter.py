@@ -38,10 +38,11 @@ def emit_markdown(report: RunReport) -> str:
 
     L.append("## Per-variant verdicts")
     L.append("")
-    L.append("| Variant | Verdict | Rule IDs | Framing | Payload | Layer | Propagation |")
-    L.append("|---|---|---|---|---|---|---|")
+    L.append("| Variant | Verdict | Path state | Rule IDs | Framing | Payload | Layer | Propagation |")
+    L.append("|---|---|---|---|---|---|---|---|")
     for r in report.results:
-        L.append(f"| {esc(r.variant_id)} | **{r.verdict.value}** | {esc(', '.join(r.rule_ids) or '—')} | "
+        L.append(f"| {esc(r.variant_id)} | **{r.verdict.value}** | {esc(r.path_state or '—')} | "
+                 f"{esc(', '.join(r.rule_ids) or '—')} | "
                  f"{esc(r.framing)} | {esc(r.payload)} | {esc(r.layer)} | {esc(r.propagation)} |")
     L.append("")
 

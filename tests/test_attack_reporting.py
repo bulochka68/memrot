@@ -67,6 +67,15 @@ def test_emit_json_and_markdown_are_well_formed_and_consistent():
     md = emit_markdown(report)
     assert "Overall ASR" in md
     assert "MEM-02" in md
+    assert "Path state" in md
+
+
+def test_emit_json_includes_path_state_on_results():
+    report = _report([_result(Verdict.CONFIRMED, rule_ids=["MEM-02"], path_state="control_violation_observed")])
+    aggregate(report)
+    import json
+    parsed = json.loads(emit_json(report))
+    assert parsed["results"][0]["path_state"] == "control_violation_observed"
 
 
 def test_aggregate_by_taxonomy_category_groups_and_untagged_bucket():

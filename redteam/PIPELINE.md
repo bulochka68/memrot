@@ -1,8 +1,23 @@
 # Пайплайн тестирования: от offline-аудита до запуска атак
 
-Единый конвейер поверх подсистемы аудита (`mcp_audit`) и red-team харнесса
-(`redteam/`). Все команды — из корня репозитория. Петля: аудит находит гипотезы
-(static), атаки подтверждают их (runtime) в том же словаре правил.
+Единый конвейер поверх подсистемы аудита (`mcp_audit`). Дальше — **два** red-team
+харнесса с одним словарём `rule_id` / `path_state`:
+
+| Харнесс | Когда | Выход |
+|---|---|---|
+| **`mcp_attack`** | любой агент (OpenAI-совместимый, MCP, callable). Портируется профилем аудита: invest overlay vs нейтральный catalog | `verdict` + `path_state` в `.attack/run.json` |
+| **`redteam/`** | только стенд GenAI Invest Assistant, готовые сценарии poisoning | `path_state` из `run_attacks.py` |
+
+Портативный happy path:
+
+```bash
+python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
+python -m mcp_attack quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
+  --audit .audit/stand.json --out .attack
+```
+
+Документация харнесса: [`docs/attacker.md`](../docs/attacker.md). Ниже — стендовый
+контур `redteam/` (rank → select → run_attacks).
 
 ```
 mcp_audit audit ──> stand.json ──> rank_targets ──> select_attacks
@@ -104,7 +119,9 @@ python3 redteam/attacks/run_attacks.py .audit/stand.json -c tool-poisoning,memor
 ## Обобщение на другую систему
 
 - Аудит: новый профиль (`profiles/<system>.json`) + привязки адаптеров в манифесте.
-- Атаки: новый адаптер `redteam/attacks/targets/<system>.py` (реализовать
-  `AttackTarget`). Сценарии, таксономия и раннер не меняются.
+- Переносимые атаки: `mcp_attack quickstart --audit <report.json>` с нейтральным
+  каталогом (`--pool auto` не подключает invest overlay, если профиль не стенд).
+- Стендовые сценарии `redteam/`: новый адаптер `redteam/attacks/targets/<system>.py`
+  (реализовать `AttackTarget`). Сценарии, таксономия и раннер не меняются.
 
 Только против своего стенда: live-режимы аудита и все атаки реально ходят по сети.

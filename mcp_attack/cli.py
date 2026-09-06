@@ -368,7 +368,8 @@ def build_parser() -> argparse.ArgumentParser:
     pq.add_argument("--audit-min-severity", choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"], default=None)
     pq.add_argument("--top-n", type=int, default=None)
     pq.add_argument("--domain", help="domain label; reserved for domain_adaptation when an attacker LLM is configured")
-    pq.add_argument("--pool", default="neutral", help="neutral | all | <catalog path>")
+    pq.add_argument("--pool", default="auto", help="auto | neutral | all | <catalog path> "
+                    "(auto: invest-stand overlay when --audit profile is genai-invest, else generic)")
     pq.add_argument("--out", default=".attack")
     pq.add_argument("--gate", action="store_true")
     pq.add_argument("--report-html", default=None)

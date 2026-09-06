@@ -82,13 +82,20 @@ python -m mcp_attack quickstart \
   --out .attack --report-html .attack/run.html
 ```
 
-Audit then attack (ranked by finding severity):
+Audit then attack (ranked by finding severity, trifecta, P3 campaigns; same
+`path_state` vocabulary as `mcp_audit` / `redteam/`):
 
 ```bash
 python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
 python -m mcp_attack quickstart --url http://localhost:8600/v1 --model my-agent \
   --audit .audit/stand.json --out .attack
 ```
+
+`--pool auto` (quickstart default) loads `catalog/prompts/domain/invest_bank`
+on top of the generic pool when `meta.profile.id` is this repo's invest stand;
+a mempalace / unknown profile stays on `generic/`. Each `AttackResult` carries
+`path_state` so a run can close the static → runtime loop without importing
+`mcp_audit`.
 
 Same function the notebook calls: `mcp_attack.pipeline.audit_then_attack`.
 

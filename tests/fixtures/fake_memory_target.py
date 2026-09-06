@@ -60,6 +60,10 @@ class FakeVulnerableMemoryApp:
         self.session_messages = {}
         return True
 
+    def ingest(self, principal_id: str, session_id: str, document_text: str) -> str:
+        self.session_messages.setdefault(session_id, []).append(document_text)
+        return f"(ingested {len(document_text)} chars)"
+
 
 class FakeCleanMemoryApp(FakeVulnerableMemoryApp):
     def consolidate(self, principal_id: str, session_id: str) -> None:
@@ -143,7 +147,8 @@ class RaisingApp:
 
 def build_adapter(app, *, access_profile: str = "black_box", with_memory: bool = False,
                   with_ground_truth: bool = False, with_reset: bool = False,
-                  with_tool_staging: bool = False) -> CallableAdapter:
+                  with_tool_staging: bool = False, with_ingest: bool = False,
+                  supported_tool_vectors: Optional[List[str]] = None) -> CallableAdapter:
     kwargs: Dict[str, Any] = dict(
         send_fn=app.send, new_session_fn=app.new_session, consolidate_fn=app.consolidate,
         access_profile=access_profile,
@@ -156,4 +161,8 @@ def build_adapter(app, *, access_profile: str = "black_box", with_memory: bool =
         kwargs["reset_fn"] = app.reset
     if with_tool_staging:
         kwargs["stage_tool_fn"] = app.stage_tool_response
+    if with_ingest:
+        kwargs["ingest_fn"] = app.ingest
+    if supported_tool_vectors is not None:
+        kwargs["supported_tool_vectors"] = supported_tool_vectors
     return CallableAdapter(**kwargs)

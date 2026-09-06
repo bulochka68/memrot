@@ -45,7 +45,8 @@ def test_profile_from_audit_parses_real_fixture_without_importing_mcp_audit():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     profile = profile_from_audit(os.path.join(root, "examples", "genai_invest_stand.audit.json"))
     assert "genai-invest" in profile.domain
-    assert profile.tool_names  # at least some tool names walked out of the JSON
+    assert profile.profile_id == "genai-invest-stand"
+    assert "instruments_search" in profile.tool_names
 
 
 def test_llm_synthesis_keeps_valid_drops_invalid():
@@ -63,3 +64,21 @@ def test_llm_synthesis_keeps_valid_drops_invalid():
     assert all(v.owasp_amg_category == "memory_prompt_injection" for v in variants)
     assert all(v.technique_category == "direct_instruction_override" for v in variants)
     assert all(v.id.startswith("synth-memory_prompt_injection-") for v in variants)
+
+
+def test_resolve_pool_auto_uses_invest_overlay_for_stand_audit():
+    import os
+    from mcp_attack.pipeline import ALL_CATALOG, GENERIC_CATALOG, resolve_pool
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    audit = os.path.join(root, "examples", "genai_invest_stand.audit.json")
+    assert resolve_pool("auto", audit) == [ALL_CATALOG]
+    assert resolve_pool("auto") == [GENERIC_CATALOG]
+    assert resolve_pool("neutral") == [GENERIC_CATALOG]
+
+
+def test_resolve_pool_auto_stays_generic_for_unknown_profile(tmp_path):
+    import json
+    from mcp_attack.pipeline import GENERIC_CATALOG, resolve_pool
+    path = tmp_path / "mempalace.audit.json"
+    path.write_text(json.dumps({"meta": {"profile": {"id": "mempalace"}}, "findings": []}), encoding="utf-8")
+    assert resolve_pool("auto", str(path)) == [GENERIC_CATALOG]
