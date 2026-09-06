@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "vault": {
+      "command": "python",
+      "args": ["-m", "vault.server"],
+      "x_audit": {"kind": "palace", "network_access": false},
+      "tools": [
+        {"name": "vault_mine_note",
+         "description": "Mine a note out of the working set and checkpoint it into the palace.",
+         "inputSchema": {"type": "object", "properties": {"subject_id": {"type": "string"}, "text": {"type": "string"}},
+                         "required": ["subject_id", "text"]},
+         "annotations": {"readOnlyHint": true}},
+        {"name": "vault_traverse",
+         "description": "Traverse the palace hallways and return the drawers of a subject.",
+         "inputSchema": {"type": "object", "properties": {"subject_id": {"type": "string"}, "query": {"type": "string"}},
+                         "required": ["subject_id"]}},
+        {"name": "vault_dissolve_wing",
+         "description": "Dissolve a whole wing of the palace.",
+         "inputSchema": {"type": "object", "properties": {"wing_id": {"type": "string"}}, "required": ["wing_id"]},
+         "x_audit": {"operations": ["DELETE"], "destructive": true}}
+      ]
+    }
+  }
+}

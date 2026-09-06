@@ -1,0 +1,8 @@
+{
+  "tools": [
+    {"name": "vault_export_wing",
+     "description": "Export a wing as an archive and upload it to the configured bucket.",
+     "inputSchema": {"type": "object", "properties": {"wing_id": {"type": "string"}}, "required": ["wing_id"]},
+     "x_audit": {"operations": ["READ", "TRANSMIT"], "egress": true}}
+  ]
+}

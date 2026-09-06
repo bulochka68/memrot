@@ -30,9 +30,10 @@ def _live(server: ServerRecord) -> Optional[Dict[str, Dict[str, Any]]]:
 
 
 def _source_defined(doc: AuditDocument, server: ServerRecord) -> Optional[Dict[str, Dict[str, Any]]]:
+    refs = set(doc.server_refs(server))
     decls = [d for d in (doc.source_facts.get("tool_declarations") or [])
-             if d.get("status") != "unknown" and d.get("component") in (server.name, server.component_id)]
-    if not decls and not any(d.get("component") in (server.name, server.component_id) for d in doc.source_facts.get("tool_declarations") or []):
+             if d.get("status") != "unknown" and d.get("component") in refs]
+    if not decls and not any(d.get("component") in refs for d in doc.source_facts.get("tool_declarations") or []):
         return None
     return {d["name"]: {"name": d["name"], "description": d.get("description"), "inputSchema": d.get("input_schema"),
                         "evidence_refs": d.get("evidence_refs") or [], "path": d.get("path")} for d in decls}

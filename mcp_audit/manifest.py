@@ -6,6 +6,10 @@ receive *credential binding names* resolved from the environment.
 
 A plain MCP client config is still accepted: it is wrapped into a manifest
 with one ``mcp_inventory`` adapter, so the v1 command line keeps working.
+
+``adapter_plugins`` names adapters that live outside the package
+(``"module:Class"``); they are imported before the adapters are built, so a new
+kind of source is a data change plus a plugin, not a patch of ``mcp_audit``.
 """
 from __future__ import annotations
 
@@ -32,6 +36,7 @@ class Manifest:
     business_policy_ref: Optional[str] = None
     inventory_manifest_ref: Optional[str] = None
     adapters: List[AdapterBinding] = field(default_factory=list)
+    adapter_plugins: List[str] = field(default_factory=list)   # 'module:Class' adapters loaded at run time
     reporting: Dict[str, Any] = field(default_factory=dict)
     reproducibility: Dict[str, Any] = field(default_factory=dict)
     fixtures: Dict[str, Any] = field(default_factory=dict)
@@ -57,6 +62,7 @@ class Manifest:
                            "business_policy_ref": self.business_policy_ref,
                            "inventory_manifest_ref": self.inventory_manifest_ref},
             "adapters": [{"id": a.adapter_id, "kind": a.kind, "binding": a.binding, "options": a.options} for a in self.adapters],
+            "adapter_plugins": list(self.adapter_plugins),
             "reporting": self.reporting, "reproducibility": self.reproducibility,
             "legacy_wrapped": self.legacy_wrapped, "path": self.path,
         }
@@ -123,7 +129,7 @@ def load_manifest(path: str, *, mode_override: Optional[Any] = None) -> Manifest
     for a in data.get("adapters") or []:
         adapters.append(AdapterBinding(adapter_id=a["id"], kind=a["kind"], binding=dict(a.get("binding") or {}),
                                        options=dict(a.get("options") or {}), base_dir=base))
-    known = {"schema_version", "target", "inspection", "adapters", "reporting", "reproducibility", "fixtures"}
+    known = {"schema_version", "target", "inspection", "adapters", "adapter_plugins", "reporting", "reproducibility", "fixtures"}
     m = Manifest(
         schema_version=str(data.get("schema_version") or MANIFEST_SCHEMA_VERSION),
         target=dict(data.get("target") or {}),
@@ -133,7 +139,9 @@ def load_manifest(path: str, *, mode_override: Optional[Any] = None) -> Manifest
         profile_ref=insp.get("profile_ref") or data.get("profile_ref"),
         business_policy_ref=insp.get("business_policy_ref"),
         inventory_manifest_ref=insp.get("inventory_manifest_ref"),
-        adapters=adapters, reporting=dict(data.get("reporting") or {}),
+        adapters=adapters,
+        adapter_plugins=[str(x) for x in (data.get("adapter_plugins") or insp.get("adapter_plugins") or [])],
+        reporting=dict(data.get("reporting") or {}),
         reproducibility=dict(data.get("reproducibility") or {}), fixtures=dict(data.get("fixtures") or {}),
         base_dir=base, path=os.path.abspath(path),
         extensions={k: v for k, v in data.items() if k not in known and k not in ("required_controls", "profile_ref")},

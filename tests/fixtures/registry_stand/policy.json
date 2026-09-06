@@ -1,0 +1,15 @@
+{
+  "schema": "access-policy", "policy_id": "registry-stand-expected", "version": "1.0.0", "owner": "test",
+  "principals": [{"id": "end_user", "type": "end_user", "identity_source": "authentication"}],
+  "access_rules": [{"subject": "end_user", "operation": "READ", "resource": "drawer(subject_id)",
+                    "condition": "drawer.subject_id == subject", "enforcement": ["vault-server"]}],
+  "memory_policy": {"scope_decision_authority": "server",
+    "memory_types": [{"type": "drawer", "audience": "user", "authority": "data", "derived": false,
+                      "allowed_writers": ["vault-server"], "retention": {"ttl_days": 90}}]},
+  "authentication": {"vault-server": {"scheme": "bearer", "expected_issuer": "https://idp.example/realms/vault",
+                                      "expected_audience": "vault-server"}},
+  "egress": {"allowed_destinations": [{"id": "digest-provider", "categories_allowed": ["summary"],
+                                       "categories_forbidden": ["drawer_text"]}],
+             "controls_required": ["category_filter"]},
+  "authorized_tools": {"vault": ["vault_mine_note", "vault_traverse", "vault_dissolve_wing", "vault_export_wing"]}
+}

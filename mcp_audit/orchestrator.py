@@ -23,6 +23,7 @@ from .models import (AccessProfile, AuditDocument, ClaimStatus, Confidence, Hand
 from .evidence import EvidenceStore
 from .manifest import Manifest, load_manifest, load_profile, wrap_legacy_config
 from .adapters import AdapterBinding, build as build_adapter
+from .adapters.registry import load_entry_point_plugins, load_plugins
 from .adapters.base import AdapterResult
 from .models import AdapterStatus
 from .static_analysis import run_static_analysis
@@ -61,7 +62,21 @@ class Orchestrator:
         return doc
 
     # -- adapters ----------------------------------------------------------- #
+    def load_adapter_plugins(self, doc: AuditDocument) -> None:
+        """Register adapters declared outside the package (entry points + manifest)."""
+        kinds, problems = load_entry_point_plugins()
+        more, more_problems = load_plugins(self.manifest.adapter_plugins)
+        loaded = kinds + more
+        problems += more_problems
+        if loaded or problems:
+            doc.meta["adapter_plugins"] = {"loaded": loaded, "problems": problems,
+                                           "declared": list(self.manifest.adapter_plugins)}
+        for problem in problems:
+            # a source that could not be loaded is a gap in coverage, not a silent pass
+            doc.limitations.append(f"adapter plugin not loaded: {problem}")
+
     def collect(self, doc: AuditDocument, store: EvidenceStore, *, timeout: float = 20.0, cwd: Optional[str] = None) -> None:
+        self.load_adapter_plugins(doc)
         for b in self.manifest.adapters:
             b.options.setdefault("timeout", timeout)
             if cwd:
@@ -175,7 +190,8 @@ class Orchestrator:
             rec = ServerRecord(name=server_name, transport="native", command=None, kind="native", is_mcp=False,
                                component_id=comp)
             rec.tools = [ToolRecord(server=server_name, definition=ToolDefinition.from_mcp(
-                {"name": d["name"], "description": d.get("description") or "", "inputSchema": d.get("input_schema") or {}}))
+                {"name": d["name"], "description": d.get("description") or "", "inputSchema": d.get("input_schema") or {},
+                 "annotations": d.get("annotations") or {}, "x_audit": d.get("declared") or {}}))
                 for d in decls]
             rec.handshake = Handshake(performed=False, ok=None, source="source", completeness="unknown",
                                       notes=[f"native {ctype}: declarations extracted from source; no handshake exists for native functions"])
