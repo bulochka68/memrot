@@ -1,0 +1,211 @@
+{
+  "toolbot": {
+    "tools": [
+      {
+        "name": "read_file",
+        "description": "Read contents of a file",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "write_file",
+        "description": "Write contents to a file",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "content": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "execute",
+        "description": "Execute a shell command",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "fetch_url",
+        "description": "Fetch content from URL",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    ],
+    "capabilities": {
+      "tools": true,
+      "resources": false,
+      "prompts": false
+    },
+    "captured_at": 1788687922.2089932,
+    "identity": "anonymous (стенд не требует аутентификации)",
+    "origin": "tools/list на http://localhost:7010/ (без initialize: метод не реализован стендом)"
+  },
+  "databot": {
+    "tools": [
+      {
+        "name": "query_database",
+        "description": "Execute SQL query",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "get_user",
+        "description": "Get user by ID",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      {
+        "name": "list_tables",
+        "description": "List database tables",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    ],
+    "capabilities": {
+      "tools": true,
+      "resources": false,
+      "prompts": false
+    },
+    "captured_at": 1788687922.2089932,
+    "identity": "anonymous (стенд не требует аутентификации)",
+    "origin": "tools/list на http://localhost:7011/ (без initialize: метод не реализован стендом)"
+  },
+  "pluginbot": {
+    "tools": [
+      {
+        "name": "fetch_data",
+        "description": "Fetch data from an API endpoint",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "headers": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      {
+        "name": "store_secret",
+        "description": "Store a secret value securely",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    ],
+    "capabilities": {
+      "tools": true,
+      "resources": false,
+      "prompts": false
+    },
+    "captured_at": 1788687922.2089932,
+    "identity": "anonymous (стенд не требует аутентификации)",
+    "origin": "tools/list на http://localhost:7012/ (без initialize: метод не реализован стендом)"
+  },
+  "proxybot": {
+    "tools": [
+      {
+        "name": "secure_query",
+        "description": "Query a secure database",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "sign_document",
+        "description": "Digitally sign a document",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "document": {
+              "type": "string"
+            },
+            "keyId": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "transfer_funds",
+        "description": "Transfer funds between accounts",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    ],
+    "capabilities": {
+      "tools": true,
+      "resources": false,
+      "prompts": false
+    },
+    "captured_at": 1788687922.2089932,
+    "identity": "anonymous (стенд не требует аутентификации)",
+    "origin": "tools/list на http://localhost:7013/ (без initialize: метод не реализован стендом)"
+  }
+}

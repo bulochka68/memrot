@@ -1,0 +1,33 @@
+{
+  "schema_version": "2.0",
+  "target": {
+    "id": "dvaa",
+    "build_ref": "faf3fb172ef526d12db0eb5377701549693118a6",
+    "environment": "локальный чекаут стенда в stand/ (Damn Vulnerable AI Agent 0.9.3)",
+    "boundaries": ["agent-fleet", "mcp-tools", "a2a-bus", "agent-memory", "dashboard", "web-fetch", "llm-provider"],
+    "snapshot_note": "Инвентарь снят скриптом scripts/capture_dvaa_inventory.py с поднятого стенда (tools/list без initialize); исходники и compose читаются из stand/. Сам аудит ничего не запускает и никуда не ходит."
+  },
+  "inspection": {
+    "access_profile": "white_box",
+    "mode": "offline",
+    "profile_ref": "../profiles/dvaa.json",
+    "business_policy_ref": "policy",
+    "inventory_manifest_ref": "mcp-config"
+  },
+  "adapters": [
+    {"id": "mcp-config", "kind": "mcp_inventory",
+     "binding": {"path": "dvaa.config.json", "snapshot": "dvaa.tools.snapshot.json", "live": false,
+                 "capture": {"method": "tools/list по HTTP JSON-RPC (метода initialize у стенда нет)",
+                             "identity": "anonymous (стенд не требует аутентификации)"}}},
+    {"id": "source", "kind": "source_snapshot",
+     "binding": {"root": "../stand"}},
+    {"id": "policy", "kind": "policy_snapshot",
+     "binding": {"path": "dvaa.policy.json"}},
+    {"id": "deployment", "kind": "deployment",
+     "binding": {"path": "../stand/docker-compose.yml"}}
+  ],
+  "reporting": {"formats": ["json", "markdown"], "evidence_policy_ref": "redacted-evidence-v1"},
+  "reproducibility": {
+    "note": "инвентарь — снимок с конкретного запуска, зафиксируйте его время и коммит стенда в target.build_ref; модель и LLM-провайдер стенда в offline-режиме не участвуют"
+  }
+}

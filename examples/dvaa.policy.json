@@ -1,0 +1,68 @@
+{
+  "schema": "access-policy",
+  "policy_id": "dvaa-expected",
+  "version": "1.0.0",
+  "owner": "команда, проверяющая аудитор (ожидания к стенду DVAA)",
+  "note": "Ожидаемая политика: как выглядела бы та же система, построенная безопасно. DVAA намеренно уязвим, поэтому расхождение с этой политикой — ожидаемый результат прогона, а не дефект аудитора. Политика ничего не доказывает об исполнении, она задаёт, что аудитор обязан проверить.",
+  "principals": [
+    {"id": "end_user", "type": "end_user", "identity_source": "authentication",
+     "allowed_scope": {"resources": "собственная сессия и собственная память"}},
+    {"id": "agent-service", "type": "service_account", "identity_source": "config",
+     "allowed_scope": {"resources": "инструменты в пределах выданной задачи"}},
+    {"id": "policy-admin", "type": "policy_publisher", "identity_source": "authentication",
+     "allowed_scope": {"memory": "публикация общих правил после ревью"}}
+  ],
+  "access_rules": [
+    {"subject": "end_user", "operation": "READ", "resource": "own memory", "condition": "record.subject == subject", "enforcement": ["agent-memory"]},
+    {"subject": "end_user", "operation": "EXECUTE", "resource": "mcp tool", "condition": "tool in authorized_tools and subject authorized for the object", "enforcement": ["mcp-tools"]},
+    {"subject": "agent-service", "operation": "READ", "resource": "file(path)", "condition": "path within the declared sandbox and allowed for the task", "enforcement": ["mcp-tools"]}
+  ],
+  "boundaries": [
+    {"id": "B-client-mcp", "from": "anonymous", "to": "mcp-tools", "rule": "субъект аутентифицирован и авторизован на конкретный объект", "enforcement_point": "mcp-tools"},
+    {"id": "B-a2a", "from": "a2a-bus", "to": "a2a-bus", "rule": "идентичность отправителя подтверждена, делегирование ограничено задачей", "enforcement_point": "a2a-bus", "delegation": "task-bound"},
+    {"id": "B-mem-publish", "from": "agent-fleet", "to": "agent-memory", "rule": "общие правила публикует только policy-admin после ревью", "enforcement_point": "agent-memory"},
+    {"id": "B-context", "from": "agent-memory", "to": "agent-fleet", "rule": "содержимое памяти включается в контекст как данные, а не как инструкции", "enforcement_point": "agent-fleet"}
+  ],
+  "memory_policy": {
+    "scope_decision_authority": "server",
+    "memory_types": [
+      {"type": "session_memory", "audience": "user", "authority": "data", "derived": true,
+       "allowed_writers": ["agent-fleet"], "retention": {"ttl_seconds": 86400}},
+      {"type": "preloaded_secret", "audience": "user", "authority": "data",
+       "allowed_writers": [], "retention": {"ttl_seconds": 0},
+       "note": "секретов в памяти агента быть не должно вовсе; тип объявлен, потому что стенд их там держит"},
+      {"type": "agent_rule", "audience": "shared", "authority": "policy", "derived": true,
+       "trusted_publishers": ["policy-admin"], "allowed_writers": ["policy-admin"],
+       "review_required": true, "retention": {"ttl_days": 90}}
+    ],
+    "allowed_sharing": [],
+    "revocation": {"propagate_to_derived": true, "max_delay_seconds": 3600}
+  },
+  "authentication": {
+    "agent-fleet": {"scheme": "api_key"},
+    "mcp-tools": {"scheme": "api_key"},
+    "a2a-bus": {"scheme": "jwt", "expected_issuer": "https://issuer.invalid/dvaa", "expected_audience": "dvaa-a2a"}
+  },
+  "mandatory_server_checks": ["resource_authorization", "subject_bound_delegation", "tool_registry_verification"],
+  "service_rights": {
+    "agent-fleet": {"memoryStore:session_memory": ["read", "write"], "memoryStore:agent_rule": ["read"]},
+    "policy-admin": {"memoryStore:agent_rule": ["read", "write", "publish"]}
+  },
+  "network": {
+    "storage_publication": "forbidden",
+    "note": "стенд намеренно публикует все 21 порт агентов и дашборд на хост; для боевой системы это запрещено"
+  },
+  "egress": {
+    "allowed_destinations": [
+      {"id": "public-web", "categories_allowed": ["public_query"],
+       "categories_forbidden": ["credentials", "file_content", "internal_endpoint"]}
+    ],
+    "controls_required": ["category_filter", "destination_allowlist"]
+  },
+  "authorized_tools": {
+    "toolbot": ["read_file"],
+    "databot": ["list_tables", "get_user"],
+    "pluginbot": ["fetch_data"],
+    "proxybot": ["secure_query"]
+  }
+}

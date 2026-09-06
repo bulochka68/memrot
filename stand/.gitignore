@@ -1,0 +1,21 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.local
+coverage/
+dist/
+
+# Runtime artifacts
+.dvaa/                  # scoreboard + team state written by the server
+.dvaa-aim/              # per-agent AIM identity (Ed25519 private key), audit log, policy
+.hackmyagent-cache/     # HMA check-metadata cache used by the dashboard scanner
+.hackmyagent-backup/    # HMA --fix backups (scenario-local, never commit)
+.pre-push-review-passed # pre-push quality gate marker
+
+# Test/screenshot artifacts (session-local)
+.playwright-mcp/
+rc*-*.png
+
+# Local AIM runtime data - agent identity (private key), audit log, cloud-agent cache
+.dvaa-aim/

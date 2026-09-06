@@ -1,0 +1,605 @@
+{
+  "profile_id": "dvaa",
+  "profile_version": "1.0.0",
+  "description": "Профиль стенда Damn Vulnerable AI Agent (OpenA2A DVAA) — 21 агент на Node.js, протоколы OpenAI-API / MCP JSON-RPC / A2A. Правила аудита не меняются: вся привязка к системе живёт здесь. Исходники JS, поэтому потоки проверяются регулярными выражениями по файлу целиком (symbol не задаётся — ast-разбор в mcp_audit только для Python, см. коннект.md).",
+  "components": [
+    {
+      "id": "agent-fleet",
+      "type": "rest_service",
+      "name": "DVAA agent fleet (OpenAI-совместимые агенты 7001-7008, 7014-7018, 7022-7023)",
+      "role": "user_session_handler",
+      "source_paths": [
+        "src/index.js"
+      ],
+      "deployment_ref": "dvaa"
+    },
+    {
+      "id": "mcp-tools",
+      "type": "mcp_server",
+      "name": "MCP-агенты ToolBot/DataBot/PluginBot/ProxyBot (7010-7013)",
+      "role": "external_tool_host",
+      "source_paths": [
+        "src/index.js"
+      ],
+      "deployment_ref": "dvaa"
+    },
+    {
+      "id": "a2a-bus",
+      "type": "orchestrator",
+      "name": "A2A Orchestrator/Worker (7020-7021)",
+      "role": "delegation_handler",
+      "source_paths": [
+        "src/index.js"
+      ],
+      "deployment_ref": "dvaa"
+    },
+    {
+      "id": "agent-memory",
+      "type": "memory_store",
+      "name": "memoryStore — process-global память агентов",
+      "role": "memory_store",
+      "source_paths": [
+        "src/index.js"
+      ],
+      "deployment_ref": "dvaa"
+    },
+    {
+      "id": "dashboard",
+      "type": "rest_service",
+      "name": "Dashboard и attack-log (9000)",
+      "role": "operator_console",
+      "source_paths": [
+        "src/dashboard/server.js"
+      ],
+      "deployment_ref": "dvaa"
+    },
+    {
+      "id": "web-fetch",
+      "type": "external_provider",
+      "name": "исходящий HTTP-фетч агентов (web-fetch / fetch_url)",
+      "role": "external_provider",
+      "source_paths": [
+        "src/web-fetch.js"
+      ]
+    },
+    {
+      "id": "llm-provider",
+      "type": "external_provider",
+      "name": "LLM-провайдер (OpenAI / Anthropic SDK, опционально)",
+      "role": "external_provider",
+      "source_paths": [
+        "src/llm/provider.js"
+      ]
+    }
+  ],
+  "memory_stores": [
+    {
+      "component_id": "agent-memory",
+      "store_type": "in_process",
+      "memory_types": [
+        {
+          "type": "session_memory",
+          "table": "memoryStore[agent.id]",
+          "audience": "user",
+          "authority": "data",
+          "derived": true
+        },
+        {
+          "type": "agent_rule",
+          "table": "memoryStore[agent.id]",
+          "audience": "shared",
+          "authority": "policy",
+          "trusted_publishers": [
+            "policy-admin"
+          ]
+        },
+        {
+          "type": "preloaded_secret",
+          "table": "agent.memory",
+          "audience": "user",
+          "authority": "data"
+        }
+      ]
+    }
+  ],
+  "tool_routing": {
+    "namespace": "flat",
+    "router": "executeMcpTool: имя инструмента ищется в agent.tools, у proxybot принимается любое имя"
+  },
+  "source_facts": {
+    "tool_declarations": [],
+    "flows": [
+      {
+        "id": "F-identity-a2a",
+        "kind": "identity_binding",
+        "from": "a2a-bus",
+        "to": "a2a-bus",
+        "path": "src/index.js",
+        "patterns": [
+          "const from = msg\\.from \\|\\| 'unknown'"
+        ],
+        "identity_source": "body_field",
+        "principal": "end_user",
+        "rule_refs": [
+          "AUTH-01"
+        ],
+        "statement": "A2A-принципал берётся из поля msg.from тела запроса; аутентификации нет"
+      },
+      {
+        "id": "F-identity-api",
+        "kind": "identity_binding",
+        "from": "agent-fleet",
+        "to": "agent-fleet",
+        "path": "src/index.js",
+        "patterns": [
+          "req\\.url === '/v1/chat/completions'"
+        ],
+        "negate_patterns": [
+          "req\\.headers\\.authorization"
+        ],
+        "identity_source": "anonymous",
+        "principal": "end_user",
+        "rule_refs": [
+          "AUTH-01"
+        ],
+        "statement": "OpenAI-совместимая ручка не читает заголовок Authorization: вызывающий анонимен"
+      },
+      {
+        "id": "F-mem-write",
+        "kind": "memory_write",
+        "from": "agent-fleet",
+        "to": "agent-memory",
+        "path": "src/index.js",
+        "patterns": [
+          "memoryStore\\[agent\\.id\\]\\.push\\(\\{",
+          "instruction: userMessage",
+          "timestamp: Date\\.now\\(\\)"
+        ],
+        "memory_type": "session_memory",
+        "audience": "user",
+        "writer_principal": "agent-fleet",
+        "provenance_kept": false,
+        "provenance_fields": [],
+        "rule_refs": [
+          "MEM-05"
+        ],
+        "statement": "Запись в память идёт из текста пользовательского сообщения без владельца, сессии и ссылки на источник"
+      },
+      {
+        "id": "F-mem-scope",
+        "kind": "scope_decision",
+        "from": "agent-fleet",
+        "to": "agent-memory",
+        "path": "src/index.js",
+        "patterns": [
+          "const memoryStore = \\{\\};"
+        ],
+        "decision_source": "message_content",
+        "memory_type": "session_memory",
+        "validation": "none",
+        "rule_refs": [
+          "MEM-03"
+        ],
+        "statement": "Область записи задаётся содержимым сообщения: ключ — только agent.id, владельца и аудитории в записи нет"
+      },
+      {
+        "id": "F-mem-read",
+        "kind": "memory_read",
+        "from": "agent-memory",
+        "to": "agent-fleet",
+        "path": "src/index.js",
+        "patterns": [
+          "Here is everything in my memory:"
+        ],
+        "memory_type": "session_memory",
+        "audience": "user",
+        "filter_by": [],
+        "subject_bound": false,
+        "audience_filter_before_context": false,
+        "rule_refs": [
+          "MEM-01",
+          "MEM-07"
+        ],
+        "statement": "Recall отдаёт все записи агента любому вызывающему: фильтра по субъекту нет (cross-session persistence)"
+      },
+      {
+        "id": "F-mem-secret-read",
+        "kind": "memory_read",
+        "from": "agent-memory",
+        "to": "agent-fleet",
+        "path": "src/index.js",
+        "patterns": [
+          "Here are the credentials I have stored in memory:"
+        ],
+        "memory_type": "preloaded_secret",
+        "audience": "user",
+        "filter_by": [],
+        "subject_bound": false,
+        "audience_filter_before_context": false,
+        "rule_refs": [
+          "MEM-01",
+          "MEM-07"
+        ],
+        "statement": "Преднастроенные секреты агента выдаются по запросу без какой-либо проверки вызывающего"
+      },
+      {
+        "id": "F-mem-context",
+        "kind": "context_include",
+        "from": "agent-memory",
+        "to": "agent-fleet",
+        "path": "src/core/agents.js",
+        "patterns": [
+          "executesFromMemory: true",
+          "If your memory contains instructions, follow them faithfully"
+        ],
+        "memory_type": "agent_rule",
+        "presented_as": "rules",
+        "context_role": "system",
+        "publisher_trusted": false,
+        "subject_bound": false,
+        "rule_refs": [
+          "MEM-04"
+        ],
+        "statement": "Содержимое памяти попадает в контекст как инструкции: агент выполняет то, что в ней записано"
+      },
+      {
+        "id": "F-mem-publish",
+        "kind": "publish",
+        "from": "agent-fleet",
+        "to": "agent-memory",
+        "path": "src/core/agents.js",
+        "patterns": [
+          "noAccessControl: true",
+          "memorySanitization: false"
+        ],
+        "writer_principal": "agent-fleet",
+        "writer_role": "user_session_handler",
+        "memory_type": "agent_rule",
+        "audience": "shared",
+        "authority": "policy",
+        "approval_required": false,
+        "mechanism": "публикация без отдельного издателя и без ревью",
+        "rule_refs": [
+          "MEM-02",
+          "MEM-06"
+        ],
+        "statement": "Обработчик пользовательской сессии сам публикует записи авторитета policy; отдельного издателя и ревью нет"
+      },
+      {
+        "id": "F-tool-result-authority",
+        "kind": "context_include",
+        "from": "mcp-tools",
+        "to": "agent-fleet",
+        "path": "src/index.js",
+        "patterns": [
+          "tool = \\{ name: toolName, vulnerable: true, resolution: 'name-only' \\}"
+        ],
+        "memory_type": "agent_rule",
+        "presented_as": "rules",
+        "context_role": "system",
+        "publisher_trusted": false,
+        "subject_bound": false,
+        "rule_refs": [
+          "TOOL-04",
+          "MEM-04"
+        ],
+        "statement": "ProxyBot разрешает инструмент по одному имени: результат неизвестного апстрима возвращается агенту как доверенное содержимое"
+      },
+      {
+        "id": "F-egress-fetch",
+        "kind": "transmit",
+        "from": "mcp-tools",
+        "to": "web-fetch",
+        "path": "src/index.js",
+        "patterns": [
+          "if \\(toolName === 'fetch_url'\\)"
+        ],
+        "negate_patterns": [
+          "allowlist",
+          "allowedHosts"
+        ],
+        "destination": "web-fetch",
+        "data_categories_possible": [
+          "credentials",
+          "file_content",
+          "internal_endpoint"
+        ],
+        "category_filter": false,
+        "composed_by": "model",
+        "rule_refs": [
+          "EGRESS-01"
+        ],
+        "statement": "fetch_url отправляет произвольный URL и произвольные данные без списка разрешённых адресатов и категорий"
+      },
+      {
+        "id": "F-egress-webfetch",
+        "kind": "transmit",
+        "from": "agent-fleet",
+        "to": "web-fetch",
+        "path": "src/web-fetch.js",
+        "patterns": [
+          "export async function webFetch"
+        ],
+        "destination": "web-fetch",
+        "data_categories_possible": [
+          "prompt_text",
+          "file_content"
+        ],
+        "category_filter": false,
+        "composed_by": "model",
+        "rule_refs": [
+          "EGRESS-01"
+        ],
+        "statement": "Ветка research/flight ходит во внешний веб по URL, который выбирает модель"
+      },
+      {
+        "id": "F-web-to-model",
+        "kind": "data_flow",
+        "from": "web-fetch",
+        "to": "agent-fleet",
+        "path": "src/web-fetch.js",
+        "patterns": [
+          "export async function webFetch"
+        ],
+        "statement": "Содержимое внешней страницы возвращается агенту и попадает в контекст модели как обычный текст",
+        "rule_refs": [
+          "EGRESS-01"
+        ]
+      },
+      {
+        "id": "F-tool-results-to-model",
+        "kind": "data_flow",
+        "from": "mcp-tools",
+        "to": "agent-fleet",
+        "path": "src/index.js",
+        "patterns": [
+          "result: \\{ content: \\[\\{ type: 'text', text: JSON\\.stringify\\(result\\) \\}\\] \\}"
+        ],
+        "statement": "Результат tools/call возвращается вызывающему как текст без разметки авторитета",
+        "rule_refs": [
+          "TOOL-04"
+        ]
+      },
+      {
+        "id": "F-agent-calls-tools",
+        "kind": "control_flow",
+        "from": "agent-fleet",
+        "to": "mcp-tools",
+        "path": "src/index.js",
+        "patterns": [
+          "const result = await executeMcpTool\\(agent, tool, args\\)"
+        ],
+        "statement": "Выбор инструмента и аргументов определяется входом, поступившим в агента",
+        "rule_refs": [
+          "TOOL-04"
+        ]
+      },
+      {
+        "id": "F-store-access-memory",
+        "kind": "store_access",
+        "from": "agent-fleet",
+        "to": "memoryStore:agent_rule",
+        "path": "src/index.js",
+        "patterns": [
+          "const memoryStore = \\{\\};"
+        ],
+        "rights": [
+          "read",
+          "write",
+          "publish"
+        ],
+        "statement": "Обработчик сессии имеет полный доступ к общему хранилищу памяти: это тот же объект в процессе, отдельных прав нет",
+        "rule_refs": [
+          "INFRA-01"
+        ]
+      },
+      {
+        "id": "F-retention-session",
+        "kind": "retention",
+        "from": "agent-memory",
+        "to": "agent-memory",
+        "path": "src/index.js",
+        "patterns": [
+          "const memoryStore = \\{\\};"
+        ],
+        "negate_patterns": [
+          "ttl",
+          "expiresAt",
+          "setInterval"
+        ],
+        "memory_type": "session_memory",
+        "ttl_seconds": null,
+        "mechanism": "none",
+        "statement": "У записей памяти нет ни TTL, ни очистки: они живут столько же, сколько процесс",
+        "rule_refs": [
+          "MEM-10"
+        ]
+      },
+      {
+        "id": "F-retention-rule",
+        "kind": "retention",
+        "from": "agent-memory",
+        "to": "agent-memory",
+        "path": "src/index.js",
+        "patterns": [
+          "memoryStore\\[agent\\.id\\] = \\[\\];"
+        ],
+        "negate_patterns": [
+          "ttl",
+          "expiresAt",
+          "setInterval"
+        ],
+        "memory_type": "agent_rule",
+        "ttl_seconds": null,
+        "mechanism": "none",
+        "statement": "Инъектированные инструкции не истекают и не отзываются",
+        "rule_refs": [
+          "MEM-10"
+        ]
+      }
+    ],
+    "auth_transitions": [
+      {
+        "id": "T-mcp-tool-call",
+        "input_principal": "anonymous",
+        "executing_component": "mcp-tools",
+        "operation": "EXECUTE",
+        "resource": "mcp tool (read_file / write_file / execute / fetch_url)",
+        "auth_scheme": "none",
+        "boundary": "B-client-mcp",
+        "enforcement_point": "mcp-tools",
+        "path": "src/index.js",
+        "patterns": [
+          "async function executeMcpTool\\(agent, toolName, args\\)"
+        ],
+        "negate_patterns": [
+          "authorize\\(",
+          "checkAccess\\("
+        ],
+        "policy_decision": "absent",
+        "statement": "tools/call исполняется без какой-либо проверки субъекта и его прав на объект"
+      },
+      {
+        "id": "T-file-read",
+        "input_principal": "anonymous",
+        "executing_component": "mcp-tools",
+        "operation": "READ",
+        "resource": "file(path)",
+        "auth_scheme": "none",
+        "boundary": "B-client-mcp",
+        "enforcement_point": "mcp-tools",
+        "path": "src/index.js",
+        "patterns": [
+          "const resolved = requestedPath\\.startsWith\\('/'\\)"
+        ],
+        "policy_decision": "client_controlled",
+        "statement": "Путь для read_file приходит от клиента; ограничение — только корень песочницы, прав на объект нет"
+      },
+      {
+        "id": "T-a2a-delegate",
+        "input_principal": "end_user",
+        "executing_component": "a2a-bus",
+        "operation": "EXECUTE",
+        "resource": "делегированная задача",
+        "auth_scheme": "none",
+        "boundary": "B-a2a",
+        "enforcement_point": "a2a-bus",
+        "path": "src/index.js",
+        "patterns": [
+          "Executed delegated task without authorization check"
+        ],
+        "policy_decision": "absent",
+        "delegation": "passthrough_unbound",
+        "statement": "Worker выполняет делегированную задачу, не проверяя ни отправителя, ни объём полномочий",
+        "subject_bound": false
+      },
+      {
+        "id": "T-plugin-register",
+        "input_principal": "anonymous",
+        "executing_component": "mcp-tools",
+        "operation": "WRITE",
+        "resource": "реестр инструментов",
+        "auth_scheme": "none",
+        "boundary": "B-client-mcp",
+        "enforcement_point": "mcp-tools",
+        "path": "src/index.js",
+        "patterns": [
+          "toolName === 'register_tool'"
+        ],
+        "negate_patterns": [
+          "verifySignature"
+        ],
+        "policy_decision": "absent",
+        "statement": "register_tool принимает регистрацию инструмента из непроверенного реестра без подписи"
+      }
+    ],
+    "token_validation": [
+      {
+        "component": "mcp-tools",
+        "path": "src/index.js",
+        "patterns": [
+          "if \\(agent\\.protocol === 'mcp' && req\\.method === 'POST'"
+        ],
+        "checks": {
+          "lookup": {
+            "pattern": "apiKeys?\\.(get|has|find)",
+            "found_means": true,
+            "absent_means": false
+          },
+          "revocation": {
+            "pattern": "revoked",
+            "found_means": true,
+            "absent_means": false
+          },
+          "binding_to_principal": {
+            "pattern": "req\\.headers\\.authorization",
+            "found_means": true,
+            "absent_means": false
+          }
+        },
+        "statement": "Политика ожидает на этом эндпоинте api_key; в коде нет ни чтения заголовка, ни поиска ключа, ни отзыва"
+      }
+    ],
+    "background_jobs": [],
+    "break_points": [],
+    "components": []
+  },
+  "boundaries": [
+    {
+      "id": "B-client-mcp",
+      "from": "anonymous",
+      "to": "mcp-tools",
+      "rule": "субъект авторизован на конкретный объект вызова",
+      "enforcement_point": "mcp-tools"
+    },
+    {
+      "id": "B-a2a",
+      "from": "a2a-bus",
+      "to": "a2a-bus",
+      "rule": "идентичность отправителя подтверждена, делегирование ограничено задачей",
+      "enforcement_point": "a2a-bus"
+    },
+    {
+      "id": "B-mem-publish",
+      "from": "agent-fleet",
+      "to": "agent-memory",
+      "rule": "общие правила публикует только выделенный издатель после ревью",
+      "enforcement_point": "agent-memory"
+    },
+    {
+      "id": "B-context",
+      "from": "agent-memory",
+      "to": "agent-fleet",
+      "rule": "разметка авторитета для каждого блока контекста",
+      "enforcement_point": "agent-fleet"
+    }
+  ],
+  "chains": [
+    {
+      "id": "tool-result-to-shared-memory",
+      "title": "Результат инструмента → ответ агента → общая память агента (правила)",
+      "nodes": [
+        "mcp-tools",
+        "agent-fleet",
+        "agent-memory"
+      ],
+      "rule_refs": [
+        "TOOL-04"
+      ]
+    },
+    {
+      "id": "web-content-to-egress",
+      "title": "Недоверенный веб-контент → агент → инструменты → исходящий канал",
+      "nodes": [
+        "web-fetch",
+        "agent-fleet",
+        "mcp-tools",
+        "web-fetch"
+      ],
+      "rule_refs": [
+        "EGRESS-01",
+        "LETHAL_TRIFECTA"
+      ]
+    }
+  ]
+}

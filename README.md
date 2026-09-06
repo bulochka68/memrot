@@ -6,14 +6,20 @@ Offline-аудитор агентных (GenAI) систем: собирает �
 статус подтверждения.
 
 Аудитор ни к какому стенду не привязан — он работает с любой системой через
-профиль и привязки адаптеров. Прежний стенд (GenAI Investment Assistant) и
-red-team харнесс из этой ветки убраны; материалы по стенду сохранены как
-эталонные данные аудита: профиль `profiles/genai_invest_stand.json`, снимки и
-отчёты в `examples/`, фикстуры в `tests/fixtures/stand/`.
+профиль и привязки адаптеров. В `stand/` лежит проверочная цель — вкопированный
+стенд [Damn Vulnerable AI Agent](https://github.com/opena2a-org/damn-vulnerable-ai-agent)
+(Node.js, 21 агент, протоколы OpenAI-API / MCP / A2A): как его развернуть,
+подключить к нему аудитор и что при этом ломается — в [`коннект.md`](коннект.md).
+
+Прежний стенд (GenAI Investment Assistant) и red-team харнесс из ветки убраны;
+материалы по прежнему стенду сохранены как эталонные данные аудита: профиль
+`profiles/genai_invest_stand.json`, снимки и отчёты в `examples/`, фикстуры в
+`tests/fixtures/stand/`.
 
 ## Содержание
 
 - [Устройство репозитория](#устройство-репозитория)
+- [Стенд для проверки](#стенд-для-проверки)
 - [Быстрый старт](#быстрый-старт)
 - [Прогон аудита](#прогон-аудита)
 - [Режимы и профили доступа](#режимы-и-профили-доступа)
@@ -33,12 +39,26 @@ mcp_audit/               — движок аудита 2.0
   active/                — controlled-validation: пробы на изолированной фикстуре
   reporting/             — JSON/Markdown-отчёт, obsec-экспорт, baseline и drift
   cli.py                 — точка входа `python -m mcp_audit`
-profiles/                — профили систем: genai_invest_stand.json, rest_native_agent.json
+profiles/                — профили систем: dvaa.json, genai_invest_stand.json, rest_native_agent.json
 schemas/                 — JSON-схема отчёта agent-security-audit 2.0
 examples/                — манифесты, снимки и эталонные отчёты
 docs/                    — архитектура, руководство аудитора, каталог правил, форматы
 tests/                   — тесты подсистемы аудита (offline, ничего не поднимают)
+scripts/                 — вспомогательные съёмщики фактов (инвентарь стенда)
+stand/                   — вкопированный стенд DVAA 0.9.3 (Apache-2.0), цель для проверки аудитора
 ```
+
+## Стенд для проверки
+
+```bash
+cd stand && npm install && OPENA2A_TELEMETRY=off node src/index.js   # дашборд :9000, агенты 7001-7023
+python3 scripts/capture_dvaa_inventory.py -o examples               # снимок MCP-инвентаря
+python3 -m mcp_audit audit examples/dvaa.manifest.json --json .audit/dvaa.json --md .audit/dvaa.md --gate
+```
+
+Стенд намеренно уязвим (исполняет команды, читает файлы, ходит по SSRF) — только
+локально. Разбор связки, ограничения и что осталось не оценено —
+[`коннект.md`](коннект.md); эталонный отчёт — `examples/dvaa.report.md`.
 
 ## Быстрый старт
 
@@ -63,7 +83,11 @@ pip install -r requirements.txt
 ```bash
 mkdir -p .audit
 
-# 1) по заранее снятым снимкам — воспроизводит эталонный пример из examples/
+# 1) стенд из stand/ (инвентарь — снимок, исходники и compose — из рабочего дерева)
+python3 -m mcp_audit audit examples/dvaa.manifest.json \
+  --json .audit/dvaa.json --md .audit/dvaa.md --gate
+
+# 1а) по заранее снятым снимкам прежнего стенда — регрессия движка
 python3 -m mcp_audit audit examples/genai_invest_stand.manifest.json \
   --json .audit/snapshot.json --md .audit/snapshot.md --gate
 
@@ -131,3 +155,4 @@ python3 -m pytest -q
 - [`docs/rules_catalog.md`](docs/rules_catalog.md) — каталог правил (генерируется `python -m mcp_audit rules --markdown`)
 - [`docs/adapters_and_formats.md`](docs/adapters_and_formats.md) — адаптеры и форматы входов
 - [`docs/migration_v1_to_v2.md`](docs/migration_v1_to_v2.md) — миграция отчётов 1.x → 2.0
+- [`коннект.md`](коннект.md) — связка аудитора со стендом DVAA: развёртывание, подключение, ограничения
