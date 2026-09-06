@@ -278,3 +278,4 @@ python -m mcp_audit validate .audit/мой.json
 * [`adapters_and_formats.md`](adapters_and_formats.md) — форматы входов всех адаптеров
 * [`rules_catalog.md`](rules_catalog.md) — что требует и что проверяет каждое из 28 правил
 * [`audit_subsystem_architecture.md`](audit_subsystem_architecture.md) — архитектура подсистемы
+* [`stand_selection.md`](stand_selection.md) — выбор второго стенда: ограничения движка и сравнение кандидатов
