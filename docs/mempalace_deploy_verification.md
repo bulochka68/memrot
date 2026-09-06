@@ -43,14 +43,25 @@ mempalace --version            # → MemPalace 3.9.0
 
 ### 3. Дымовой тест CLI (палаца + майнинг + поиск)
 
+`mempalace init <dir>` настраивает индексацию **уже существующего** каталога с
+контентом (сканирует его структуру для комнат) — сам каталог он не создаёт.
+Поэтому сначала создаём папку с файлами (или указываем на реальный проект),
+и только потом `init`, иначе будет `ERROR: Directory not found`.
+
 ```bash
-mempalace init ./demo --yes --auto-mine   # скачивает эмбеддер all-MiniLM-L6-v2 (~80 МБ)
+mkdir -p ./demo                                  # init не создаёт каталог сам
+printf '# Notes\nWe chose GraphQL over REST for field selection.\n' > ./demo/notes.md
+mempalace init ./demo --yes --auto-mine --no-llm # --no-llm гасит warning про Ollama;
+                                                 # скачивает эмбеддер all-MiniLM-L6-v2 (~80 МБ)
 mempalace status
-mempalace search "why did we switch to GraphQL"
+mempalace search "GraphQL"
 ```
 
 Результат: замайнились файлы, `search` вернул корректный топ-хит
 (`cosine_sim=0.601`).
+
+> `No LLM provider reachable … Running heuristics-only` — это предупреждение, а
+> не ошибка (нет запущенной Ollama); индексации не мешает, `--no-llm` его гасит.
 
 ### 4. Поднять HTTP-хаб (то, что атакует attack-config)
 
