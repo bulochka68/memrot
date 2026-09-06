@@ -95,9 +95,10 @@ def _result_row(r: dict) -> str:
     rule_ids = ", ".join(r.get("rule_ids") or []) or "—"
     return (
         '<tr class="result-row" '
-        f'data-search="{_esc((r.get("variant_id","") + " " + rule_ids + " " + str(r.get("owasp_amg_category","")) + " " + str(r.get("mutation_technique",""))).lower())}">'
+        f'data-search="{_esc((r.get("variant_id","") + " " + rule_ids + " " + str(r.get("owasp_amg_category","")) + " " + str(r.get("path_state","")) + " " + str(r.get("mutation_technique",""))).lower())}">'
         f'<td>{_esc(r.get("variant_id"))}</td>'
         f'<td><span class="chip" style="border-color:{color};color:{color}">{_esc(verdict)}</span></td>'
+        f'<td>{_esc(r.get("path_state") or "—")}</td>'
         f'<td>{_esc(r.get("owasp_amg_category") or "—")}</td>'
         f'<td>{_esc(rule_ids)}</td>'
         f'<td>{_esc(r.get("mutation_technique") or "—")}</td>'
@@ -219,6 +220,12 @@ def emit_html(report: RunReport) -> str:
   <h2>ASR by taxonomy category (OWASP Agent Memory Guard)</h2>
   {_metric_table(report.asr_by_taxonomy_category, "no owasp_amg_category tags in this run")}
 
+  <h2>ASR by technique category (delivery / obfuscation)</h2>
+  {_metric_table(report.asr_by_technique_category, "no technique_category tags in this run")}
+
+  <h2>ASR by source (curated vs synthesized)</h2>
+  {_metric_table(report.asr_by_source, "no source tags in this run")}
+
   <h2>ASR by mutation technique</h2>
   {_metric_table(report.asr_by_mutation_technique, "no mutated variants in this run")}
 
@@ -236,7 +243,7 @@ def emit_html(report: RunReport) -> str:
   <h2>Per-variant results ({len(report.results)})</h2>
   <input id="filter" type="text" placeholder="Filter by variant id, rule id, category, or mutation technique...">
   <table class="results-table">
-    <thead><tr><th>Variant</th><th>Verdict</th><th>Category</th><th>Rule IDs</th>
+    <thead><tr><th>Variant</th><th>Verdict</th><th>Path state</th><th>Category</th><th>Rule IDs</th>
     <th>Mutation</th><th>Framing</th><th>Payload</th><th>Propagation</th></tr></thead>
     <tbody>{results_rows}</tbody>
   </table>

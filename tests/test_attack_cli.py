@@ -9,10 +9,10 @@ from mcp_attack.cli import main
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CATALOG_ROOT = os.path.join(ROOT, "mcp_attack", "catalog", "prompts")
-BENIGN = os.path.join(CATALOG_ROOT, "benign_control")
-MEM02 = os.path.join(CATALOG_ROOT, "mem02_global_policy_poisoning")
-GENERIC_MPI = os.path.join(CATALOG_ROOT, "generic_memory_prompt_injection")
-GENERIC_LEAK = os.path.join(CATALOG_ROOT, "generic_sensitive_data_leakage")
+BENIGN = os.path.join(CATALOG_ROOT, "domain", "invest_bank", "benign_control")
+MEM02 = os.path.join(CATALOG_ROOT, "domain", "invest_bank", "mem02_global_policy_poisoning")
+GENERIC_MPI = os.path.join(CATALOG_ROOT, "generic", "generic_memory_prompt_injection")
+GENERIC_LEAK = os.path.join(CATALOG_ROOT, "generic", "generic_sensitive_data_leakage")
 
 
 class _EchoHandler(BaseHTTPRequestHandler):
@@ -197,3 +197,18 @@ def test_run_unknown_generator_kind_is_a_clean_error(http_server, monkeypatch, w
         "generator": {"kind": "imported_bank"},
     })
     assert main(["run", "--config", config_path]) == 4
+
+
+def test_quickstart_runs_without_a_config_file(monkeypatch, tmp_path):
+    from tests.fixtures.fake_memory_target import FakeCleanMemoryApp, build_adapter
+    adapter = build_adapter(FakeCleanMemoryApp())
+    monkeypatch.setattr("mcp_attack.pipeline.build_adapter", lambda target: adapter)
+    out_dir = str(tmp_path / "out")
+    rc = main(["quickstart", "--url", "http://example.invalid/v1", "--model", "test-model",
+               "--pool", GENERIC_MPI, "--out", out_dir, "--top-n", "2"])
+    assert rc == 0
+    assert os.path.isfile(os.path.join(out_dir, "run.json"))
+    with open(os.path.join(out_dir, "run.json"), encoding="utf-8") as fh:
+        report = json.load(fh)
+    assert len(report["results"]) == 2
+    assert "asr_by_technique_category" in report

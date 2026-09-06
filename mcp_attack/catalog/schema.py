@@ -6,9 +6,9 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List
 
-from ..models import (DELIVERY_CHANNEL_VALUES, FRAMING_VALUES, LAYER_VALUES, PAYLOAD_VALUES,
-                     PROPAGATION_VALUES, THREAT_MODEL_VALUES)
-from ..taxonomy import OWASP_AMG_CATEGORY_SLUGS
+from ..models import (DELIVERY_CHANNEL_VALUES, DOMAIN_VALUES, FRAMING_VALUES, LAYER_VALUES,
+                     PAYLOAD_VALUES, PROPAGATION_VALUES, THREAT_MODEL_VALUES, TOOL_VECTOR_VALUES)
+from ..taxonomy import ATTACK_TECHNIQUE_CATEGORY_SLUGS, OWASP_AMG_CATEGORY_SLUGS
 
 REQUIRED_FIELDS = ("id", "title", "framing", "payload", "layer", "propagation", "probe", "rule_ids")
 ALLOWED_FRAMING = set(FRAMING_VALUES)
@@ -17,11 +17,19 @@ ALLOWED_LAYER = set(LAYER_VALUES)
 ALLOWED_PROPAGATION = set(PROPAGATION_VALUES)
 ALLOWED_ACCESS_PROFILE = {"black_box", "grey_box", "white_box"}
 ALLOWED_OWASP_AMG_CATEGORY = set(OWASP_AMG_CATEGORY_SLUGS)
+ALLOWED_TECHNIQUE_CATEGORY = set(ATTACK_TECHNIQUE_CATEGORY_SLUGS)
 ALLOWED_DELIVERY_CHANNEL = set(DELIVERY_CHANNEL_VALUES)
 ALLOWED_THREAT_MODEL = set(THREAT_MODEL_VALUES)
+ALLOWED_TOOL_VECTOR = set(TOOL_VECTOR_VALUES)
+ALLOWED_DOMAIN = set(DOMAIN_VALUES)
 
 
-def validate_variant_dict(d: Dict[str, Any], where: str = "") -> List[str]:
+def _is_benign_control(d: Dict[str, Any]) -> bool:
+    return d.get("framing") == "none" and d.get("payload") == "none"
+
+
+def validate_variant_dict(d: Dict[str, Any], where: str = "", *,
+                          require_taxonomy: bool = False) -> List[str]:
     errors: List[str] = []
     tag = f"{where}: " if where else ""
     for field_name in REQUIRED_FIELDS:
@@ -45,6 +53,14 @@ def validate_variant_dict(d: Dict[str, Any], where: str = "") -> List[str]:
     if owasp_amg_category and owasp_amg_category not in ALLOWED_OWASP_AMG_CATEGORY:
         errors.append(f"{tag}owasp_amg_category={owasp_amg_category!r} not in {sorted(ALLOWED_OWASP_AMG_CATEGORY)}")
 
+    technique_category = d.get("technique_category")
+    if technique_category and technique_category not in ALLOWED_TECHNIQUE_CATEGORY:
+        errors.append(f"{tag}technique_category={technique_category!r} not in {sorted(ALLOWED_TECHNIQUE_CATEGORY)}")
+
+    domain = d.get("domain")
+    if domain and domain not in ALLOWED_DOMAIN:
+        errors.append(f"{tag}domain={domain!r} not in {sorted(ALLOWED_DOMAIN)}")
+
     check_enum("delivery_channel", ALLOWED_DELIVERY_CHANNEL)
     check_enum("threat_model", ALLOWED_THREAT_MODEL)
 
@@ -54,22 +70,37 @@ def validate_variant_dict(d: Dict[str, Any], where: str = "") -> List[str]:
         if not isinstance(tool_stage, dict) or not tool_stage.get("tool_name") or not tool_stage.get("content_template"):
             errors.append(f"{tag}delivery_channel='tool_result' requires tool_stage.tool_name and "
                           "tool_stage.content_template")
-        elif "{canary}" not in tool_stage["content_template"]:
-            errors.append(f"{tag}tool_stage.content_template must contain the '{{canary}}' placeholder")
+        else:
+            if "{canary}" not in tool_stage["content_template"]:
+                errors.append(f"{tag}tool_stage.content_template must contain the '{{canary}}' placeholder")
+            vector = tool_stage.get("vector", "web_search")
+            if vector not in ALLOWED_TOOL_VECTOR:
+                errors.append(f"{tag}tool_stage.vector={vector!r} not in {sorted(ALLOWED_TOOL_VECTOR)}")
         if not d.get("trigger_message"):
             errors.append(f"{tag}delivery_channel='tool_result' requires a non-empty trigger_message")
+
+    if delivery_channel == "document_ingestion":
+        inject_turns = d.get("inject_turns") or []
+        if not inject_turns:
+            errors.append(f"{tag}delivery_channel='document_ingestion' requires non-empty inject_turns "
+                          "(the document body)")
+        canary_template = d.get("canary_template") or ""
+        if not canary_template:
+            errors.append(f"{tag}delivery_channel='document_ingestion' requires a canary_template")
+        elif "{canary}" not in canary_template:
+            errors.append(f"{tag}canary_template must contain the '{{canary}}' placeholder")
 
     propagation = d.get("propagation")
     inject_turns = d.get("inject_turns") or []
     canary_template = d.get("canary_template") or ""
-    if propagation in ("cross-user", "cross-session-same-user"):
+    if delivery_channel == "chat_direct" and propagation in ("cross-user", "cross-session-same-user"):
         if not inject_turns:
             errors.append(f"{tag}propagation={propagation!r} requires non-empty inject_turns")
         if not canary_template:
             errors.append(f"{tag}propagation={propagation!r} requires a canary_template")
         if "{canary}" not in canary_template and canary_template:
             errors.append(f"{tag}canary_template must contain the '{{canary}}' placeholder")
-    elif propagation == "single-turn":
+    elif delivery_channel == "chat_direct" and propagation == "single-turn":
         if inject_turns:
             errors.append(f"{tag}propagation='single-turn' must not carry inject_turns (the ask lives in probe)")
 
@@ -78,10 +109,19 @@ def validate_variant_dict(d: Dict[str, Any], where: str = "") -> List[str]:
     if not isinstance(d.get("taxonomy", []), list):
         errors.append(f"{tag}taxonomy must be a list")
 
+    if require_taxonomy and not _is_benign_control(d):
+        threat_model = d.get("threat_model", "memory_poisoning")
+        if threat_model == "memory_poisoning" and not (d.get("owasp_amg_category") or ""):
+            errors.append(f"{tag}memory_poisoning variant must carry owasp_amg_category")
+        has_atlas = bool(d.get("taxonomy") or [])
+        has_technique = bool(d.get("technique_category") or "")
+        if not has_atlas and not has_technique:
+            errors.append(f"{tag}variant must carry taxonomy (ATLAS) or technique_category")
+
     return errors
 
 
-def validate_catalog_file(path: str) -> List[str]:
+def validate_catalog_file(path: str, *, require_taxonomy: bool = False) -> List[str]:
     try:
         with open(path, "r", encoding="utf-8") as fh:
             data = json.load(fh)
@@ -89,10 +129,13 @@ def validate_catalog_file(path: str) -> List[str]:
         return [f"{path}: cannot read/parse: {exc}"]
     if not isinstance(data, dict) or "variants" not in data:
         return [f"{path}: expected an object with a 'variants' list"]
+    domain = data.get("domain", "neutral")
+    errors: List[str] = []
+    if domain not in ALLOWED_DOMAIN:
+        errors.append(f"{path}: domain={domain!r} not in {sorted(ALLOWED_DOMAIN)}")
     variants = data["variants"]
     if not isinstance(variants, list):
-        return [f"{path}: 'variants' must be a list"]
-    errors: List[str] = []
+        return errors + [f"{path}: 'variants' must be a list"]
     seen_ids = set()
     for i, v in enumerate(variants):
         where = f"{path}#{i}"
@@ -103,5 +146,5 @@ def validate_catalog_file(path: str) -> List[str]:
         if vid in seen_ids:
             errors.append(f"{where}: duplicate variant id {vid!r}")
         seen_ids.add(vid)
-        errors.extend(validate_variant_dict(v, where=where))
+        errors.extend(validate_variant_dict(v, where=where, require_taxonomy=require_taxonomy))
     return errors

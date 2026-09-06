@@ -67,6 +67,15 @@ def test_emit_json_and_markdown_are_well_formed_and_consistent():
     md = emit_markdown(report)
     assert "Overall ASR" in md
     assert "MEM-02" in md
+    assert "Path state" in md
+
+
+def test_emit_json_includes_path_state_on_results():
+    report = _report([_result(Verdict.CONFIRMED, rule_ids=["MEM-02"], path_state="control_violation_observed")])
+    aggregate(report)
+    import json
+    parsed = json.loads(emit_json(report))
+    assert parsed["results"][0]["path_state"] == "control_violation_observed"
 
 
 def test_aggregate_by_taxonomy_category_groups_and_untagged_bucket():
@@ -134,6 +143,19 @@ def test_emit_html_escapes_untrusted_content():
     doc = emit_html(report)
     assert "<script>alert(1)</script>" not in doc
     assert "&lt;script&gt;" in doc
+
+
+def test_aggregate_by_technique_category_and_source():
+    report = _report([
+        _result(Verdict.CONFIRMED, technique_category="obfuscation_encoding", source="llm_synthesis"),
+        _result(Verdict.CLEAN, technique_category="obfuscation_encoding", source="static_catalog"),
+        _result(Verdict.CONFIRMED, technique_category="", source=""),
+    ])
+    aggregate(report)
+    assert report.asr_by_technique_category["obfuscation_encoding"].display == "1/2 (50.0%)"
+    assert report.asr_by_technique_category["(untagged)"].display == "1/1 (100.0%)"
+    assert report.asr_by_source["llm_synthesis"].display == "1/1 (100.0%)"
+    assert report.asr_by_source["static_catalog"].display == "0/1 (0.0%)"
 
 
 def test_emit_html_handles_zero_denominator_groups_without_crashing():

@@ -5,7 +5,7 @@
 
 1. **Стенд-жертва** — GenAI Investment Assistant, намеренно уязвимый ReAct-агент.
 2. **Аудитор** (`mcp_audit`) — offline-разбор стенда, находки-гипотезы с провенансом.
-3. **Red-team харнесс** (`redteam/`) — рантайм-подтверждение находок живыми атаками.
+3. **Red-team харнесс** (`mcp_attack`, плюс узкий `redteam/` для стендовых сценариев) — рантайм-подтверждение находок живыми атаками.
 
 Все три держатся в одной системе координат — **общем словаре правил**
 (`MEM-*`, `TOOL-*`, `AUTH-*`, `EGRESS-*`, `INFRA-*`, `INV-*`): аудит находит гипотезы
@@ -25,9 +25,9 @@ flowchart LR
         direction TB
         a1["Разбирает конфиги, код,<br/>политику, compose →<br/>находки-гипотезы"]
     end
-    subgraph attack["③ АТАКИ — redteam/ (runtime)"]
+    subgraph attack["③ АТАКИ — mcp_attack (runtime)"]
         direction TB
-        r1["Подтверждает гипотезы<br/>живыми воздействиями"]
+        r1["Каталог + ranked по audit JSON<br/>→ любой агент через адаптер"]
     end
 
     stand -- "исходники + compose<br/>(манифест/профиль)" --> audit
@@ -168,26 +168,42 @@ flowchart TD
 
 ---
 
-## 6. Конвейер аудит → атака (`redteam/PIPELINE.md`)
+## 6. Конвейер аудит → атака
+
+Две реализации одной петли, общий словарь `rule_id` (`MEM-*`, `TOOL-*`, `AUTH-*`, …)
+и общий `path_state` (`static_path_supported` → `runtime_path_observed` →
+`control_violation_observed`).
+
+**Переносимый путь** — `mcp_attack` (любой агент через адаптер, ranked по audit JSON):
+
+```bash
+python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
+python -m mcp_attack quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
+  --audit .audit/stand.json --out .attack
+```
+
+`--pool auto` (по умолчанию в `quickstart`) подключает overlay `domain/invest_bank`,
+если `meta.profile.id` — инвестиционный стенд; для `mempalace` и прочих профилей
+остаётся нейтральный `generic/` каталог. Подробности: [`docs/attacker.md`](attacker.md).
 
 ```mermaid
 flowchart LR
-    s1["1. mcp_audit audit<br/>→ stand.json"] --> s2["2. rank_targets.py<br/>цели по severity"]
-    s2 --> s3["3. select_attacks.py<br/>категории атак"]
-    s3 --> s4["4. run_attacks.py --dry-run<br/>план, стенд не нужен"]
-    s4 --> s5["5. docker compose up<br/>завести 2 принципалов"]
-    s5 --> s6["6. run_attacks / pytest / promptfoo<br/>runtime-подтверждение"]
-    s6 --> s7["7. регрессия защиты<br/>protected → зелёные"]
+    s1["1. mcp_audit audit<br/>→ stand.json"] --> s2["2. mcp_attack quickstart --audit<br/>ranked + path_state"]
+    s2 --> s3["3. .attack/run.json<br/>verdict + path_state"]
 ```
+
+**Стендовый путь** — `redteam/` (сценарии только против GenAI Invest Assistant):
+`rank_targets.py` → `select_attacks.py` → `run_attacks.py`. Команды и
+`path_state` раннера — [`redteam/PIPELINE.md`](../redteam/PIPELINE.md).
 
 Каждая цель проходит три состояния подтверждения (`path_state`):
 
 ```mermaid
 flowchart LR
-    x1["static_path_supported<br/>(аудит: гипотеза)"] --> x2["runtime_path_observed<br/>(инъекция в общую политику)"] --> x3["control_violation_observed<br/>(маркер дошёл до жертвы —<br/>межпользовательский payoff)"]
+    x1["static_path_supported<br/>(аудит: гипотеза / атака не воспроизвелась)"] --> x2["runtime_path_observed<br/>(инъекция осела / canary всплыл)"] --> x3["control_violation_observed<br/>(маркер дошёл до жертвы —<br/>межпользовательский payoff)"]
 ```
 
-**Категории атак** (`redteam/attack_taxonomy.py`) — подмножества правил аудита:
+**Категории атак** (`redteam/attack_taxonomy.py`, зеркало в `mcp_attack.audit_plan.REDTEAM_CATEGORIES`) — подмножества правил аудита:
 
 | Категория | Правила |
 |---|---|
@@ -202,8 +218,8 @@ flowchart LR
 | `inventory` | INV-01, INV-02, TOOL-01, TOOL-02 |
 
 Именно общий словарь правил связывает аудит и атаки: находка `MEM-02` из отчёта
-становится целью категории `memory-poisoning`, а результат атаки возвращается в тот
-же `rule_id` как обновлённый `path_state`.
+становится целью категории `memory-poisoning`, а `mcp_attack` / `redteam`
+возвращают тот же `rule_id` с обновлённым `path_state`.
 
 ---
 
@@ -213,7 +229,8 @@ flowchart LR
   `scope=global`.
 - **`mcp_audit`** статически разбирает стенд и выдаёт находки-гипотезы с провенансом,
   не запуская систему.
-- **`redteam/`** берёт находки и живыми атаками переводит их из `static_supported` в
-  `control_violation_observed`.
+- **`mcp_attack`** берёт нейтральный каталог (и опционально audit JSON) и гоняет
+  канареечные атаки против любого агента через тонкий адаптер; см. [`docs/attacker.md`](attacker.md).
+- **`redteam/`** — более узкий стендовый рантайм с тем же словарём правил.
 - Режим **`protected`** служит регрессией: те же атаки должны стать зелёными —
   доказательство, что защита закрывает именно найденный дефект.

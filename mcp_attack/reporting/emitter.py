@@ -38,10 +38,11 @@ def emit_markdown(report: RunReport) -> str:
 
     L.append("## Per-variant verdicts")
     L.append("")
-    L.append("| Variant | Verdict | Rule IDs | Framing | Payload | Layer | Propagation |")
-    L.append("|---|---|---|---|---|---|---|")
+    L.append("| Variant | Verdict | Path state | Rule IDs | Framing | Payload | Layer | Propagation |")
+    L.append("|---|---|---|---|---|---|---|---|")
     for r in report.results:
-        L.append(f"| {esc(r.variant_id)} | **{r.verdict.value}** | {esc(', '.join(r.rule_ids) or '—')} | "
+        L.append(f"| {esc(r.variant_id)} | **{r.verdict.value}** | {esc(r.path_state or '—')} | "
+                 f"{esc(', '.join(r.rule_ids) or '—')} | "
                  f"{esc(r.framing)} | {esc(r.payload)} | {esc(r.layer)} | {esc(r.propagation)} |")
     L.append("")
 
@@ -59,6 +60,22 @@ def emit_markdown(report: RunReport) -> str:
     L.append("|---|---|")
     for cat, metric in sorted(report.asr_by_taxonomy_category.items()):
         L.append(f"| {esc(cat)} | {metric.display} |")
+    L.append("")
+
+    L.append("## ASR by technique category (delivery / obfuscation)")
+    L.append("")
+    L.append("| Technique category | ASR |")
+    L.append("|---|---|")
+    for cat, metric in sorted(report.asr_by_technique_category.items()):
+        L.append(f"| {esc(cat)} | {metric.display} |")
+    L.append("")
+
+    L.append("## ASR by source (curated vs synthesized)")
+    L.append("")
+    L.append("| Source | ASR |")
+    L.append("|---|---|")
+    for source, metric in sorted(report.asr_by_source.items()):
+        L.append(f"| {esc(source)} | {metric.display} |")
     L.append("")
 
     L.append("## ASR by mutation technique")

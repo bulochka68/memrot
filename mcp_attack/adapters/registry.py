@@ -10,13 +10,16 @@ from typing import TYPE_CHECKING
 
 from .base import TargetAdapter
 from .genai_invest import GenAIInvestAdapter
-from .openai_compat import OpenAICompatAdapter
+from .mcp_client import MCPClientAdapter
+from .openai_compat import HTTPGenericAdapter, OpenAICompatAdapter
 
 if TYPE_CHECKING:
     from ..config import TargetBinding
 
 _REGISTRY = {
     "openai_compat": OpenAICompatAdapter,
+    "http_generic": HTTPGenericAdapter,
+    "mcp_client": MCPClientAdapter,
     "genai_invest": GenAIInvestAdapter,
 }
 

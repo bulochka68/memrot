@@ -5,7 +5,7 @@ no Keycloak), so it exercises the *real* target code (real LangGraph
 orchestration, real summarization/extraction prompts) against the *real*
 Mongo/Redis the live stand uses, when pointed at the same URLs.
 
-Why this exists (see ``mcp_attack/catalog/prompts/tool_output_web_search_poisoning/``):
+Why this exists (see ``mcp_attack/catalog/prompts/domain/invest_bank/tool_output_web_search_poisoning/``):
 the stand's only web tool, ``duckduckgo_search`` (``app/agent/tools.py``),
 hits real DuckDuckGo -- not deterministically controllable from outside the
 process for a red-team test. This adapter's ``stage_tool_response()``
@@ -164,7 +164,7 @@ class InProcessStandAdapter(TargetAdapter):
         }
         return json.dumps(blob, ensure_ascii=False)
 
-    def stage_tool_response(self, tool_name: str, content: str) -> None:
+    def stage_tool_response(self, tool_name: str, content: str, *, vector: str = "web_search") -> None:
         self._staged[tool_name] = content
 
     def reset(self) -> bool:
@@ -180,6 +180,7 @@ class InProcessStandAdapter(TargetAdapter):
             supports_inspect_memory=True,
             supports_tool_staging=True,
             supports_reset=False,
+            supported_tool_vectors=["web_search"],
             notes=["in-process grey-box adapter: runs the real vendored app/ code directly, "
                   "sharing whatever Mongo/Redis/LLM endpoint its own app.config resolves -- "
                   "no HTTP or Keycloak involved"],

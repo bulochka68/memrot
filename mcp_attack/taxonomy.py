@@ -122,3 +122,107 @@ def category(slug: str) -> TaxonomyCategory:
 
 def is_known_category(slug: str) -> bool:
     return slug in OWASP_AMG_CATEGORIES
+
+
+# --------------------------------------------------------------------------- #
+# Delivery / obfuscation techniques (orthogonal to the 6 memory-focused AMG
+# categories above). A variant can carry both: AMG says *what* is being
+# poisoned, this says *how* the payload is delivered or disguised.
+# --------------------------------------------------------------------------- #
+
+@dataclass(frozen=True)
+class TechniqueCategory:
+    slug: str                    # 'obfuscation_encoding', 'many_shot', 'payload_splitting', ...
+    title: str
+    owasp_llm_id: str            # OWASP LLM Top-10 2025, usually 'LLM01' (Prompt Injection)
+    atlas_technique_ids: Tuple[str, ...]   # e.g. ('AML.T0051.000',)
+    description: str
+
+
+ATTACK_TECHNIQUE_CATEGORIES: Dict[str, TechniqueCategory] = {
+    "direct_instruction_override": TechniqueCategory(
+        slug="direct_instruction_override",
+        title="Direct instruction override",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0051",),
+        description="A blunt standing-rule / system-note ask that tries to replace the agent's instructions.",
+    ),
+    "authority_impersonation": TechniqueCategory(
+        slug="authority_impersonation",
+        title="Authority / compliance impersonation",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0051",),
+        description="The payload is framed as coming from an administrator, auditor, or other authority.",
+    ),
+    "obfuscation_encoding": TechniqueCategory(
+        slug="obfuscation_encoding",
+        title="Obfuscation / encoding",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0051.000",),
+        description="The instruction is wrapped in base64, rot13, hex, or unicode-escape to dodge keyword filters.",
+    ),
+    "payload_splitting": TechniqueCategory(
+        slug="payload_splitting",
+        title="Payload splitting",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0051",),
+        description="The payload is assembled from several individually-benign turns or fragments.",
+    ),
+    "many_shot": TechniqueCategory(
+        slug="many_shot",
+        title="Many-shot priming",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0051",),
+        description="A long fake dialogue that legitimizes a standing rule by example before asking for it.",
+    ),
+    "refusal_suppression": TechniqueCategory(
+        slug="refusal_suppression",
+        title="Refusal / disclaimer suppression",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0051",),
+        description="A standing rule that the agent must not refuse, hedge, or attach safety disclaimers.",
+    ),
+    "roleplay_persona": TechniqueCategory(
+        slug="roleplay_persona",
+        title="Roleplay / persona override",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0051",),
+        description="The ask is wrapped in an unrestricted persona or in-character roleplay frame.",
+    ),
+    "low_resource_language": TechniqueCategory(
+        slug="low_resource_language",
+        title="Low-resource language",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0051",),
+        description="The same payload delivered in a less-filtered language to bypass keyword/English-centric guards.",
+    ),
+    "tool_result_injection": TechniqueCategory(
+        slug="tool_result_injection",
+        title="Tool-result / indirect injection",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0070",),
+        description="The payload arrives via a tool return value (search snippet, email, document) rather than a chat turn.",
+    ),
+    "context_ignore": TechniqueCategory(
+        slug="context_ignore",
+        title="Ignore-previous-instructions",
+        owasp_llm_id="LLM01",
+        atlas_technique_ids=("AML.T0051",),
+        description="An explicit 'ignore previous instructions' / context-reset ask persisted into memory.",
+    ),
+}
+
+ATTACK_TECHNIQUE_CATEGORY_SLUGS: Tuple[str, ...] = tuple(ATTACK_TECHNIQUE_CATEGORIES)
+
+
+def technique_category(slug: str) -> TechniqueCategory:
+    try:
+        return ATTACK_TECHNIQUE_CATEGORIES[slug]
+    except KeyError as exc:
+        raise KeyError(
+            f"unknown technique_category {slug!r}; known: {sorted(ATTACK_TECHNIQUE_CATEGORY_SLUGS)}"
+        ) from exc
+
+
+def is_known_technique(slug: str) -> bool:
+    return slug in ATTACK_TECHNIQUE_CATEGORIES

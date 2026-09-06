@@ -24,11 +24,12 @@ from .audit_plan import select_variants_by_audit
 from .catalog.generator import ImportedBankGenerator, LLMMutationGenerator, StaticCatalogGenerator
 from .catalog.loader import discover_catalog_files, load_catalog
 from .catalog.schema import validate_catalog_file
-from .config import load_config
+from .config import TargetBinding, load_config
 from .detectors import build_detector
-from .models import Verdict
+from .models import Channel, ChannelRole, Principal, RunReport, Verdict
+from .pipeline import audit_then_attack
 from .reporting import emit_html, emit_json, emit_markdown
-from .runner import run_matrix
+from .runner import run_adaptive, run_matrix
 from .tracer import JSONLTracer
 
 _IMPLEMENTED_GENERATOR_KINDS = ("static_catalog", "llm_mutation")
@@ -110,8 +111,10 @@ def cmd_run(args: argparse.Namespace) -> int:
     if audit_path:
         audit_mode = args.audit_mode or config.audit_mode
         if audit_mode == "ranked":
-            variants, audit_limitations = select_variants_by_audit(variants, audit_path, mode="ranked",
-                                                                    min_severity=args.audit_min_severity)
+            variants, audit_limitations = select_variants_by_audit(
+                variants, audit_path, mode="ranked", min_severity=args.audit_min_severity,
+                top_n=getattr(args, "audit_top_n", None),
+            )
         else:
             variants, audit_limitations = filter_variants_by_audit(variants, audit_path, mode=audit_mode)
         limitations.extend(audit_limitations)
@@ -122,18 +125,50 @@ def cmd_run(args: argparse.Namespace) -> int:
         os.makedirs(out_dir, exist_ok=True)
     tracer = JSONLTracer(path=trace_path)
     try:
-        report = run_matrix(variants, config.channels, adapter, detector, tracer,
-                            reset_between_variants=config.reset_between_variants)
+        if getattr(args, "adaptive", False):
+            if not args.attacker_base_url or not args.attacker_model:
+                print("error: --adaptive requires --attacker-base-url and --attacker-model", file=sys.stderr)
+                return EXIT_ERROR
+            from .mutation.llm_client import LLMClient, LLMClientConfig
+            attacker_llm = LLMClient(LLMClientConfig(
+                base_url=args.attacker_base_url, model=args.attacker_model,
+                api_key_env=args.attacker_api_key_env,
+            ))
+            from .models import RunReport as _RunReport, default_run_id
+            from .reporting.aggregate import aggregate
+            run_id = default_run_id()
+            results = []
+            for seed in variants:
+                results.extend(run_adaptive(
+                    seed, config.channels, adapter, detector, tracer, run_id,
+                    attacker_llm=attacker_llm, max_rounds=args.adaptive_max_rounds,
+                ))
+            report = _RunReport(run_id=run_id, target_id=adapter.kind, results=results,
+                               channels=list(config.channels), limitations=limitations,
+                               trace_path=tracer.path)
+            aggregate(report)
+        else:
+            report = run_matrix(variants, config.channels, adapter, detector, tracer,
+                                reset_between_variants=config.reset_between_variants)
+            report.limitations = limitations + report.limitations
     finally:
         tracer.close()
-    report.limitations = limitations + report.limitations
 
     formats = (config.reporting or {}).get("formats", ["json", "markdown"])
+    return _emit_and_status(report, args, formats=formats)
+
+
+def _emit_and_status(report: RunReport, args: argparse.Namespace,
+                     formats: Optional[List[str]] = None) -> int:
+    formats = formats or ["json", "markdown"]
+    out_dir = getattr(args, "out", None)
     json_text = emit_json(report)
     md_text = emit_markdown(report) if "markdown" in formats else None
-    html_text = emit_html(report) if (args.report_html or "html" in formats) else None
+    html_wanted = bool(getattr(args, "report_html", None) or "html" in formats)
+    html_text = emit_html(report) if html_wanted else None
 
     if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
         if "json" in formats:
             with open(os.path.join(out_dir, "run.json"), "w", encoding="utf-8") as fh:
                 fh.write(json_text)
@@ -146,19 +181,20 @@ def cmd_run(args: argparse.Namespace) -> int:
     else:
         print(json_text)
 
-    if args.report_html:
-        dirname = os.path.dirname(os.path.abspath(args.report_html))
+    report_html = getattr(args, "report_html", None)
+    if report_html:
+        dirname = os.path.dirname(os.path.abspath(report_html))
         if dirname:
             os.makedirs(dirname, exist_ok=True)
-        with open(args.report_html, "w", encoding="utf-8") as fh:
-            fh.write(html_text)
+        with open(report_html, "w", encoding="utf-8") as fh:
+            fh.write(html_text or emit_html(report))
 
     counts = report.counts_by_verdict
     status = {
         "run_id": report.run_id,
         "counts_by_verdict": counts,
         "overall_asr": report.overall_asr.display if report.overall_asr else "n/a (0/0)",
-        "exit_code": _exit_code(counts, args.gate),
+        "exit_code": _exit_code(counts, bool(getattr(args, "gate", False))),
     }
     print(json.dumps(status, ensure_ascii=False), file=sys.stderr)
     return status["exit_code"]
@@ -197,7 +233,7 @@ def cmd_validate_catalog(args: argparse.Namespace) -> int:
     files = discover_catalog_files(args.paths)
     total_errors = 0
     for path in files:
-        errors = validate_catalog_file(path)
+        errors = validate_catalog_file(path, require_taxonomy=bool(getattr(args, "strict_taxonomy", False)))
         if errors:
             total_errors += len(errors)
             for e in errors:
@@ -206,6 +242,55 @@ def cmd_validate_catalog(args: argparse.Namespace) -> int:
             print(f"ok: {path}")
     print(f"{len(files)} file(s), {total_errors} error(s)", file=sys.stderr)
     return EXIT_OK if not total_errors else EXIT_ERROR
+
+
+def cmd_quickstart(args: argparse.Namespace) -> int:
+    if not args.url:
+        print("error: --url is required (e.g. --url http://localhost:8600/v1)", file=sys.stderr)
+        return EXIT_ERROR
+    if args.adaptive and (not args.attacker_base_url or not args.attacker_model):
+        print("error: --adaptive requires --attacker-base-url and --attacker-model", file=sys.stderr)
+        return EXIT_ERROR
+
+    attacker_ref = args.attacker_principal
+    victim_ref = args.victim_principal
+    if args.cred_attacker_env and os.environ.get(args.cred_attacker_env):
+        os.environ[f"MCP_ATTACK_CRED_{attacker_ref}"] = os.environ[args.cred_attacker_env]
+    if args.cred_victim_env and os.environ.get(args.cred_victim_env):
+        os.environ[f"MCP_ATTACK_CRED_{victim_ref}"] = os.environ[args.cred_victim_env]
+
+    target = TargetBinding(kind=args.adapter, binding={"base_url": args.url, "model": args.model})
+    channels = [
+        Channel(role=ChannelRole.ATTACKER, principal=Principal(principal_id=args.attacker_principal,
+                                                               credential_ref=attacker_ref)),
+        Channel(role=ChannelRole.VICTIM, principal=Principal(principal_id=args.victim_principal,
+                                                             credential_ref=victim_ref)),
+    ]
+    attacker_llm = None
+    if args.adaptive:
+        from .mutation.llm_client import LLMClient, LLMClientConfig
+        attacker_llm = LLMClient(LLMClientConfig(
+            base_url=args.attacker_base_url, model=args.attacker_model,
+            api_key_env=args.attacker_api_key_env,
+        ))
+    out_dir = args.out or ".attack"
+    os.makedirs(out_dir, exist_ok=True)
+    if not args.report_html:
+        args.report_html = os.path.join(out_dir, "run.html")
+    tracer = JSONLTracer(path=os.path.join(out_dir, "trace.jsonl"))
+    try:
+        report = audit_then_attack(
+            args.audit, target, channels, pool=args.pool, top_n=args.top_n,
+            tracer=tracer, adaptive=bool(args.adaptive), attacker_llm=attacker_llm,
+            adaptive_max_rounds=args.adaptive_max_rounds, min_severity=args.audit_min_severity,
+        )
+    except (ValueError, FileNotFoundError, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    finally:
+        tracer.close()
+    args.out = out_dir
+    return _emit_and_status(report, args, formats=["json", "markdown", "html"])
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -225,6 +310,14 @@ def build_parser() -> argparse.ArgumentParser:
                         "bridged from rule_id to owasp_amg_category where possible (see audit_plan.py)")
     pr.add_argument("--audit-min-severity", choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"], default=None,
                     help="with --audit-mode ranked: only consider findings at or above this severity")
+    pr.add_argument("--audit-top-n", type=int, default=None,
+                    help="with --audit-mode ranked: keep only the N highest-priority variants")
+    pr.add_argument("--adaptive", action="store_true",
+                    help="PAIR/TAP-lite loop: rewrite a failed payload and retry (requires attacker LLM)")
+    pr.add_argument("--adaptive-max-rounds", type=int, default=3)
+    pr.add_argument("--attacker-base-url", help="OpenAI-compatible base_url for the adaptive attacker LLM")
+    pr.add_argument("--attacker-model", help="model name for the adaptive attacker LLM")
+    pr.add_argument("--attacker-api-key-env", help="env var holding the attacker LLM API key")
     pr.add_argument("--out", help="directory to write run.json / run.md / run.html / trace.jsonl into")
     pr.add_argument("--gate", action="store_true", help="exit 1 on a CONFIRMED verdict, 2 on incomplete coverage")
     pr.add_argument("--taxonomy-filter", help="only run variants tagged with this owasp_amg_category")
@@ -257,7 +350,35 @@ def build_parser() -> argparse.ArgumentParser:
 
     pv = sub.add_parser("validate-catalog", help="validate one or more catalog files/dirs")
     pv.add_argument("paths", nargs="+")
+    pv.add_argument("--strict-taxonomy", action="store_true",
+                    help="require owasp_amg_category on memory_poisoning variants and ATLAS or technique_category on all")
     pv.set_defaults(func=cmd_validate_catalog)
+
+    pq = sub.add_parser("quickstart", help="run against any OpenAI-compatible agent without a config file")
+    pq.add_argument("--url", required=False, help="target base URL (e.g. http://localhost:8600/v1)")
+    pq.add_argument("--model", default="default", help="model / agent name")
+    pq.add_argument("--adapter", default="openai_compat",
+                    choices=["openai_compat", "genai_invest", "mcp_client", "http_generic"])
+    pq.add_argument("--attacker-principal", default="A")
+    pq.add_argument("--victim-principal", default="B")
+    pq.add_argument("--cred-attacker-env", default=None,
+                    help="env var holding the attacker credential (copied onto MCP_ATTACK_CRED_<ref>)")
+    pq.add_argument("--cred-victim-env", default=None)
+    pq.add_argument("--audit", help="mcp_audit JSON; enables ranked mode")
+    pq.add_argument("--audit-min-severity", choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"], default=None)
+    pq.add_argument("--top-n", type=int, default=None)
+    pq.add_argument("--domain", help="domain label; reserved for domain_adaptation when an attacker LLM is configured")
+    pq.add_argument("--pool", default="auto", help="auto | neutral | all | <catalog path> "
+                    "(auto: invest-stand overlay when --audit profile is genai-invest, else generic)")
+    pq.add_argument("--out", default=".attack")
+    pq.add_argument("--gate", action="store_true")
+    pq.add_argument("--report-html", default=None)
+    pq.add_argument("--adaptive", action="store_true")
+    pq.add_argument("--adaptive-max-rounds", type=int, default=3)
+    pq.add_argument("--attacker-base-url")
+    pq.add_argument("--attacker-model")
+    pq.add_argument("--attacker-api-key-env")
+    pq.set_defaults(func=cmd_quickstart)
 
     return parser
 

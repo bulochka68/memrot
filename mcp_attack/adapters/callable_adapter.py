@@ -10,7 +10,7 @@ directly in code instead.
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional
 
 from ..models import Principal
 from .base import AdapterCapabilities, TargetAdapter
@@ -21,7 +21,8 @@ ConsolidateFn = Callable[[str, str], None]
 InspectFn = Callable[[str], Optional[str]]
 GroundTruthFn = Callable[..., Optional[bool]]
 ResetFn = Callable[[], bool]
-StageToolFn = Callable[[str, str], None]
+StageToolFn = Callable[..., None]
+IngestFn = Callable[[str, str, str], str]
 
 
 class CallableAdapter(TargetAdapter):
@@ -34,7 +35,9 @@ class CallableAdapter(TargetAdapter):
                  ground_truth_fn: Optional[GroundTruthFn] = None,
                  reset_fn: Optional[ResetFn] = None,
                  stage_tool_fn: Optional[StageToolFn] = None,
-                 access_profile: str = "black_box") -> None:
+                 ingest_fn: Optional[IngestFn] = None,
+                 access_profile: str = "black_box",
+                 supported_tool_vectors: Optional[List[str]] = None) -> None:
         self._send_fn = send_fn
         self._new_session_fn = new_session_fn
         self._consolidate_fn = consolidate_fn
@@ -42,7 +45,11 @@ class CallableAdapter(TargetAdapter):
         self._ground_truth_fn = ground_truth_fn
         self._reset_fn = reset_fn
         self._stage_tool_fn = stage_tool_fn
+        self._ingest_fn = ingest_fn
         self._access_profile = access_profile
+        self._supported_tool_vectors = list(supported_tool_vectors) if supported_tool_vectors is not None else (
+            ["web_search"] if stage_tool_fn is not None else []
+        )
         self._session_counter = 0
 
     def new_session(self, principal: Principal) -> str:
@@ -73,9 +80,18 @@ class CallableAdapter(TargetAdapter):
             return bool(self._reset_fn())
         return False
 
-    def stage_tool_response(self, tool_name: str, content: str) -> None:
-        if self._stage_tool_fn is not None:
+    def stage_tool_response(self, tool_name: str, content: str, *, vector: str = "web_search") -> None:
+        if self._stage_tool_fn is None:
+            return
+        try:
+            self._stage_tool_fn(tool_name, content, vector=vector)
+        except TypeError:
             self._stage_tool_fn(tool_name, content)
+
+    def ingest_document(self, principal: Principal, session_id: str, document_text: str) -> str:
+        if self._ingest_fn is not None:
+            return self._ingest_fn(principal.principal_id, session_id, document_text)
+        return ""
 
     def capabilities(self) -> AdapterCapabilities:
         return AdapterCapabilities(
@@ -85,4 +101,6 @@ class CallableAdapter(TargetAdapter):
             supports_ground_truth=self._ground_truth_fn is not None,
             supports_reset=self._reset_fn is not None,
             supports_tool_staging=self._stage_tool_fn is not None,
+            supports_document_ingestion=self._ingest_fn is not None,
+            supported_tool_vectors=list(self._supported_tool_vectors),
         )

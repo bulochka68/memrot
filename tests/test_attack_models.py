@@ -1,4 +1,4 @@
-from mcp_attack.models import (Channel, ChannelRole, GroupMetric, Principal, Verdict, plain)
+from mcp_attack.models import (Channel, ChannelRole, GroupMetric, Principal, Verdict, path_state_for, plain)
 
 
 def test_group_metric_zero_denominator_is_not_a_percentage():
@@ -27,3 +27,12 @@ def test_channel_to_dict_round_trips_plain_values():
 
 def test_verdict_values_are_plain_strings_via_plain():
     assert plain(Verdict.CONFIRMED) == "CONFIRMED"
+
+
+def test_path_state_for_matches_audit_ladder():
+    assert path_state_for(Verdict.CONFIRMED, "cross-user") == "control_violation_observed"
+    assert path_state_for(Verdict.CONFIRMED, "single-turn") == "runtime_path_observed"
+    assert path_state_for(Verdict.CLEAN, "cross-user") == "static_path_supported"
+    assert path_state_for(Verdict.ERROR) == "unknown"
+    assert path_state_for(Verdict.NOT_EVALUATED) == "unknown"
+    assert path_state_for(Verdict.INVALID) == "unknown"
