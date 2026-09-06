@@ -4,6 +4,5 @@
 # deployment-адаптер: чтение docker-compose.yml (без PyYAML читается только JSON-снимок)
 PyYAML>=6.0
 
-# redteam/: HTTP-клиент к цели атаки и запуск сценариев
-httpx>=0.24.0
+# тесты
 pytest>=8.0.0

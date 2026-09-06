@@ -7,8 +7,8 @@ capabilities, definitions and context, identity and authorization, memory,
 observed behaviour and infrastructure. MCP is one supported interface among
 REST, native functions, background jobs, memory stores and traces.
 
-This branch carries the tooling only: `mcp_audit/`, `profiles/`, `schemas/`,
-`examples/`, `docs/`, `tests/` and the red-team harness in `redteam/`. The audited
+This branch carries the auditor only: `mcp_audit/`, `profiles/`, `schemas/`,
+`examples/`, `docs/` and `tests/`. The audited
 stand is not checked out here, so the offline examples below run against the
 snapshots in `examples/`; profile paths such as `app/api_server.py` are recorded in
 `profiles/genai_invest_stand.json` as locators inside *that* system's checkout.
