@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="docs/assets/banner.png" alt="memrot" width="420">
+  <img src="docs/assets/banner.png" alt="memrot" width="1000">
 </p>
 
 <p align="center">
-  A target-agnostic multi-step attack harness for AI-agent memory and tool compromise.
+  A  multi-step audit && attack harness for AI-agent memory and tool compromise.
 </p>
 
 ---
@@ -17,7 +17,7 @@ and did something.
 ## Why this exists
 
 Off-the-shelf red-teaming tools (Garak, Promptfoo, and similar) treat an
-agent like a chatbot: send a prompt, grade the reply. That misses most of an
+agent like a one-session chatbot: send a prompt, grade the reply. That misses most of an
 agent's real attack surface, which looks like this:
 
 ```
@@ -118,7 +118,7 @@ memrot {run, list-catalog, validate-catalog, quickstart}
 
 Full flag semantics and worked examples: [`docs/attacker.md`](docs/attacker.md).
 
-## The fancy CLI
+## Our cool sexy fancy CLI
 
 Run `memrot run` in an interactive terminal and it shows a full, human-readable
 walkthrough of the run — no flags needed, it auto-detects a TTY (`--fancy`/
@@ -317,32 +317,3 @@ examples/      -- configs, manifests, and pre-generated audit reports for
 docs/          -- deep-dive docs (attacker.md, auditor.md, rules_catalog.md, ...)
 tests/         -- pytest suite for both memrot and mcp_audit
 ```
-
-## Status
-
-Hackathon deliverable, actively evolving. No `LICENSE` file yet.
-
----
-
-<sub>Logo: a placeholder wordmark generated for this project
-(`docs/assets/logo.svg`) reusing memrot's own terminal color palette. Swap it
-for a real one whenever — see [Replacing the logo](#replacing-the-logo).</sub>
-
-### Replacing the logo
-
-The header above is a plain, GitHub-flavored-markdown image embed:
-
-```html
-<p align="center">
-  <img src="docs/assets/logo.svg" alt="memrot" width="420">
-</p>
-```
-
-To use your own: drop the file at `docs/assets/logo.svg` (or `.png`) and
-keep this same tag — only the `src`/`width` need to change. SVG is the
-better default for a wordmark/monogram (crisp at any size, tiny file size);
-PNG is the safer fallback for anything photographic or gradient-heavy. `width`
-controls display size independently of the file's native resolution — 200–400px
-reads well as a README header; much larger tends to push content below the
-fold. `<p align="center">` is what centers it; a plain `![memrot](docs/assets/logo.svg)`
-also renders fine on GitHub, just left-aligned and at native size.
