@@ -7,8 +7,8 @@ tagged with the same rule_id are indistinguishable to it. The older
 scenario set (``redteam/rank_targets.py``'s ``SEV_RANK``/``extract``/``rank``);
 this module ports that same ranking logic (not an import -- ``redteam/``
 stays a separate, uncoupled harness) into a new, additive ``ranked`` mode for
-``mcp_attack``, and adds the piece ``redteam/`` never needed: a bridge table
-from ``mcp_audit``'s rule_id vocabulary to ``mcp_attack``'s own, target-
+``memrot``, and adds the piece ``redteam/`` never needed: a bridge table
+from ``mcp_audit``'s rule_id vocabulary to ``memrot``'s own, target-
 agnostic OWASP Agent Memory Guard taxonomy (``taxonomy.py``) -- two
 independently-evolved vocabularies with no prior relationship.
 
@@ -37,7 +37,7 @@ from .models import AttackVariant
 SEV_RANK = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, None: 9, "": 9}   # ported verbatim from redteam/rank_targets.py
 
 # Port of redteam/attack_taxonomy.py CATEGORIES. Kept as a local copy so
-# mcp_attack never imports redteam/; if a slug or rule set changes there,
+# memrot never imports redteam/; if a slug or rule set changes there,
 # update this table to match.
 REDTEAM_CATEGORIES: Dict[str, Tuple[str, frozenset]] = {
     "memory-poisoning": ("memory poisoning", frozenset({"MEM-02", "MEM-03", "MEM-04", "MEM-06"})),
@@ -56,7 +56,7 @@ def redteam_categories_for(rule_id: str) -> List[str]:
     return [slug for slug, (_title, ids) in REDTEAM_CATEGORIES.items() if rule_id in ids]
 
 
-# mcp_audit rule_id -> mcp_attack owasp_amg_category slug (taxonomy.py).
+# mcp_audit rule_id -> memrot owasp_amg_category slug (taxonomy.py).
 # AUTH-04/05, INFRA-*, INV-*, TOOL-01/02 have no AMG analogue -- left blank
 # rather than forced; they still rank via redteam category + direct rule_id.
 RULE_ID_TO_OWASP_AMG_CATEGORY: Dict[str, str] = {
@@ -77,7 +77,7 @@ RULE_ID_TO_OWASP_AMG_CATEGORY: Dict[str, str] = {
     "AUTH-03": "protected_key_tampering",
 }
 
-# mcp_audit rule_id -> mcp_attack technique_category slug (delivery/obfuscation).
+# mcp_audit rule_id -> memrot technique_category slug (delivery/obfuscation).
 RULE_ID_TO_TECHNIQUE_CATEGORY: Dict[str, str] = {
     "AUTH-02": "direct_instruction_override",
     "AUTH-03": "direct_instruction_override",

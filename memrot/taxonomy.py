@@ -2,7 +2,7 @@
 plus a best-effort MITRE ATLAS technique cross-reference (secondary).
 
 Why a second taxonomy alongside ``rule_ids``/``taxonomy`` on
-:class:`~mcp_attack.models.AttackVariant`: those two fields are useful but
+:class:`~memrot.models.AttackVariant`: those two fields are useful but
 both have a genericity problem for the stated goal of running this harness
 against *any* agent, not just the bank stand this repo ships fixtures for.
 

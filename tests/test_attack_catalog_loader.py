@@ -2,11 +2,11 @@ import os
 
 import pytest
 
-from mcp_attack.catalog.loader import discover_catalog_files, load_catalog
-from mcp_attack.catalog.schema import validate_catalog_file, validate_variant_dict
+from memrot.catalog.loader import discover_catalog_files, load_catalog
+from memrot.catalog.schema import validate_catalog_file, validate_variant_dict
 
 CATALOG_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            "mcp_attack", "catalog", "prompts")
+                            "memrot", "catalog", "prompts")
 
 FOLDERS = [
     "domain/invest_bank/mem02_global_policy_poisoning",

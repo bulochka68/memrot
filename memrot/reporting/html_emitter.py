@@ -207,7 +207,7 @@ def emit_html(report: RunReport) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mcp_attack report: {_esc(report.run_id)}</title>
+<title>memrot report: {_esc(report.run_id)}</title>
 <style>{_STYLE}</style>
 </head>
 <body>
@@ -249,7 +249,7 @@ def emit_html(report: RunReport) -> str:
   </table>
 
   <footer>
-    mcp_attack v1 &middot; trace: {_esc(report.trace_path or "not recorded")}
+    memrot v1 &middot; trace: {_esc(report.trace_path or "not recorded")}
     &middot; generated {time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())}
   </footer>
 </div>

@@ -14,7 +14,7 @@
 `examples/mempalace.policy.json`, `examples/mempalace.manifest.json` — без единой
 правки пакета; `git diff --stat mcp_audit/` после подключения пуст. Attack-сторона
 того же стенда прикручена так же данными — `examples/mempalace.attack.config.json`
-плюс оверлей `mcp_attack/catalog/prompts/domain/mempalace/` (см. [Шаг 7](#шаг-7-attack-сторона--прикрутить-mcp_attack-к-тому-же-стенду)).
+плюс оверлей `memrot/catalog/prompts/domain/mempalace/` (см. [Шаг 7](#шаг-7-attack-сторона--прикрутить-memrot-к-тому-же-стенду)).
 
 ## Что пишется руками, а что генерируется
 
@@ -466,20 +466,20 @@ python -m mcp_audit validate .audit/мой.json
 записанных снимков, поэтому не требует ни клона, ни сети.
 
 Attack-сторона того же переноса — `examples/mempalace.attack.config.json` и
-оверлей `mcp_attack/catalog/prompts/domain/mempalace/` — прикручена по образцу
+оверлей `memrot/catalog/prompts/domain/mempalace/` — прикручена по образцу
 ниже; каждый вариант бьёт по контролю, который аудит показал FAIL, и ссылается
 в `notes` на локатор факта. Регресс: `tests/test_mempalace_attack.py`.
 
-## Шаг 7. Attack-сторона — прикрутить `mcp_attack` к тому же стенду
+## Шаг 7. Attack-сторона — прикрутить `memrot` к тому же стенду
 
-Аудит даёт инвентарь и находки; `mcp_attack` бьёт по ним. Перенос атаки — тоже
+Аудит даёт инвентарь и находки; `memrot` бьёт по ним. Перенос атаки — тоже
 данные: один конфиг плюс доменный оверлей каталога, без правок движка (кроме
 одной аддитивной записи в `DOMAIN_VALUES` — attack-аналог расширения лексикона).
 
 | Файл | Кто создаёт |
 |---|---|
 | `<стенд>.attack.config.json` | **руками** — цель (адаптер+binding), каналы, `catalog_paths`, `audit_path`+`audit_mode` |
-| `mcp_attack/catalog/prompts/domain/<стенд>/` | **руками** — доменные варианты под контролы, которые аудит показал FAIL |
+| `memrot/catalog/prompts/domain/<стенд>/` | **руками** — доменные варианты под контролы, которые аудит показал FAIL |
 | `<стенд>.audit.json` | генерируется аудитом; питает ранжирование атаки |
 
 Как выбрать цель и каналы:
@@ -487,7 +487,7 @@ Attack-сторона того же переноса — `examples/mempalace.att
 * **Адаптер = транспорт стенда.** `openai_compat`/`http_generic` для
   chat-агента, `mcp_client` для MCP-сервера (HTTP или stdio), `callable` для
   in-process библиотеки памяти, `genai_invest` для здешнего стенда. Секрет не
-  в конфиге: `credential_ref` → `MCP_ATTACK_CRED_<ref>`.
+  в конфиге: `credential_ref` → `MEMROT_CRED_<ref>`.
 * **Каналы кодируют модель угроз стенда.** Общий статический токен с
   самозаявленной личностью моделируется одним `credential_ref` на всех каналах
   при разных `principal_id`; изолированные субъекты — разными `credential_ref`.
@@ -500,9 +500,9 @@ Attack-сторона того же переноса — `examples/mempalace.att
 
 ```bash
 # оверлей проходит строгую таксономию
-python -m mcp_attack validate-catalog mcp_attack/catalog/prompts/domain/<стенд> --strict-taxonomy
+python -m memrot validate-catalog memrot/catalog/prompts/domain/<стенд> --strict-taxonomy
 # аудит → атака: снимок аудита ранжирует каталог под свои FAIL-контролы
-python -m mcp_attack run --config examples/<стенд>.attack.config.json --out .attack
+python -m memrot run --config examples/<стенд>.attack.config.json --out .attack
 ```
 
 Офлайн (без живого стенда) проверяются загрузка конфига, валидность каталога и

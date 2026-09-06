@@ -1,7 +1,7 @@
-from mcp_attack.detectors.literal import LiteralDetector
-from mcp_attack.models import AttackVariant, Channel, ChannelRole, Principal, Verdict
-from mcp_attack.runner.engine import run_matrix, run_variant
-from mcp_attack.tracer import JSONLTracer
+from memrot.detectors.literal import LiteralDetector
+from memrot.models import AttackVariant, Channel, ChannelRole, Principal, Verdict
+from memrot.runner.engine import run_matrix, run_variant
+from memrot.tracer import JSONLTracer
 from tests.fixtures.fake_memory_target import (FakeCleanMemoryApp, FakeVulnerableMemoryApp, RaisingApp,
                                                build_adapter)
 

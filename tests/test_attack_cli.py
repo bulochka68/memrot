@@ -5,10 +5,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from mcp_attack.cli import main
+from memrot.cli import main
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CATALOG_ROOT = os.path.join(ROOT, "mcp_attack", "catalog", "prompts")
+CATALOG_ROOT = os.path.join(ROOT, "memrot", "catalog", "prompts")
 BENIGN = os.path.join(CATALOG_ROOT, "domain", "invest_bank", "benign_control")
 MEM02 = os.path.join(CATALOG_ROOT, "domain", "invest_bank", "mem02_global_policy_poisoning")
 GENERIC_MPI = os.path.join(CATALOG_ROOT, "generic", "generic_memory_prompt_injection")
@@ -64,7 +64,7 @@ def test_validate_catalog_all_shipped_folders_clean(capsys):
 
 def test_run_end_to_end_against_in_process_http_target(http_server, monkeypatch, tmp_path, write_json):
     port = http_server.server_address[1]
-    monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")
+    monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
     config_path = write_json("cli_run.config.json", {
         "schema_version": "1.0",
         "target": {"kind": "openai_compat",
@@ -105,7 +105,7 @@ def test_list_catalog_taxonomy_filter_excludes_other_categories(capsys):
 
 def test_run_with_mutate_flag_multiplies_variants(http_server, monkeypatch, tmp_path, write_json):
     port = http_server.server_address[1]
-    monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")
+    monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
     config_path = write_json("cli_mutate.config.json", {
         "schema_version": "1.0",
         "target": {"kind": "openai_compat",
@@ -129,11 +129,11 @@ def test_run_with_mutate_flag_multiplies_variants(http_server, monkeypatch, tmp_
 def test_run_with_mutate_surfaces_failures_in_report_limitations(http_server, monkeypatch, tmp_path, write_json):
     """Regression guard: a mutation technique that raises on every seed must
     not silently degrade a run to "just the kept seeds" with no trace in the
-    report -- see LLMMutationGenerator.failures (mcp_attack/catalog/generator.py)
+    report -- see LLMMutationGenerator.failures (memrot/catalog/generator.py)
     and its wiring into cli.py's ``limitations``. Forces PrefixInjectionTechnique
     (cheap, no LLM required) to always raise, so this test needs no LLM stub
     beyond the plain echo http_server already used for the target itself."""
-    from mcp_attack.mutation.techniques import PrefixInjectionTechnique
+    from memrot.mutation.techniques import PrefixInjectionTechnique
 
     def _always_raise(self, variant, *, llm=None):
         raise RuntimeError("forced failure for test")
@@ -141,7 +141,7 @@ def test_run_with_mutate_surfaces_failures_in_report_limitations(http_server, mo
     monkeypatch.setattr(PrefixInjectionTechnique, "mutate", _always_raise)
 
     port = http_server.server_address[1]
-    monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")
+    monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
     config_path = write_json("cli_mutate_fail.config.json", {
         "schema_version": "1.0",
         "target": {"kind": "openai_compat",
@@ -161,9 +161,39 @@ def test_run_with_mutate_surfaces_failures_in_report_limitations(http_server, mo
     assert all("prefix_injection" in lim and "forced failure for test" in lim for lim in report["limitations"])
 
 
+def test_run_with_judge_flags_drops_incompatible_literal_detector_options(http_server, monkeypatch, tmp_path, write_json):
+    """Regression guard: a config authored for the default LiteralDetector
+    (e.g. detector.options={"case_sensitive": false}) combined with
+    --judge-base-url/--judge-model used to crash with TypeError --
+    LLMJudgeDetector.__init__() got an unexpected keyword argument
+    'case_sensitive' -- because switching detector_kind kept the old
+    detector's options instead of starting fresh. The judge LLM here is the
+    same plain echo http_server as the target; it always replies with the
+    same text, which the judge's YES/NO parser rejects, so LLMJudgeDetector
+    falls back to LiteralDetector *by design* -- this test only needs the
+    run to complete without crashing, not to produce a specific verdict."""
+    port = http_server.server_address[1]
+    monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
+    config_path = write_json("cli_judge.config.json", {
+        "schema_version": "1.0",
+        "target": {"kind": "openai_compat",
+                  "binding": {"base_url": f"http://127.0.0.1:{port}", "model": "test-model", "timeout": 5.0}},
+        "channels": [{"role": "attacker", "principal": {"principal_id": "1001", "credential_ref": "CUS_TEST"}}],
+        "catalog_paths": [BENIGN],
+        "detector": {"kind": "literal", "options": {"case_sensitive": False}},
+    })
+    out_dir = str(tmp_path / "out")
+    rc = main(["run", "--config", config_path, "--out", out_dir,
+              "--judge-base-url", f"http://127.0.0.1:{port}", "--judge-model", "test-model"])
+    assert rc == 0
+    with open(os.path.join(out_dir, "run.json"), encoding="utf-8") as fh:
+        report = json.load(fh)
+    assert len(report["results"]) == 3
+
+
 def test_run_with_taxonomy_filter_restricts_to_one_category(http_server, monkeypatch, tmp_path, write_json):
     port = http_server.server_address[1]
-    monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")
+    monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
     config_path = write_json("cli_taxfilter.config.json", {
         "schema_version": "1.0",
         "target": {"kind": "openai_compat",
@@ -184,7 +214,7 @@ def test_run_with_taxonomy_filter_restricts_to_one_category(http_server, monkeyp
 
 def test_run_report_html_flag_writes_explicit_path(http_server, monkeypatch, tmp_path, write_json):
     port = http_server.server_address[1]
-    monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")
+    monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
     config_path = write_json("cli_html.config.json", {
         "schema_version": "1.0",
         "target": {"kind": "openai_compat",
@@ -203,7 +233,7 @@ def test_run_report_html_flag_writes_explicit_path(http_server, monkeypatch, tmp
 
 def test_run_with_catalog_bank_needs_no_catalog_paths(http_server, monkeypatch, tmp_path, write_json):
     port = http_server.server_address[1]
-    monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")
+    monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
     config_path = write_json("cli_bank.config.json", {
         "schema_version": "1.0",
         "target": {"kind": "openai_compat",
@@ -222,7 +252,7 @@ def test_run_with_catalog_bank_needs_no_catalog_paths(http_server, monkeypatch, 
 
 def test_run_unknown_generator_kind_is_a_clean_error(http_server, monkeypatch, write_json):
     port = http_server.server_address[1]
-    monkeypatch.setenv("MCP_ATTACK_CRED_CUS_TEST", "sk-test-cli")
+    monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
     config_path = write_json("cli_badgen.config.json", {
         "schema_version": "1.0",
         "target": {"kind": "openai_compat",
@@ -237,7 +267,7 @@ def test_run_unknown_generator_kind_is_a_clean_error(http_server, monkeypatch, w
 def test_quickstart_runs_without_a_config_file(monkeypatch, tmp_path):
     from tests.fixtures.fake_memory_target import FakeCleanMemoryApp, build_adapter
     adapter = build_adapter(FakeCleanMemoryApp())
-    monkeypatch.setattr("mcp_attack.pipeline.build_adapter", lambda target: adapter)
+    monkeypatch.setattr("memrot.pipeline.build_adapter", lambda target: adapter)
     out_dir = str(tmp_path / "out")
     rc = main(["quickstart", "--url", "http://example.invalid/v1", "--model", "test-model",
                "--pool", GENERIC_MPI, "--out", out_dir, "--top-n", "2"])

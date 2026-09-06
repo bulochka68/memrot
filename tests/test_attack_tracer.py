@@ -1,6 +1,6 @@
 import json
 
-from mcp_attack.tracer import JSONLTracer
+from memrot.tracer import JSONLTracer
 
 
 def test_tracer_writes_one_json_object_per_line(tmp_path):

@@ -4,13 +4,13 @@ Implements the canary methodology's four-phase flow -- baseline -> inject ->
 consolidate -> probe -- for ``cross-user``/``cross-session-same-user``
 variants, and a simpler one-shot flow for ``single-turn`` control variants
 (no persistent state involved, so ``INVALID`` is structurally impossible
-there). The engine only calls :class:`~mcp_attack.adapters.base.TargetAdapter`
+there). The engine only calls :class:`~memrot.adapters.base.TargetAdapter`
 methods and never knows which concrete target is bound.
 """
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from ..adapters.base import AdapterCapabilities, TargetAdapter
 from ..detectors.base import Detector
@@ -418,15 +418,20 @@ def _run_document_ingestion_flow(variant: AttackVariant, channels: List[Channel]
 
 def run_matrix(variants: List[AttackVariant], channels: List[Channel], adapter: TargetAdapter,
                detector: Detector, tracer: JSONLTracer, run_id: Optional[str] = None,
-               reset_between_variants: bool = False) -> RunReport:
+               reset_between_variants: bool = False, progress_hook: Optional[Callable[[int, int, AttackVariant, AttackResult], None]] = None) -> RunReport:
+    """``progress_hook``, if given, is called as ``hook(index, total, variant,
+    result)`` right after each variant finishes -- purely a UI hook (the CLI's
+    tqdm bar uses it), the engine itself has no notion of progress or of
+    tqdm."""
     from ..reporting.aggregate import aggregate   # local import: avoids a reporting<->runner import cycle
 
     run_id = run_id or default_run_id()
     limitations: List[str] = []
     results: List[AttackResult] = []
     reset_note_added = False
+    total = len(variants)
 
-    for variant in variants:
+    for i, variant in enumerate(variants):
         if reset_between_variants:
             if not adapter.reset() and not reset_note_added:
                 limitations.append(
@@ -434,7 +439,10 @@ def run_matrix(variants: List[AttackVariant], channels: List[Channel], adapter: 
                     "the mandatory per-variant baseline phase is the cross-variant contamination safety net"
                 )
                 reset_note_added = True
-        results.append(run_variant(variant, channels, adapter, detector, tracer, run_id))
+        result = run_variant(variant, channels, adapter, detector, tracer, run_id)
+        results.append(result)
+        if progress_hook is not None:
+            progress_hook(i, total, variant, result)
 
     report = RunReport(run_id=run_id, target_id=adapter.kind, results=results, channels=list(channels),
                        limitations=limitations, trace_path=tracer.path)

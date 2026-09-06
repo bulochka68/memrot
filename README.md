@@ -20,7 +20,7 @@
 - [Память агента](#память-агента)
 - [Как пользоваться стендом](#как-пользоваться-стендом)
 - [Аудит безопасности стенда](#аудит-безопасности-стенда)
-- [Red-team харнесс (`mcp_attack`)](#red-team-харнесс-mcp_attack)
+- [Red-team харнесс (`memrot`)](#red-team-харнесс-memrot)
 - [Устройство репозитория](#устройство-репозитория)
 - [Troubleshooting](#troubleshooting)
 
@@ -402,16 +402,27 @@ python -m mcp_audit audit examples/genai_invest_stand.manifest.json \
 реально ходят по сети и вызывают `tools/call`, поэтому только против своего
 локального стенда) описаны в [`docs/auditor.md`](docs/auditor.md).
 
-## Red-team харнесс (`mcp_attack`)
+## Red-team харнесс (`memrot`)
 
 Динамические атаки на память и инструменты агента: канареечная методология,
 нейтральный каталог промптов, адаптеры black/grey/white-box. Полное описание —
 [`docs/attacker.md`](docs/attacker.md).
 
+`memrot run` в интерактивном терминале сам включает человекочитаемый вывод —
+баннер, панель конфигурации, реальную проверку доступа к каждой подключённой
+модели (target / attacker / judge / mutation), сводку по аудиту **перед**
+атаками (наша специфика: сначала что нашёл аудит, потом что подтвердила
+атака), tqdm-прогресс и таблицу результатов с ASR по категориям. Отключается
+`--no-fancy` (и не включается сама, если stdout не терминал — так что
+скрипты/CI получают старый машиночитаемый вывод без изменений). `pip install
+tqdm` — опционально: без него прогресс просто печатается процентами, ядро
+инструмента (`runner/`, `adapters/`, `detectors/`) как и раньше не тянет
+сторонних зависимостей.
+
 Одна команда против любого OpenAI-совместимого агента (конфиг-файл не нужен):
 
 ```bash
-python -m mcp_attack quickstart \
+python -m memrot quickstart \
   --url http://localhost:8600/v1 --model genai-invest-agent \
   --out .attack --report-html .attack/run.html
 ```
@@ -420,20 +431,20 @@ python -m mcp_attack quickstart \
 
 ```bash
 python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
-python -m mcp_attack quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
+python -m memrot quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
   --audit .audit/stand.json --out .attack
 ```
 
 Тот же харнесс, прикрученный к чужой системе
 [MemPalace](https://github.com/MemPalace/mempalace) (общий MCP-хаб поверх HTTP):
-цель `mcp_client`, доменный оверлей `mcp_attack/catalog/prompts/domain/mempalace/`
+цель `mcp_client`, доменный оверлей `memrot/catalog/prompts/domain/mempalace/`
 бьёт по контролам, которые аудит показал FAIL (MEM-01/03/07, AUTH-01, EGRESS-01),
 а `examples/mempalace.audit.json` ранжирует каталог. Перенос — только данными, см.
 [`docs/porting_to_a_new_stand.md`](docs/porting_to_a_new_stand.md) (Шаг 7).
 
 ```bash
-export MCP_ATTACK_CRED_MEMPALACE_TEAM_TOKEN=<bearer-токен хаба>
-python -m mcp_attack run --config examples/mempalace.attack.config.json --out .attack
+export MEMROT_CRED_MEMPALACE_TEAM_TOKEN=<bearer-токен хаба>
+python -m memrot run --config examples/mempalace.attack.config.json --out .attack
 ```
 
 ## Устройство репозитория
@@ -454,7 +465,7 @@ librechat.yaml            — custom endpoint LibreChat → agent-api
 docker-compose.yml         — весь стенд целиком
 
 mcp_audit/               — подсистема аудита (движок 2.0, см. docs/auditor.md)
-mcp_attack/              — red-team харнесс, каталог: generic + domain/{invest_bank,mempalace} (см. docs/attacker.md)
+memrot/              — red-team харнесс, каталог: generic + domain/{invest_bank,mempalace} (см. docs/attacker.md)
 profiles/                — профили аудита: genai_invest_stand.json (этот стенд), rest_native_agent.json,
                            mempalace.json (чужая система: перенос без правок движка)
 schemas/                 — JSON-схема отчёта agent-security-audit 2.0

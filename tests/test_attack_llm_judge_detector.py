@@ -7,9 +7,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from mcp_attack.detectors.literal import LiteralDetector
-from mcp_attack.detectors.llm_judge_stub import LLMJudgeDetector, _parse_yes_no
-from mcp_attack.models import DetectionChannel
+from memrot.detectors.literal import LiteralDetector
+from memrot.detectors.llm_judge_stub import LLMJudgeDetector, _parse_yes_no
+from memrot.models import DetectionChannel
 
 
 class _JudgeHandler(BaseHTTPRequestHandler):

@@ -50,7 +50,7 @@ def ensure_placeholder_credentials(channels: Sequence[Channel]) -> List[str]:
     notes: List[str] = []
     for channel in channels:
         ref = channel.principal.credential_ref or channel.principal.principal_id
-        env_name = f"MCP_ATTACK_CRED_{ref}"
+        env_name = f"MEMROT_CRED_{ref}"
         if not os.environ.get(env_name):
             os.environ[env_name] = PLACEHOLDER_CREDENTIAL
             notes.append(

@@ -1,7 +1,7 @@
-from mcp_attack.adapters.mcp_client import MCPClientAdapter
-from mcp_attack.adapters.openai_compat import HTTPGenericAdapter, OpenAICompatAdapter
-from mcp_attack.adapters.registry import build_adapter
-from mcp_attack.config import TargetBinding
+from memrot.adapters.mcp_client import MCPClientAdapter
+from memrot.adapters.openai_compat import HTTPGenericAdapter, OpenAICompatAdapter
+from memrot.adapters.registry import build_adapter
+from memrot.config import TargetBinding
 
 
 def test_build_adapter_constructs_openai_compat():

@@ -5,7 +5,7 @@ no Keycloak), so it exercises the *real* target code (real LangGraph
 orchestration, real summarization/extraction prompts) against the *real*
 Mongo/Redis the live stand uses, when pointed at the same URLs.
 
-Why this exists (see ``mcp_attack/catalog/prompts/domain/invest_bank/tool_output_web_search_poisoning/``):
+Why this exists (see ``memrot/catalog/prompts/domain/invest_bank/tool_output_web_search_poisoning/``):
 the stand's only web tool, ``duckduckgo_search`` (``app/agent/tools.py``),
 hits real DuckDuckGo -- not deterministically controllable from outside the
 process for a red-team test. This adapter's ``stage_tool_response()``

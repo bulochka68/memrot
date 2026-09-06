@@ -5,29 +5,29 @@ The audit half of the stand is already ported to MemPalace
 (``tests/test_mempalace_profile.py``). This test covers the *attack* half of
 the same port: a run config (``examples/mempalace.attack.config.json``) that
 points ``mcp_client`` at the shared HTTP hub, and a domain overlay
-(``mcp_attack/catalog/prompts/domain/mempalace/``) whose variants attack
+(``memrot/catalog/prompts/domain/mempalace/``) whose variants attack
 exactly the controls that audit flagged FAIL on that build — MEM-01, MEM-03,
 MEM-07, AUTH-01 and EGRESS-01.
 
 Everything here is offline: it reads the committed config, catalog and audit
 snapshot, so it needs neither the clone, the network, nor a live hub. Only
-``mcp_attack`` is imported — never ``mcp_audit`` — matching the package
+``memrot`` is imported — never ``mcp_audit`` — matching the package
 boundary the audit → attack bridge relies on (plain JSON + shared string tags).
 """
 import json
 import os
 
-from mcp_attack.catalog.loader import load_catalog
-from mcp_attack.catalog.schema import validate_catalog_file
-from mcp_attack.config import load_config
-from mcp_attack.audit_plan import select_variants_by_audit
-from mcp_attack.models import DOMAIN_VALUES
+from memrot.catalog.loader import load_catalog
+from memrot.catalog.schema import validate_catalog_file
+from memrot.config import load_config
+from memrot.audit_plan import select_variants_by_audit
+from memrot.models import DOMAIN_VALUES
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 CONFIG = os.path.join(ROOT, "examples", "mempalace.attack.config.json")
 AUDIT = os.path.join(ROOT, "examples", "mempalace.audit.json")
-OVERLAY = os.path.join(ROOT, "mcp_attack", "catalog", "prompts", "domain", "mempalace")
+OVERLAY = os.path.join(ROOT, "memrot", "catalog", "prompts", "domain", "mempalace")
 
 # The controls that MemPalace's audit reports FAIL on the recorded build
 # (see tests/test_mempalace_profile.py). The overlay must attack these.

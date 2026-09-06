@@ -5,7 +5,7 @@
 
 1. **Стенд-жертва** — GenAI Investment Assistant, намеренно уязвимый ReAct-агент.
 2. **Аудитор** (`mcp_audit`) — offline-разбор стенда, находки-гипотезы с провенансом.
-3. **Red-team харнесс** (`mcp_attack`, плюс узкий `redteam/` для стендовых сценариев) — рантайм-подтверждение находок живыми атаками.
+3. **Red-team харнесс** (`memrot`, плюс узкий `redteam/` для стендовых сценариев) — рантайм-подтверждение находок живыми атаками.
 
 Все три держатся в одной системе координат — **общем словаре правил**
 (`MEM-*`, `TOOL-*`, `AUTH-*`, `EGRESS-*`, `INFRA-*`, `INV-*`): аудит находит гипотезы
@@ -25,7 +25,7 @@ flowchart LR
         direction TB
         a1["Разбирает конфиги, код,<br/>политику, compose →<br/>находки-гипотезы"]
     end
-    subgraph attack["③ АТАКИ — mcp_attack (runtime)"]
+    subgraph attack["③ АТАКИ — memrot (runtime)"]
         direction TB
         r1["Каталог + ranked по audit JSON<br/>→ любой агент через адаптер"]
     end
@@ -174,11 +174,11 @@ flowchart TD
 и общий `path_state` (`static_path_supported` → `runtime_path_observed` →
 `control_violation_observed`).
 
-**Переносимый путь** — `mcp_attack` (любой агент через адаптер, ranked по audit JSON):
+**Переносимый путь** — `memrot` (любой агент через адаптер, ranked по audit JSON):
 
 ```bash
 python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
-python -m mcp_attack quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
+python -m memrot quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
   --audit .audit/stand.json --out .attack
 ```
 
@@ -191,7 +191,7 @@ overlay `domain/mempalace/` и готовый конфиг `examples/mempalace.a
 
 ```mermaid
 flowchart LR
-    s1["1. mcp_audit audit<br/>→ stand.json"] --> s2["2. mcp_attack quickstart --audit<br/>ranked + path_state"]
+    s1["1. mcp_audit audit<br/>→ stand.json"] --> s2["2. memrot quickstart --audit<br/>ranked + path_state"]
     s2 --> s3["3. .attack/run.json<br/>verdict + path_state"]
 ```
 
@@ -206,7 +206,7 @@ flowchart LR
     x1["static_path_supported<br/>(аудит: гипотеза / атака не воспроизвелась)"] --> x2["runtime_path_observed<br/>(инъекция осела / canary всплыл)"] --> x3["control_violation_observed<br/>(маркер дошёл до жертвы —<br/>межпользовательский payoff)"]
 ```
 
-**Категории атак** (`redteam/attack_taxonomy.py`, зеркало в `mcp_attack.audit_plan.REDTEAM_CATEGORIES`) — подмножества правил аудита:
+**Категории атак** (`redteam/attack_taxonomy.py`, зеркало в `memrot.audit_plan.REDTEAM_CATEGORIES`) — подмножества правил аудита:
 
 | Категория | Правила |
 |---|---|
@@ -221,7 +221,7 @@ flowchart LR
 | `inventory` | INV-01, INV-02, TOOL-01, TOOL-02 |
 
 Именно общий словарь правил связывает аудит и атаки: находка `MEM-02` из отчёта
-становится целью категории `memory-poisoning`, а `mcp_attack` / `redteam`
+становится целью категории `memory-poisoning`, а `memrot` / `redteam`
 возвращают тот же `rule_id` с обновлённым `path_state`.
 
 ---
@@ -232,7 +232,7 @@ flowchart LR
   `scope=global`.
 - **`mcp_audit`** статически разбирает стенд и выдаёт находки-гипотезы с провенансом,
   не запуская систему.
-- **`mcp_attack`** берёт нейтральный каталог (и опционально audit JSON) и гоняет
+- **`memrot`** берёт нейтральный каталог (и опционально audit JSON) и гоняет
   канареечные атаки против любого агента через тонкий адаптер; см. [`docs/attacker.md`](attacker.md).
 - **`redteam/`** — более узкий стендовый рантайм с тем же словарём правил.
 - Режим **`protected`** служит регрессией: те же атаки должны стать зелёными —

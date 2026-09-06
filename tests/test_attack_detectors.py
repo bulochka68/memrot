@@ -1,6 +1,6 @@
-from mcp_attack.detectors.ground_truth import GroundTruthDetector
-from mcp_attack.detectors.literal import LiteralDetector
-from mcp_attack.models import DetectionChannel
+from memrot.detectors.ground_truth import GroundTruthDetector
+from memrot.detectors.literal import LiteralDetector
+from memrot.models import DetectionChannel
 
 
 def test_literal_detector_case_insensitive_by_default():

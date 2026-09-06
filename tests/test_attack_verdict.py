@@ -1,7 +1,7 @@
 import pytest
 
-from mcp_attack.models import Verdict
-from mcp_attack.runner.verdict import decide_verdict
+from memrot.models import Verdict
+from memrot.runner.verdict import decide_verdict
 
 
 @pytest.mark.parametrize("baseline,post,expected", [

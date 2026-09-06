@@ -41,7 +41,7 @@ class TraceEvent:
     run_id: str
     trace_id: str                                    # groups events by variant (variant.id)
     parent_event_refs: List[str] = field(default_factory=list)
-    component: str = "mcp_attack.runner"
+    component: str = "memrot.runner"
     ts: float = field(default_factory=time.time)
     config_version: str = ATTACK_SCHEMA_VERSION
     principal: Optional[str] = None

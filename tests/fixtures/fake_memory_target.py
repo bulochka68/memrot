@@ -1,4 +1,4 @@
-"""In-process fake targets for the mcp_attack test suite -- no Docker/network.
+"""In-process fake targets for the memrot test suite -- no Docker/network.
 
 FakeVulnerableMemoryApp blindly promotes whatever was said in a session to
 both "global policy" (visible to every principal) and per-principal
@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from mcp_attack.adapters.callable_adapter import CallableAdapter
+from memrot.adapters.callable_adapter import CallableAdapter
 
 
 class FakeVulnerableMemoryApp:
@@ -72,7 +72,7 @@ class FakeCleanMemoryApp(FakeVulnerableMemoryApp):
 
 class FakeToolPoisonableApp:
     """Mirrors the reference stand's two-hop laundering requirement (see
-    ``mcp_attack.adapters.inprocess_stand``'s docstring): staged tool content
+    ``memrot.adapters.inprocess_stand``'s docstring): staged tool content
     is never auto-persisted -- it only reaches memory if the model's own
     visible reply repeats it (simulated here: ``send()`` echoes the staged
     snippet back only when the message looks like a search request), and

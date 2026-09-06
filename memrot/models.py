@@ -111,7 +111,7 @@ class DetectionChannel(str, enum.Enum):
 @dataclass
 class Principal:
     principal_id: str
-    credential_ref: Optional[str] = None   # resolved as MCP_ATTACK_CRED_<credential_ref>
+    credential_ref: Optional[str] = None   # resolved as MEMROT_CRED_<credential_ref>
     label: str = ""
     metadata: Dict[str, Any] = field(default_factory=dict)
 

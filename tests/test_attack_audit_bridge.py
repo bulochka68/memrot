@@ -1,11 +1,11 @@
 import os
 
-from mcp_attack.audit_bridge import filter_variants_by_audit, load_audit_rule_ids
-from mcp_attack.catalog.loader import load_catalog
+from memrot.audit_bridge import filter_variants_by_audit, load_audit_rule_ids
+from memrot.catalog.loader import load_catalog
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STAND_AUDIT = os.path.join(ROOT, "examples", "genai_invest_stand.audit.json")
-CATALOG_ROOT = os.path.join(ROOT, "mcp_attack", "catalog", "prompts")
+CATALOG_ROOT = os.path.join(ROOT, "memrot", "catalog", "prompts")
 ALL_CATALOG_PATHS = [os.path.join(CATALOG_ROOT, "domain", "invest_bank", f) for f in
                      ["mem02_global_policy_poisoning", "mem01_03_cross_session_semantic_poisoning",
                       "auth_tool_direct_bac_injection", "framing_diversity", "benign_control"]]
@@ -32,7 +32,7 @@ def test_filter_variants_by_audit_prioritize_keeps_all_but_reorders():
 
 
 def test_filter_variants_by_audit_prefers_fail_control_results(write_json):
-    from mcp_attack.models import AttackVariant
+    from memrot.models import AttackVariant
     variants = [
         AttackVariant(id="fail-hit", title="t", framing="none", payload="none", layer="none",
                       propagation="single-turn", probe="p", rule_ids=["MEM-02"]),

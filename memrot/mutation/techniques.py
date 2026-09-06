@@ -281,7 +281,7 @@ class EscalationRewriteTechnique(MutationTechnique):
 class DomainAdaptationTechnique(MutationTechnique):
     """Rewrite a neutral payload into the target's domain lexicon while
     preserving the canary marker verbatim. Requires an LLM and a
-    :class:`~mcp_attack.mutation.domain.DomainProfile`."""
+    :class:`~memrot.mutation.domain.DomainProfile`."""
     slug = "domain_adaptation"
     requires_llm = True
 

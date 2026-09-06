@@ -1,4 +1,4 @@
-from mcp_attack.models import (Channel, ChannelRole, GroupMetric, Principal, Verdict, path_state_for, plain)
+from memrot.models import (Channel, ChannelRole, GroupMetric, Principal, Verdict, path_state_for, plain)
 
 
 def test_group_metric_zero_denominator_is_not_a_percentage():

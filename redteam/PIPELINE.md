@@ -5,14 +5,14 @@
 
 | Харнесс | Когда | Выход |
 |---|---|---|
-| **`mcp_attack`** | любой агент (OpenAI-совместимый, MCP, callable). Портируется профилем аудита: invest overlay vs нейтральный catalog | `verdict` + `path_state` в `.attack/run.json` |
+| **`memrot`** | любой агент (OpenAI-совместимый, MCP, callable). Портируется профилем аудита: invest overlay vs нейтральный catalog | `verdict` + `path_state` в `.attack/run.json` |
 | **`redteam/`** | только стенд GenAI Invest Assistant, готовые сценарии poisoning | `path_state` из `run_attacks.py` |
 
 Портативный happy path:
 
 ```bash
 python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
-python -m mcp_attack quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
+python -m memrot quickstart --url http://localhost:8600/v1 --model genai-invest-agent \
   --audit .audit/stand.json --out .attack
 ```
 
@@ -119,7 +119,7 @@ python3 redteam/attacks/run_attacks.py .audit/stand.json -c tool-poisoning,memor
 ## Обобщение на другую систему
 
 - Аудит: новый профиль (`profiles/<system>.json`) + привязки адаптеров в манифесте.
-- Переносимые атаки: `mcp_attack quickstart --audit <report.json>` с нейтральным
+- Переносимые атаки: `memrot quickstart --audit <report.json>` с нейтральным
   каталогом (`--pool auto` не подключает invest overlay, если профиль не стенд).
 - Стендовые сценарии `redteam/`: новый адаптер `redteam/attacks/targets/<system>.py`
   (реализовать `AttackTarget`). Сценарии, таксономия и раннер не меняются.

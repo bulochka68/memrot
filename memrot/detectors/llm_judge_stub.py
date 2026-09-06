@@ -9,7 +9,7 @@ fact was accepted).
 Kept deliberately narrow: the judge is asked only whether a given marker
 string is present or being honored in a piece of text -- it does not receive
 ``AttackVariant.rule_semantic`` or any other free-form rubric, because the
-:class:`~mcp_attack.detectors.base.Detector` contract (``detect(text, canary,
+:class:`~memrot.detectors.base.Detector` contract (``detect(text, canary,
 channel)``) is shared with :class:`LiteralDetector` and
 :class:`GroundTruthDetector` and changing it would ripple into the runner
 engine for all three. This narrower judge is still strictly more capable
@@ -17,12 +17,12 @@ than a literal substring match (it can recognize a paraphrased marker,
 different casing, or a marker embedded in a rewritten sentence) without
 touching the well-tested engine/verdict flow.
 
-Uses its own, independently configured :class:`~mcp_attack.mutation.llm_client.LLMClient`
+Uses its own, independently configured :class:`~memrot.mutation.llm_client.LLMClient`
 -- a separate model slot from any mutation LLM, per this project's own note
 that the model attacking a target and the model judging it should differ.
 
 On any judge failure (timeout, malformed judgement, missing config), this
-degrades to :class:`~mcp_attack.detectors.literal.LiteralDetector` rather
+degrades to :class:`~memrot.detectors.literal.LiteralDetector` rather
 than raising -- an unavailable judge must never turn a run into ERROR.
 """
 from __future__ import annotations

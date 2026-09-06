@@ -1,7 +1,7 @@
-from mcp_attack.models import AttackResult, Channel, ChannelRole, Principal, RunReport, Verdict
-from mcp_attack.reporting.aggregate import aggregate
-from mcp_attack.reporting.emitter import emit_json, emit_markdown
-from mcp_attack.reporting.html_emitter import emit_html
+from memrot.models import AttackResult, Channel, ChannelRole, Principal, RunReport, Verdict
+from memrot.reporting.aggregate import aggregate
+from memrot.reporting.emitter import emit_json, emit_markdown
+from memrot.reporting.html_emitter import emit_html
 
 
 def _result(verdict, rule_ids=None, **kw) -> AttackResult:

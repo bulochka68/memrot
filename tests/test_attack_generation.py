@@ -1,7 +1,7 @@
-from mcp_attack.catalog.generator import LLMSynthesisGenerator, SynthesisSpec
-from mcp_attack.models import AttackVariant
-from mcp_attack.mutation.domain import DomainProfile, profile_from_audit
-from mcp_attack.mutation.techniques import DomainAdaptationTechnique
+from memrot.catalog.generator import LLMSynthesisGenerator, SynthesisSpec
+from memrot.models import AttackVariant
+from memrot.mutation.domain import DomainProfile, profile_from_audit
+from memrot.mutation.techniques import DomainAdaptationTechnique
 
 
 class _FakeLLM:
@@ -68,7 +68,7 @@ def test_llm_synthesis_keeps_valid_drops_invalid():
 
 def test_resolve_pool_auto_uses_invest_overlay_for_stand_audit():
     import os
-    from mcp_attack.pipeline import ALL_CATALOG, GENERIC_CATALOG, resolve_pool
+    from memrot.pipeline import ALL_CATALOG, GENERIC_CATALOG, resolve_pool
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     audit = os.path.join(root, "examples", "genai_invest_stand.audit.json")
     assert resolve_pool("auto", audit) == [ALL_CATALOG]
@@ -78,7 +78,7 @@ def test_resolve_pool_auto_uses_invest_overlay_for_stand_audit():
 
 def test_resolve_pool_auto_stays_generic_for_unknown_profile(tmp_path):
     import json
-    from mcp_attack.pipeline import GENERIC_CATALOG, resolve_pool
+    from memrot.pipeline import GENERIC_CATALOG, resolve_pool
     path = tmp_path / "mempalace.audit.json"
     path.write_text(json.dumps({"meta": {"profile": {"id": "mempalace"}}, "findings": []}), encoding="utf-8")
     assert resolve_pool("auto", str(path)) == [GENERIC_CATALOG]

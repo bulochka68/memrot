@@ -1,23 +1,23 @@
 # Attack catalog path map
 
 The prompt catalog was split into a **neutral core** and a **domain overlay**.
-`discover_catalog_files` is recursive, so pointing at `mcp_attack/catalog/prompts`
+`discover_catalog_files` is recursive, so pointing at `memrot/catalog/prompts`
 still loads everything. Prefer the new paths in configs and notebooks.
 
 | Old path | New path | Domain |
 |---|---|---|
-| `mcp_attack/catalog/prompts/generic_memory_prompt_injection` | `mcp_attack/catalog/prompts/generic/generic_memory_prompt_injection` | neutral |
-| `mcp_attack/catalog/prompts/generic_sensitive_data_leakage` | `mcp_attack/catalog/prompts/generic/generic_sensitive_data_leakage` | neutral |
-| `mcp_attack/catalog/prompts/generic_protected_key_tampering` | `mcp_attack/catalog/prompts/generic/generic_protected_key_tampering` | neutral |
-| `mcp_attack/catalog/prompts/generic_memory_integrity_violation` | `mcp_attack/catalog/prompts/generic/generic_memory_integrity_violation` | neutral |
-| `mcp_attack/catalog/prompts/generic_bulk_injection_anomaly` | `mcp_attack/catalog/prompts/generic/generic_bulk_injection_anomaly` | neutral |
-| `mcp_attack/catalog/prompts/generic_tool_output_instruction_injection` | `mcp_attack/catalog/prompts/generic/generic_tool_output_instruction_injection` | neutral |
-| `mcp_attack/catalog/prompts/mem02_global_policy_poisoning` | `mcp_attack/catalog/prompts/domain/invest_bank/mem02_global_policy_poisoning` | invest_bank |
-| `mcp_attack/catalog/prompts/mem01_03_cross_session_semantic_poisoning` | `mcp_attack/catalog/prompts/domain/invest_bank/mem01_03_cross_session_semantic_poisoning` | invest_bank |
-| `mcp_attack/catalog/prompts/auth_tool_direct_bac_injection` | `mcp_attack/catalog/prompts/domain/invest_bank/auth_tool_direct_bac_injection` | invest_bank |
-| `mcp_attack/catalog/prompts/framing_diversity` | `mcp_attack/catalog/prompts/domain/invest_bank/framing_diversity` | invest_bank |
-| `mcp_attack/catalog/prompts/benign_control` | `mcp_attack/catalog/prompts/domain/invest_bank/benign_control` | invest_bank |
-| `mcp_attack/catalog/prompts/tool_output_web_search_poisoning` | `mcp_attack/catalog/prompts/domain/invest_bank/tool_output_web_search_poisoning` | invest_bank |
+| `memrot/catalog/prompts/generic_memory_prompt_injection` | `memrot/catalog/prompts/generic/generic_memory_prompt_injection` | neutral |
+| `memrot/catalog/prompts/generic_sensitive_data_leakage` | `memrot/catalog/prompts/generic/generic_sensitive_data_leakage` | neutral |
+| `memrot/catalog/prompts/generic_protected_key_tampering` | `memrot/catalog/prompts/generic/generic_protected_key_tampering` | neutral |
+| `memrot/catalog/prompts/generic_memory_integrity_violation` | `memrot/catalog/prompts/generic/generic_memory_integrity_violation` | neutral |
+| `memrot/catalog/prompts/generic_bulk_injection_anomaly` | `memrot/catalog/prompts/generic/generic_bulk_injection_anomaly` | neutral |
+| `memrot/catalog/prompts/generic_tool_output_instruction_injection` | `memrot/catalog/prompts/generic/generic_tool_output_instruction_injection` | neutral |
+| `memrot/catalog/prompts/mem02_global_policy_poisoning` | `memrot/catalog/prompts/domain/invest_bank/mem02_global_policy_poisoning` | invest_bank |
+| `memrot/catalog/prompts/mem01_03_cross_session_semantic_poisoning` | `memrot/catalog/prompts/domain/invest_bank/mem01_03_cross_session_semantic_poisoning` | invest_bank |
+| `memrot/catalog/prompts/auth_tool_direct_bac_injection` | `memrot/catalog/prompts/domain/invest_bank/auth_tool_direct_bac_injection` | invest_bank |
+| `memrot/catalog/prompts/framing_diversity` | `memrot/catalog/prompts/domain/invest_bank/framing_diversity` | invest_bank |
+| `memrot/catalog/prompts/benign_control` | `memrot/catalog/prompts/domain/invest_bank/benign_control` | invest_bank |
+| `memrot/catalog/prompts/tool_output_web_search_poisoning` | `memrot/catalog/prompts/domain/invest_bank/tool_output_web_search_poisoning` | invest_bank |
 
 New neutral pools (no old path):
 

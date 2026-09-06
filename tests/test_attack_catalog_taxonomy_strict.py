@@ -1,13 +1,13 @@
 import os
 import re
 
-from mcp_attack.catalog.loader import load_catalog
-from mcp_attack.catalog.schema import validate_catalog_file
-from mcp_attack.cli import main
+from memrot.catalog.loader import load_catalog
+from memrot.catalog.schema import validate_catalog_file
+from memrot.cli import main
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GENERIC = os.path.join(ROOT, "mcp_attack", "catalog", "prompts", "generic")
-PROMPTS = os.path.join(ROOT, "mcp_attack", "catalog", "prompts")
+GENERIC = os.path.join(ROOT, "memrot", "catalog", "prompts", "generic")
+PROMPTS = os.path.join(ROOT, "memrot", "catalog", "prompts")
 
 DOMAIN_STOP = re.compile(
     r"портфел|клиент|\binvest|\bportfolio\b|\bbanks?\b|\bbanking\b|\bcus=|\bcus\b|\b100[1-5]\b",

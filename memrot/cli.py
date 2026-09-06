@@ -17,10 +17,10 @@ import os
 import sys
 from typing import List, Optional
 
-from . import ATTACK_ENGINE_VERSION, ATTACK_SCHEMA_VERSION
+from . import ATTACK_ENGINE_VERSION, ATTACK_SCHEMA_VERSION, MEMROT_TAGLINE, MEMROT_VERSION, taxonomy, ui
 from .adapters.registry import build_adapter
 from .audit_bridge import filter_variants_by_audit
-from .audit_plan import select_variants_by_audit
+from .audit_plan import extract_ranked_findings, select_variants_by_audit
 from .catalog.generator import ImportedBankGenerator, LLMMutationGenerator, StaticCatalogGenerator
 from .catalog.loader import discover_catalog_files, load_catalog
 from .catalog.schema import validate_catalog_file
@@ -43,7 +43,74 @@ _DEFAULT_BANK_SOURCES = {
 EXIT_OK, EXIT_CONFIRMED, EXIT_INCOMPLETE, EXIT_DRIFT, EXIT_ERROR = 0, 1, 2, 3, 4
 
 
+def _check_target_adapter(adapter, channels):
+    """A real ping (new_session + send), not a key-format check -- matches
+    this project's own live-validated adapters, which have no lighter-weight
+    health endpoint. Costs one extra turn against a real target, same
+    trade-off the config-panel banner is asked to make explicit."""
+    if not channels:
+        return True, "no channel configured to validate against"
+    try:
+        principal = channels[0].principal
+        session = adapter.new_session(principal)
+        adapter.send(principal, session, "ping")
+        return True, f"reachable ({adapter.kind})"
+    except Exception as exc:
+        return False, f"{type(exc).__name__}: {exc}"
+
+
+def _check_llm(base_url, model, api_key_env):
+    from .mutation.llm_client import LLMClient, LLMClientConfig, LLMClientError
+    try:
+        client = LLMClient(LLMClientConfig(base_url=base_url, model=model, api_key_env=api_key_env))
+        client.complete(system="You are a health check.", user="Reply with the single word OK.", max_tokens=5)
+        return True, f"reachable ({model})"
+    except LLMClientError as exc:
+        return False, str(exc)
+
+
+def _group_key(variant_or_result) -> str:
+    rule_ids = getattr(variant_or_result, "rule_ids", None) or []
+    if rule_ids:
+        return "+".join(sorted(rule_ids))
+    return getattr(variant_or_result, "owasp_amg_category", "") or "(untagged)"
+
+
+def _results_table_rows(results):
+    groups: "dict[str, list[int]]" = {}
+    for r in results:
+        key = _group_key(r)
+        bucket = groups.setdefault(key, [0, 0, 0])
+        if r.verdict == Verdict.CONFIRMED:
+            bucket[0] += 1
+        elif r.verdict == Verdict.CLEAN:
+            bucket[1] += 1
+        else:
+            bucket[2] += 1
+    rows = [(key, c, cl, e) for key, (c, cl, e) in sorted(groups.items())]
+    total_c = sum(r[1] for r in rows)
+    total_cl = sum(r[2] for r in rows)
+    total_e = sum(r[3] for r in rows)
+    return rows, ("Total", total_c, total_cl, total_e)
+
+
+def _vulnerable_descriptions(rows) -> List[str]:
+    lines = []
+    for key, confirmed, _clean, _excluded in rows:
+        if confirmed == 0:
+            continue
+        desc = ""
+        if taxonomy.is_known_category(key):
+            desc = taxonomy.category(key).description
+        lines.append(f"{key}: {desc}" if desc else key)
+    return lines
+
+
 def cmd_run(args: argparse.Namespace) -> int:
+    fancy = ui.fancy_enabled(getattr(args, "no_fancy", False), getattr(args, "fancy", False))
+    if fancy:
+        ui.print_banner(MEMROT_VERSION, MEMROT_TAGLINE)
+        print()
     try:
         config = load_config(args.config)
     except (ValueError, FileNotFoundError, RuntimeError) as exc:
@@ -97,7 +164,11 @@ def cmd_run(args: argparse.Namespace) -> int:
         detector_kind = config.detector.kind
         detector_options = dict(config.detector.options)
         if args.judge_base_url or args.judge_model:
+            # a full kind switch, not an override: config.detector.options was authored
+            # for whatever detector_kind the config file itself declared (e.g. LiteralDetector's
+            # case_sensitive), and LLMJudgeDetector's constructor rejects unknown kwargs outright.
             detector_kind = "llm_judge"
+            detector_options = {}
             if args.judge_base_url:
                 detector_options["base_url"] = args.judge_base_url
             if args.judge_model:
@@ -108,6 +179,46 @@ def cmd_run(args: argparse.Namespace) -> int:
     except (ValueError, FileNotFoundError, RuntimeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ERROR
+
+    if fancy:
+        config_lines = [
+            f"Target:       {config.target.kind} @ {config.target.binding.get('base_url', '(in-process)')}",
+        ]
+        auth_mode = config.target.binding.get("auth_mode")
+        if auth_mode:
+            config_lines[-1] += f" (auth_mode={auth_mode})"
+        if args.mutation_base_url and args.mutation_model:
+            config_lines.append(f"Mutation LLM: {args.mutation_model} via {args.mutation_base_url}")
+        if args.attacker_base_url and args.attacker_model:
+            config_lines.append(f"Attacker LLM: {args.attacker_model} via {args.attacker_base_url}")
+        if args.judge_base_url and args.judge_model:
+            config_lines.append(f"Judge LLM:    {args.judge_model} via {args.judge_base_url}")
+        catalog_desc = f"{len(variants)} variant(s) from {len(catalog_paths)} path(s)"
+        if generator_kind == "llm_mutation":
+            catalog_desc += f", mutation techniques: {args.mutate or ','.join(config.generator.options.get('techniques', []))}"
+        config_lines.append(f"Catalog:      {catalog_desc}")
+        config_lines.append(f"Detector:     {detector_kind}")
+        if audit_path := (args.audit or config.audit_path):
+            config_lines.append(f"Audit-driven: {args.audit_mode or config.audit_mode} ({audit_path})")
+        config_lines.append(f"Gate:         {'enabled' if getattr(args, 'gate', False) else 'disabled'}")
+        ui.print_panel("Run Configuration", config_lines)
+        print()
+
+        checks = [ui.ModelCheck(f"Target ({config.target.kind})", lambda: _check_target_adapter(adapter, config.channels))]
+        if args.mutation_base_url and args.mutation_model:
+            checks.append(ui.ModelCheck(f"Mutation LLM ({args.mutation_model})",
+                                        lambda: _check_llm(args.mutation_base_url, args.mutation_model, args.mutation_api_key_env)))
+        if args.attacker_base_url and args.attacker_model:
+            checks.append(ui.ModelCheck(f"Attacker LLM ({args.attacker_model})",
+                                        lambda: _check_llm(args.attacker_base_url, args.attacker_model, args.attacker_api_key_env)))
+        if args.judge_base_url and args.judge_model:
+            checks.append(ui.ModelCheck(f"Judge LLM ({args.judge_model})",
+                                        lambda: _check_llm(args.judge_base_url, args.judge_model, args.judge_api_key_env),
+                                        required=False))
+        if not ui.validate_models(checks):
+            print("error: target validation failed -- aborting before spending any attack turns", file=sys.stderr)
+            return EXIT_ERROR
+        print()
 
     limitations: List[str] = list(mutation_failures)
     audit_path = args.audit or config.audit_path
@@ -121,6 +232,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         else:
             variants, audit_limitations = filter_variants_by_audit(variants, audit_path, mode=audit_mode)
         limitations.extend(audit_limitations)
+
+        if fancy and audit_mode == "ranked":
+            with open(audit_path, "r", encoding="utf-8") as fh:
+                audit_doc = json.load(fh)
+            ranked = extract_ranked_findings(audit_doc, min_severity=args.audit_min_severity)
+            ui.print_audit_summary(ranked, [v.id for v in variants[:5]], audit_limitations)
+            print()
+
+    if fancy:
+        ui.print_legend()
+        print()
 
     out_dir = args.out
     trace_path = os.path.join(out_dir, "trace.jsonl") if out_dir else None
@@ -141,24 +263,64 @@ def cmd_run(args: argparse.Namespace) -> int:
             from .reporting.aggregate import aggregate
             run_id = default_run_id()
             results = []
-            for seed in variants:
-                results.extend(run_adaptive(
+            on_item, close_progress = ui.make_progress(len(variants), desc="Attacking") if fancy else (None, None)
+            for i, seed in enumerate(variants):
+                seed_results = run_adaptive(
                     seed, config.channels, adapter, detector, tracer, run_id,
                     attacker_llm=attacker_llm, max_rounds=args.adaptive_max_rounds,
-                ))
+                )
+                results.extend(seed_results)
+                if on_item is not None:
+                    on_item(i, len(variants), seed, seed_results[-1] if seed_results else None)
+            if close_progress is not None:
+                close_progress()
             report = _RunReport(run_id=run_id, target_id=adapter.kind, results=results,
                                channels=list(config.channels), limitations=limitations,
                                trace_path=tracer.path)
             aggregate(report)
         else:
+            on_item, close_progress = ui.make_progress(len(variants), desc="Attacking") if fancy else (None, None)
             report = run_matrix(variants, config.channels, adapter, detector, tracer,
-                                reset_between_variants=config.reset_between_variants)
+                                reset_between_variants=config.reset_between_variants,
+                                progress_hook=on_item)
+            if close_progress is not None:
+                close_progress()
             report.limitations = limitations + report.limitations
     finally:
         tracer.close()
 
+    if fancy:
+        print()
+        rows, total_row = _results_table_rows(report.results)
+        ui.print_panel("Attack Results", [])
+        ui.print_results_table(rows, total_row)
+        print()
+        vulnerable = _vulnerable_descriptions(rows)
+        asr_display = report.overall_asr.display if report.overall_asr else "n/a (0/0)"
+        summary_lines = [f"Target failed {asr_display} of attack simulations (CONFIRMED / (CONFIRMED+CLEAN))."]
+        if report.counts_by_verdict.get("ERROR") or report.counts_by_verdict.get("INVALID") or report.counts_by_verdict.get("NOT_EVALUATED"):
+            summary_lines.append(f"Excluded from ASR (see Status Legend above): {report.counts_by_verdict}")
+        summary_lines.append("")
+        if vulnerable:
+            summary_lines.append("Vulnerable to:")
+            summary_lines.extend(f"  {line}" for line in vulnerable)
+        else:
+            summary_lines.append("No CONFIRMED findings this run (see Known limitations before calling this a clean bill of health).")
+        summary_lines.append("")
+        summary_lines.append("DISCLAIMER: this report may contain harmful/offensive language from attack payloads.")
+        if out_dir:
+            summary_lines.append(f"Reports written to: {out_dir}/ (run.json, run.md, trace.jsonl)")
+        if getattr(args, "report_html", None):
+            summary_lines.append(f"HTML dashboard: {args.report_html}")
+        ui.print_panel("Summary", summary_lines)
+        print()
+
     formats = (config.reporting or {}).get("formats", ["json", "markdown"])
-    return _emit_and_status(report, args, formats=formats)
+    status = _emit_and_status(report, args, formats=formats)
+    if fancy:
+        print()
+        ui.print_footer("Thank you for using MEMROT!")
+    return status
 
 
 def _emit_and_status(report: RunReport, args: argparse.Namespace,
@@ -258,9 +420,9 @@ def cmd_quickstart(args: argparse.Namespace) -> int:
     attacker_ref = args.attacker_principal
     victim_ref = args.victim_principal
     if args.cred_attacker_env and os.environ.get(args.cred_attacker_env):
-        os.environ[f"MCP_ATTACK_CRED_{attacker_ref}"] = os.environ[args.cred_attacker_env]
+        os.environ[f"MEMROT_CRED_{attacker_ref}"] = os.environ[args.cred_attacker_env]
     if args.cred_victim_env and os.environ.get(args.cred_victim_env):
-        os.environ[f"MCP_ATTACK_CRED_{victim_ref}"] = os.environ[args.cred_victim_env]
+        os.environ[f"MEMROT_CRED_{victim_ref}"] = os.environ[args.cred_victim_env]
 
     target = TargetBinding(kind=args.adapter, binding={"base_url": args.url, "model": args.model})
     channels = [
@@ -298,7 +460,7 @@ def cmd_quickstart(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="mcp_attack",
+        prog="memrot",
         description=f"Multi-step memory/tool attack harness v{ATTACK_ENGINE_VERSION} (schema {ATTACK_SCHEMA_VERSION})",
     )
     sub = parser.add_subparsers(dest="command", required=True)
@@ -339,10 +501,15 @@ def build_parser() -> argparse.ArgumentParser:
                     help="also load an external, vendored jailbreak-prompt bank (threat_model="
                         "llm_jailbreak_susceptibility) alongside any --catalog/config catalog_paths")
     pr.add_argument("--catalog-bank-source", help="path override for --catalog-bank (defaults to the "
-                    "vendored copy under mcp_attack/catalog/imported/)")
+                    "vendored copy under memrot/catalog/imported/)")
     pr.add_argument("--catalog-bank-sample-size", type=int, default=None,
                     help="randomly (deterministically, see --catalog-bank-seed) subsample the bank to N variants")
     pr.add_argument("--catalog-bank-seed", type=int, default=0, help="seed for --catalog-bank-sample-size")
+    pr.add_argument("--fancy", action="store_true",
+                    help="force the human-readable banner/panels/progress-bar/table UI even when stdout "
+                        "is not a terminal (auto-on for an interactive terminal, auto-off when piped)")
+    pr.add_argument("--no-fancy", action="store_true",
+                    help="force the plain machine-readable output even in an interactive terminal")
     pr.set_defaults(func=cmd_run)
 
     pl = sub.add_parser("list-catalog", help="print the loaded catalog's variant inventory")
@@ -365,7 +532,7 @@ def build_parser() -> argparse.ArgumentParser:
     pq.add_argument("--attacker-principal", default="A")
     pq.add_argument("--victim-principal", default="B")
     pq.add_argument("--cred-attacker-env", default=None,
-                    help="env var holding the attacker credential (copied onto MCP_ATTACK_CRED_<ref>)")
+                    help="env var holding the attacker credential (copied onto MEMROT_CRED_<ref>)")
     pq.add_argument("--cred-victim-env", default=None)
     pq.add_argument("--audit", help="mcp_audit JSON; enables ranked mode")
     pq.add_argument("--audit-min-severity", choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"], default=None)

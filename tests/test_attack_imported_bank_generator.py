@@ -3,11 +3,11 @@ import os
 
 import pytest
 
-from mcp_attack.catalog.generator import ImportedBankGenerator, build_generator
+from memrot.catalog.generator import ImportedBankGenerator, build_generator
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GARAK_DAN_DIR = os.path.join(ROOT, "mcp_attack", "catalog", "imported", "garak_dan")
-TRUSTAIRLAB_SAMPLE = os.path.join(ROOT, "mcp_attack", "catalog", "imported", "trustairlab_jailbreak", "sample.json")
+GARAK_DAN_DIR = os.path.join(ROOT, "memrot", "catalog", "imported", "garak_dan")
+TRUSTAIRLAB_SAMPLE = os.path.join(ROOT, "memrot", "catalog", "imported", "trustairlab_jailbreak", "sample.json")
 
 
 def test_unknown_bank_rejected():

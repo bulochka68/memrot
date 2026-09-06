@@ -3,7 +3,7 @@
 :class:`StaticCatalogGenerator` loads canned, pre-written variants from
 ``catalog/prompts/*/catalog.json``. :class:`LLMMutationGenerator` takes those
 same seed variants and, for each requested mutation technique (see
-``mcp_attack/mutation/techniques.py``), produces a reworded variant tagged
+``memrot/mutation/techniques.py``), produces a reworded variant tagged
 with which technique produced it -- so a run's statistics can break out ASR
 per mutation technique, not just per seed. :class:`ImportedBankGenerator`
 converts two vendored, license-clean external prompt banks (see
@@ -52,7 +52,7 @@ class StaticCatalogGenerator(AttackGenerator):
 
 class LLMMutationGenerator(AttackGenerator):
     """Takes seed variants and, for each ``techniques`` slug, produces one
-    mutated variant per seed via ``mcp_attack.mutation.techniques``. Cheap
+    mutated variant per seed via ``memrot.mutation.techniques``. Cheap
     techniques (``prefix_injection``, ``base64_obfuscation``,
     ``persona_override``) need no LLM; the rest (``paraphrase``,
     ``roleplay_framing``, ``translation``, ``escalation_rewrite``) do, and

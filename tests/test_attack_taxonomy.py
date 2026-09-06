@@ -1,6 +1,6 @@
 import pytest
 
-from mcp_attack.taxonomy import (ATTACK_TECHNIQUE_CATEGORIES, ATTACK_TECHNIQUE_CATEGORY_SLUGS,
+from memrot.taxonomy import (ATTACK_TECHNIQUE_CATEGORIES, ATTACK_TECHNIQUE_CATEGORY_SLUGS,
                                  OWASP_AMG_CATEGORIES, OWASP_AMG_CATEGORY_SLUGS, category,
                                  is_known_category, is_known_technique, technique_category)
 
@@ -64,9 +64,9 @@ def test_technique_category_lookup_mirrors_amg_helpers():
 
 def test_default_catalog_memory_variants_all_carry_owasp_amg_category():
     import os
-    from mcp_attack.catalog.loader import load_catalog
+    from memrot.catalog.loader import load_catalog
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                        "mcp_attack", "catalog", "prompts")
+                        "memrot", "catalog", "prompts")
     variants = load_catalog([root])
     missing = [v.id for v in variants
                if v.threat_model == "memory_poisoning"

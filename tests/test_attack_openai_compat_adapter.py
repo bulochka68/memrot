@@ -6,8 +6,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from mcp_attack.adapters.openai_compat import OpenAICompatAdapter
-from mcp_attack.models import Principal
+from memrot.adapters.openai_compat import OpenAICompatAdapter
+from memrot.models import Principal
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -49,7 +49,7 @@ def http_server():
 
 def test_send_round_trip_over_real_http(http_server, monkeypatch):
     port = http_server.server_address[1]
-    monkeypatch.setenv("MCP_ATTACK_CRED_TESTKEY", "sk-test-123")
+    monkeypatch.setenv("MEMROT_CRED_TESTKEY", "sk-test-123")
     adapter = OpenAICompatAdapter(base_url=f"http://127.0.0.1:{port}", model="test-model", timeout=5.0)
     principal = Principal(principal_id="1001", credential_ref="TESTKEY")
     session_id = adapter.new_session(principal)
@@ -66,7 +66,7 @@ def test_missing_credential_raises_before_any_network_call(http_server):
 
 def test_http_error_is_wrapped_as_runtime_error(http_server, monkeypatch):
     port = http_server.server_address[1]
-    monkeypatch.setenv("MCP_ATTACK_CRED_TESTKEY2", "sk-test-456")
+    monkeypatch.setenv("MEMROT_CRED_TESTKEY2", "sk-test-456")
     adapter = OpenAICompatAdapter(base_url=f"http://127.0.0.1:{port}", model="test-model", timeout=5.0)
     principal = Principal(principal_id="1002", credential_ref="TESTKEY2")
     with pytest.raises(RuntimeError, match="HTTP 500"):

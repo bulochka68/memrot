@@ -1,7 +1,7 @@
 """Run configuration: target binding + channels + catalog + detector + generator.
 
 Credentials are never embedded here -- only a ``credential_ref`` per
-principal, resolved at adapter-call time from ``MCP_ATTACK_CRED_<ref>``
+principal, resolved at adapter-call time from ``MEMROT_CRED_<ref>``
 (mirrors ``mcp_audit``'s ``MCP_AUDIT_CRED_<NAME>`` convention). JSON is the
 primary format; YAML is accepted when PyYAML is installed, same optional-dep
 pattern as ``mcp_audit.manifest``.

@@ -1,4 +1,4 @@
-# Agent attack harness (`mcp_attack`)
+# Agent attack harness (`memrot`)
 
 Implementation of the red-team half of the audit → attack loop. The package is
 standalone: it never imports `mcp_audit`. Alignment with the auditor is by
@@ -38,7 +38,7 @@ baseline → inject → consolidate → probe. `tool_result` and
 | `genai_invest` | white (if Mongo configured) | This repo's investment stand | finalize, optional Mongo/Redis, docker-log ground truth |
 | `callable` | whatever you wire | In-process memory library (mem0, LangGraph, tests) | whatever callables you pass |
 
-Credentials are never in config: set `MCP_ATTACK_CRED_<credential_ref>`.
+Credentials are never in config: set `MEMROT_CRED_<credential_ref>`.
 
 ## Connect a new agent in ~40 lines (white-box)
 
@@ -46,11 +46,11 @@ Credentials are never in config: set `MCP_ATTACK_CRED_<credential_ref>`.
 JSON config cannot express live Python callables — build the adapter in code:
 
 ```python
-from mcp_attack.adapters.callable_adapter import CallableAdapter
-from mcp_attack.models import Channel, ChannelRole, Principal
-from mcp_attack.detectors.literal import LiteralDetector
-from mcp_attack.runner import run_matrix
-from mcp_attack.tracer import JSONLTracer
+from memrot.adapters.callable_adapter import CallableAdapter
+from memrot.models import Channel, ChannelRole, Principal
+from memrot.detectors.literal import LiteralDetector
+from memrot.runner import run_matrix
+from memrot.tracer import JSONLTracer
 
 store = {}  # stand-in for mem0 / a LangGraph checkpointer
 
@@ -77,7 +77,7 @@ adapter = CallableAdapter(
 Black-box, one command, no config file:
 
 ```bash
-python -m mcp_attack quickstart \
+python -m memrot quickstart \
   --url http://localhost:8600/v1 --model my-agent \
   --out .attack --report-html .attack/run.html
 ```
@@ -87,7 +87,7 @@ Audit then attack (ranked by finding severity, trifecta, P3 campaigns; same
 
 ```bash
 python -m mcp_audit audit examples/genai_invest_stand.local.manifest.json --json .audit/stand.json
-python -m mcp_attack quickstart --url http://localhost:8600/v1 --model my-agent \
+python -m memrot quickstart --url http://localhost:8600/v1 --model my-agent \
   --audit .audit/stand.json --out .attack
 ```
 
@@ -97,7 +97,7 @@ a mempalace / unknown profile stays on `generic/`. Each `AttackResult` carries
 `path_state` so a run can close the static → runtime loop without importing
 `mcp_audit`.
 
-Same function the notebook calls: `mcp_attack.pipeline.audit_then_attack`.
+Same function the notebook calls: `memrot.pipeline.audit_then_attack`.
 
 ## Taxonomy
 
@@ -110,7 +110,7 @@ Three independent tag sets on every variant:
 | `taxonomy` | MITRE ATLAS ids (`AML.T0051`, `AML.T0070`, …) | cross-reference |
 | `rule_ids` | `mcp_audit` rule catalogue | optional link to a specific audit |
 
-`python -m mcp_attack validate-catalog mcp_attack/catalog/prompts --strict-taxonomy`
+`python -m memrot validate-catalog memrot/catalog/prompts --strict-taxonomy`
 requires AMG on every `memory_poisoning` variant and ATLAS **or**
 `technique_category` on every non-benign variant.
 
@@ -128,8 +128,8 @@ Path map: [`docs/catalog_paths.md`](catalog_paths.md).
 - Do emit a `Verdict` for every attempt, including `ERROR` and `NOT_EVALUATED`.
 - Do keep `INVALID` / `ERROR` / `NOT_EVALUATED` out of the ASR ratio; they still appear in `counts_by_verdict`.
 - Do return `NOT_EVALUATED` when the adapter cannot stage a tool vector or ingest a document — never a false `CLEAN`.
-- Don't import `mcp_audit` from `mcp_attack`.
-- Don't embed secrets in config; only `credential_ref` → `MCP_ATTACK_CRED_<ref>`.
+- Don't import `mcp_audit` from `memrot`.
+- Don't embed secrets in config; only `credential_ref` → `MEMROT_CRED_<ref>`.
 - Don't add third-party HTTP/SDK deps on the black-box path (stdlib `urllib` only).
 
 ## Moving the pool to a new domain
@@ -163,8 +163,8 @@ additive `DOMAIN_VALUES` entry:
   to its own FAIL controls.
 
 ```bash
-export MCP_ATTACK_CRED_MEMPALACE_TEAM_TOKEN=<hub bearer token>
-python -m mcp_attack run --config examples/mempalace.attack.config.json --out .attack
+export MEMROT_CRED_MEMPALACE_TEAM_TOKEN=<hub bearer token>
+python -m memrot run --config examples/mempalace.attack.config.json --out .attack
 ```
 
 Offline (no hub) the config still loads, the overlay validates
@@ -172,4 +172,4 @@ Offline (no hub) the config still loads, the overlay validates
 run needs the hub reachable. Regression: `tests/test_mempalace_attack.py`.
 
 Net-new prompts: `LLMSynthesisGenerator` (`kind=llm_synthesis`). Adaptive
-retries: `python -m mcp_attack run --adaptive --attacker-base-url … --attacker-model …`.
+retries: `python -m memrot run --adaptive --attacker-base-url … --attacker-model …`.

@@ -24,11 +24,11 @@
   "access_profile": "white_box",
   "detector": {"kind": "literal", "options": {"case_sensitive": false}},
     "catalog_paths": [
-    "../mcp_attack/catalog/prompts/domain/invest_bank/mem02_global_policy_poisoning",
-    "../mcp_attack/catalog/prompts/domain/invest_bank/mem01_03_cross_session_semantic_poisoning",
-    "../mcp_attack/catalog/prompts/domain/invest_bank/auth_tool_direct_bac_injection",
-    "../mcp_attack/catalog/prompts/domain/invest_bank/framing_diversity",
-    "../mcp_attack/catalog/prompts/domain/invest_bank/benign_control"
+    "../memrot/catalog/prompts/domain/invest_bank/mem02_global_policy_poisoning",
+    "../memrot/catalog/prompts/domain/invest_bank/mem01_03_cross_session_semantic_poisoning",
+    "../memrot/catalog/prompts/domain/invest_bank/auth_tool_direct_bac_injection",
+    "../memrot/catalog/prompts/domain/invest_bank/framing_diversity",
+    "../memrot/catalog/prompts/domain/invest_bank/benign_control"
   ],
   "generator": {"kind": "static_catalog"},
   "reset_between_variants": false,

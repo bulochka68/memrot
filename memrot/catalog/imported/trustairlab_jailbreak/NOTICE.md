@@ -17,7 +17,7 @@ whichever produced the most raw rows, consistent with this project's
 truncated (`"truncated": true`) purely to keep the catalog file a practical
 size; the truncation point is recorded, not hidden.
 
-Used by `mcp_attack.catalog.generator.ImportedBankGenerator`
+Used by `memrot.catalog.generator.ImportedBankGenerator`
 (`bank="trustairlab_jailbreak"`) as `llm_jailbreak_susceptibility` threat-model
-variants -- see `mcp_attack/taxonomy.py` and `models.py`'s `threat_model`
+variants -- see `memrot/taxonomy.py` and `models.py`'s `threat_model`
 field for why these are tagged separately from the memory-poisoning catalog.

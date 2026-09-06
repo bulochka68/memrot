@@ -9,10 +9,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from mcp_attack.catalog.generator import LLMMutationGenerator
-from mcp_attack.models import AttackVariant
-from mcp_attack.mutation.llm_client import LLMClient, LLMClientConfig, LLMClientError
-from mcp_attack.mutation.techniques import (Base64ObfuscationTechnique, EscalationRewriteTechnique,
+from memrot.catalog.generator import LLMMutationGenerator
+from memrot.models import AttackVariant
+from memrot.mutation.llm_client import LLMClient, LLMClientConfig, LLMClientError
+from memrot.mutation.techniques import (Base64ObfuscationTechnique, EscalationRewriteTechnique,
                                             ForcedOutputShapeTechnique, MUTATION_TECHNIQUES,
                                             ParaphraseTechnique, PersonaOverrideTechnique,
                                             PrefixInjectionTechnique, RoleplayFramingTechnique,
@@ -289,7 +289,7 @@ def test_generator_skips_a_technique_that_fails_without_aborting_the_run():
     gen = LLMMutationGenerator.__new__(LLMMutationGenerator)
     gen.seed_variants = [single_turn_seed]
     gen.technique_slugs = ["prefix_injection", "escalation_rewrite"]
-    from mcp_attack.mutation.techniques import build_technique as _bt
+    from memrot.mutation.techniques import build_technique as _bt
     gen.techniques = [_bt(s) for s in gen.technique_slugs]
     gen.max_mutations_per_seed = None
     gen.keep_seeds = False

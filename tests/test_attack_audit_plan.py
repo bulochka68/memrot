@@ -1,13 +1,13 @@
 import os
 
-from mcp_attack.audit_plan import (RULE_ID_TO_OWASP_AMG_CATEGORY, SEV_RANK, extract_ranked_findings,
+from memrot.audit_plan import (RULE_ID_TO_OWASP_AMG_CATEGORY, SEV_RANK, extract_ranked_findings,
                                    redteam_categories_for, select_variants_by_audit)
-from mcp_attack.catalog.loader import load_catalog
-from mcp_attack.models import AttackVariant
+from memrot.catalog.loader import load_catalog
+from memrot.models import AttackVariant
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REAL_AUDIT = os.path.join(ROOT, "examples", "genai_invest_stand.audit.json")
-CATALOG_ROOT = os.path.join(ROOT, "mcp_attack", "catalog", "prompts")
+CATALOG_ROOT = os.path.join(ROOT, "memrot", "catalog", "prompts")
 
 
 def _finding(rule_id, severity=None, effective_severity=None, **extra):
@@ -89,7 +89,7 @@ def test_redteam_categories_mirror_stand_taxonomy():
 
 
 def test_bridge_table_only_maps_to_real_taxonomy_slugs():
-    from mcp_attack.taxonomy import OWASP_AMG_CATEGORY_SLUGS
+    from memrot.taxonomy import OWASP_AMG_CATEGORY_SLUGS
     assert set(RULE_ID_TO_OWASP_AMG_CATEGORY.values()) <= set(OWASP_AMG_CATEGORY_SLUGS)
 
 

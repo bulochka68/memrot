@@ -1,4 +1,4 @@
-"""Tests for mcp_attack.adapters.inprocess_stand.
+"""Tests for memrot.adapters.inprocess_stand.
 
 ``_StagingDDGS`` is tested standalone (no ``app`` import, always runs,
 any Python version): it's the actual novel logic (single-shot staging with
@@ -16,7 +16,7 @@ import sys
 
 import pytest
 
-from mcp_attack.adapters.inprocess_stand import _StagingDDGS
+from memrot.adapters.inprocess_stand import _StagingDDGS
 
 
 class _FakeRealDDGS:
@@ -105,7 +105,7 @@ def _app_importable() -> bool:
 
 @pytest.mark.skipif(not _app_importable(), reason="requires Python 3.10+ and the vendored app/'s heavy deps installed")
 def test_capabilities_reflect_white_box_grey_box_adapter():
-    from mcp_attack.adapters.inprocess_stand import InProcessStandAdapter
+    from memrot.adapters.inprocess_stand import InProcessStandAdapter
     adapter = InProcessStandAdapter()
     caps = adapter.capabilities()
     assert caps.access_profile == "white_box"
@@ -116,7 +116,7 @@ def test_capabilities_reflect_white_box_grey_box_adapter():
 
 @pytest.mark.skipif(not _app_importable(), reason="requires Python 3.10+ and the vendored app/'s heavy deps installed")
 def test_stage_tool_response_populates_staged_dict():
-    from mcp_attack.adapters.inprocess_stand import InProcessStandAdapter
+    from memrot.adapters.inprocess_stand import InProcessStandAdapter
     adapter = InProcessStandAdapter()
     adapter.stage_tool_response("duckduckgo_search", "test content")
     assert adapter._staged.get("duckduckgo_search") == "test content"

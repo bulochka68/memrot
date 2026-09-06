@@ -3,7 +3,7 @@
 Stdlib only (``urllib``) -- the black-box path never requires a third-party
 HTTP or SDK dependency. Any target exposing ``POST {base_url}/chat/completions``
 with ``Authorization: Bearer <key>`` works: mint one credential per principal
-via ``MCP_ATTACK_CRED_<credential_ref>`` and point ``base_url``/``model`` at it.
+via ``MEMROT_CRED_<credential_ref>`` and point ``base_url``/``model`` at it.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from .base import AdapterCapabilities, TargetAdapter
 
 def credential_for(principal: Principal) -> str:
     ref = principal.credential_ref or principal.principal_id
-    env_name = f"MCP_ATTACK_CRED_{ref}"
+    env_name = f"MEMROT_CRED_{ref}"
     value = os.environ.get(env_name)
     if not value:
         raise RuntimeError(
