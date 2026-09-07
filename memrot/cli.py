@@ -316,7 +316,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         print()
 
     formats = (config.reporting or {}).get("formats", ["json", "markdown"])
-    status = _emit_and_status(report, args, formats=formats)
+    status = _emit_and_status(report, args, formats=formats, variants=variants)
     if fancy:
         print()
         ui.print_footer("Thank you for using MEMROT!")
@@ -324,13 +324,14 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def _emit_and_status(report: RunReport, args: argparse.Namespace,
-                     formats: Optional[List[str]] = None) -> int:
+                     formats: Optional[List[str]] = None,
+                     variants: Optional[List] = None) -> int:
     formats = formats or ["json", "markdown"]
     out_dir = getattr(args, "out", None)
     json_text = emit_json(report)
     md_text = emit_markdown(report) if "markdown" in formats else None
     html_wanted = bool(getattr(args, "report_html", None) or "html" in formats)
-    html_text = emit_html(report) if html_wanted else None
+    html_text = emit_html(report, variants=variants) if html_wanted else None
 
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
@@ -352,7 +353,7 @@ def _emit_and_status(report: RunReport, args: argparse.Namespace,
         if dirname:
             os.makedirs(dirname, exist_ok=True)
         with open(report_html, "w", encoding="utf-8") as fh:
-            fh.write(html_text or emit_html(report))
+            fh.write(html_text or emit_html(report, variants=variants))
 
     counts = report.counts_by_verdict
     status = {

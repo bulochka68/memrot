@@ -17,9 +17,10 @@ from __future__ import annotations
 import html
 import json
 import time
-from typing import Dict, Optional
+from typing import Dict, Iterable, Optional
 
-from ..models import GroupMetric, RunReport
+from .. import taxonomy
+from ..models import AttackVariant, GroupMetric, RunReport
 
 _SEVERITY_BANDS = (
     (0.66, "#dc2626", "critical"),   # >=66% ASR
@@ -87,6 +88,74 @@ def _verdict_chip(verdict: str, count: int) -> str:
            f"{_esc(verdict)}: {count}</span>")
 
 
+def _variant_prompt_excerpt(variant: AttackVariant, limit: int = 240) -> str:
+    """Best-effort, human-readable sample of what was actually sent: the
+    first injected turn for a chat_direct/cross-* variant, the staged
+    tool-result content for a tool_result variant, or the probe itself for
+    a single-turn variant -- whichever the variant actually carries."""
+    text = ""
+    if variant.inject_turns:
+        text = variant.inject_turns[0]
+    elif variant.tool_stage and variant.tool_stage.get("content_template"):
+        text = variant.tool_stage["content_template"]
+    elif variant.probe:
+        text = variant.probe
+    text = " ".join(text.split())
+    if len(text) > limit:
+        text = text[:limit].rstrip() + "…"
+    return text
+
+
+def _top_attacks_chart(report: RunReport, variants_by_id: Dict[str, AttackVariant]) -> str:
+    """Groups CONFIRMED results by owasp_amg_category (falling back to the
+    first rule_id, then '(untagged)') and renders a horizontal bar per
+    group, ranked by how many attacks actually landed -- the "what got
+    through" view a presenter reaches for, as opposed to the per-axis ASR
+    tables above/below which answer "what fraction of each category was
+    even attempted". Hovering a bar reveals the category's own vulnerability
+    description (from taxonomy.py when it's a real AMG slug) plus up to 3
+    example variant ids with a real excerpt of the payload that was sent --
+    the excerpt is only ever pulled from CONFIRMED variants, so nothing
+    that failed to land is shown as if it were a live example."""
+    groups: Dict[str, dict] = {}
+    for r in report.results:
+        if r.verdict.value != "CONFIRMED":
+            continue
+        key = r.owasp_amg_category or (r.rule_ids[0] if r.rule_ids else "") or "(untagged)"
+        g = groups.setdefault(key, {"count": 0, "examples": []})
+        g["count"] += 1
+        if len(g["examples"]) < 3:
+            g["examples"].append(r)
+
+    if not groups:
+        return '<p class="muted">No CONFIRMED attacks this run -- nothing to chart. See the per-axis ASR tables below for what was attempted.</p>'
+
+    max_count = max(g["count"] for g in groups.values())
+    ordered = sorted(groups.items(), key=lambda kv: (-kv[1]["count"], kv[0]))
+
+    def _example_html(r) -> str:
+        variant = variants_by_id.get(r.variant_id)
+        excerpt = _variant_prompt_excerpt(variant) if variant else ""
+        excerpt_html = f"<code>{_esc(excerpt)}</code>" if excerpt else ""
+        return f'<div class="attack-example"><span class="attack-example-id">{_esc(r.variant_id)}</span>{excerpt_html}</div>'
+
+    rows = []
+    for key, g in ordered:
+        pct = round(g["count"] / max_count * 100, 1)
+        desc = taxonomy.category(key).description if taxonomy.is_known_category(key) else ""
+        example_html = "".join(_example_html(r) for r in g["examples"])
+        detail = (f'<div class="attack-tooltip-desc">{_esc(desc)}</div>' if desc else "") + example_html
+        rows.append(
+            '<div class="attack-bar-row" tabindex="0">'
+            f'<div class="attack-bar-label">{_esc(key)}</div>'
+            f'<div class="attack-bar-track"><div class="attack-bar-fill" style="width:{pct}%"></div></div>'
+            f'<div class="attack-bar-count">{g["count"]}</div>'
+            f'<div class="attack-tooltip">{detail}</div>'
+            "</div>"
+        )
+    return f'<div class="attack-chart">{"".join(rows)}</div>'
+
+
 def _result_row(r: dict) -> str:
     verdict = r.get("verdict", "")
     colors = {"CONFIRMED": "#dc2626", "CLEAN": "#16a34a", "INVALID": "#6b7280",
@@ -140,8 +209,29 @@ table.metric-table th, table.results-table th { color: #9ca3af; font-weight: 600
 .axis-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
 input#filter { width: 100%; padding: 8px 12px; margin-bottom: 10px; background: #161a22;
              border: 1px solid #262b36; border-radius: 8px; color: #e5e7eb; font-size: 13px; }
-.limitations li { margin-bottom: 6px; color: #d1d5db; font-size: 13px; }
 footer { margin-top: 40px; color: #6b7280; font-size: 12px; }
+
+.attack-chart { display: flex; flex-direction: column; gap: 10px; }
+.attack-bar-row { position: relative; display: grid;
+                  grid-template-columns: minmax(160px, 240px) 1fr 48px; align-items: center;
+                  gap: 12px; padding: 6px 0; cursor: default; }
+.attack-bar-label { font-size: 13px; color: #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.attack-bar-track { background: #1f2430; border-radius: 6px; height: 22px; overflow: hidden; }
+.attack-bar-fill { height: 100%; border-radius: 6px;
+                   background: linear-gradient(90deg, #7f1d1d, #dc2626); min-width: 6px; }
+.attack-bar-count { font-size: 13px; color: #f87171; font-weight: 700; text-align: right;
+                    font-variant-numeric: tabular-nums; }
+.attack-tooltip { display: none; position: absolute; left: 0; top: 100%; margin-top: 6px; z-index: 10;
+                  background: #161a22; border: 1px solid #2d3444; border-radius: 10px; padding: 12px 14px;
+                  width: min(560px, 90vw); box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+.attack-bar-row:hover .attack-tooltip, .attack-bar-row:focus .attack-tooltip,
+.attack-bar-row:focus-within .attack-tooltip { display: block; }
+.attack-tooltip-desc { font-size: 13px; color: #d1d5db; margin-bottom: 10px; line-height: 1.5; }
+.attack-example { font-size: 12px; margin-bottom: 8px; }
+.attack-example:last-child { margin-bottom: 0; }
+.attack-example-id { display: block; color: #f87171; font-weight: 600; margin-bottom: 3px; }
+.attack-example code { display: block; color: #9ca3af; background: #0f1115; border-radius: 6px;
+                       padding: 6px 8px; white-space: pre-wrap; word-break: break-word; font-size: 11.5px; }
 @media (prefers-color-scheme: light) {
   :root { color-scheme: light; }
   body { background: #f7f8fa; color: #1f2430; }
@@ -151,6 +241,11 @@ footer { margin-top: 40px; color: #6b7280; font-size: 12px; }
   table.results-table td, table.results-table th { border-color: #e5e7eb; }
   .bar-track { background: #e5e7eb; }
   input#filter { background: #ffffff; border-color: #e5e7eb; color: #1f2430; }
+  .attack-bar-label { color: #1f2430; }
+  .attack-bar-track { background: #e5e7eb; }
+  .attack-tooltip { background: #ffffff; border-color: #e5e7eb; box-shadow: 0 12px 32px rgba(0,0,0,.15); }
+  .attack-tooltip-desc { color: #374151; }
+  .attack-example code { background: #f3f4f6; color: #4b5563; }
 }
 """
 
@@ -172,7 +267,13 @@ def _json_script_safe(data: dict) -> str:
     return json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
 
 
-def emit_html(report: RunReport) -> str:
+def emit_html(report: RunReport, variants: Optional[Iterable[AttackVariant]] = None) -> str:
+    """``variants``, when given (the same list passed to ``run_matrix``), is
+    used only to enrich the "Most Successful Attacks" chart's hover detail
+    with a real excerpt of each example payload -- everything else about the
+    report is generated purely from ``report`` itself, exactly as before,
+    so passing nothing still produces the full dashboard minus that one
+    enrichment (each example still shows its variant id either way)."""
     data = report.to_dict()
     overall = report.overall_asr
     overall_color, overall_label = _severity(overall.ratio if overall else None)
@@ -185,16 +286,14 @@ def emit_html(report: RunReport) -> str:
     ]
     verdict_chips = "".join(_verdict_chip(v, c) for v, c in sorted(report.counts_by_verdict.items()))
 
+    variants_by_id = {v.id: v for v in variants} if variants else {}
+    top_attacks_html = _top_attacks_chart(report, variants_by_id)
+
     axis_sections = "".join(
         f'<div><h3 style="font-size:13px;color:#9ca3af;margin:0 0 8px;text-transform:capitalize">{_esc(axis)}</h3>'
         f'{_metric_table(groups, "no data for this axis")}</div>'
         for axis, groups in report.asr_by_axis.items() if groups
     )
-
-    limitations_html = ""
-    if report.limitations:
-        items = "".join(f"<li>{_esc(l)}</li>" for l in report.limitations)
-        limitations_html = f'<h2>Limitations</h2><ul class="limitations">{items}</ul>'
 
     results_rows = "".join(_result_row(r) for r in data["results"])
 
@@ -217,6 +316,10 @@ def emit_html(report: RunReport) -> str:
   <div class="kpi-row">{"".join(kpis)}</div>
   <div>{verdict_chips}</div>
 
+  <h2>Most Successful Attacks</h2>
+  <p class="muted" style="margin-top:-6px">Ranked by how many attacks actually landed in each category. Hover (or tab to) a bar for the vulnerability it targets and a real example of the payload that got through.</p>
+  {top_attacks_html}
+
   <h2>ASR by taxonomy category (OWASP Agent Memory Guard)</h2>
   {_metric_table(report.asr_by_taxonomy_category, "no owasp_amg_category tags in this run")}
 
@@ -237,8 +340,6 @@ def emit_html(report: RunReport) -> str:
 
   <h2>ASR by diversity axis</h2>
   <div class="axis-grid">{axis_sections}</div>
-
-  {limitations_html}
 
   <h2>Per-variant results ({len(report.results)})</h2>
   <input id="filter" type="text" placeholder="Filter by variant id, rule id, category, or mutation technique...">
