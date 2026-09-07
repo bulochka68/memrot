@@ -19,10 +19,17 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
+
+# HTTP statuses worth retrying: 429 (rate limit) and 5xx (server-side,
+# transient). Never retry 4xx client errors like 401/400/403/404 -- an
+# invalid key or a malformed request won't fix itself on the next attempt,
+# and retrying just delays the (correct) failure.
+_RETRYABLE_HTTP_STATUSES = frozenset({429, 500, 502, 503, 504})
 
 
 @dataclass
@@ -32,6 +39,8 @@ class LLMClientConfig:
     api_key_env: Optional[str] = None   # unset -> no Authorization header (typical for local endpoints)
     timeout: float = 60.0
     extra_headers: Dict[str, str] = field(default_factory=dict)
+    max_retries: int = 2   # additional attempts after the first, only for transient failures (see below)
+    retry_backoff: float = 1.5   # seconds; attempt N waits retry_backoff * N before retrying
 
 
 class LLMClientError(RuntimeError):
@@ -49,7 +58,15 @@ class LLMClient:
         return os.environ.get(self.config.api_key_env)
 
     def complete(self, *, system: str, user: str, temperature: float = 0.9, max_tokens: int = 800) -> str:
-        """One chat-completion call; returns the assistant message content."""
+        """One chat-completion call; returns the assistant message content.
+
+        Transient failures (429, 5xx, or a bare transport/connection error --
+        e.g. a hosted gateway like OpenRouter dropping the TLS connection
+        mid-handshake, seen live and confirmed non-deterministic: the exact
+        same call succeeds on a bare retry) get up to ``config.max_retries``
+        extra attempts with linear backoff before raising. A 4xx client error
+        (bad key, malformed request) is raised immediately on the first
+        attempt -- it will not fix itself."""
         body: Dict[str, Any] = {
             "model": self.config.model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
@@ -67,14 +84,26 @@ class LLMClient:
             headers=headers,
             method="POST",
         )
-        try:
-            with urllib.request.urlopen(req, timeout=self.config.timeout) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace") if exc.fp else ""
-            raise LLMClientError(f"HTTP {exc.code} from {self.config.base_url}: {detail[:500]}") from exc
-        except urllib.error.URLError as exc:
-            raise LLMClientError(f"transport error contacting {self.config.base_url}: {exc.reason}") from exc
+
+        attempts = max(0, self.config.max_retries) + 1
+        last_exc: Optional[LLMClientError] = None
+        data: Optional[dict] = None
+        for attempt in range(attempts):
+            try:
+                with urllib.request.urlopen(req, timeout=self.config.timeout) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                break
+            except urllib.error.HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="replace") if exc.fp else ""
+                last_exc = LLMClientError(f"HTTP {exc.code} from {self.config.base_url}: {detail[:500]}")
+                if exc.code not in _RETRYABLE_HTTP_STATUSES or attempt == attempts - 1:
+                    raise last_exc from exc
+            except urllib.error.URLError as exc:
+                last_exc = LLMClientError(f"transport error contacting {self.config.base_url}: {exc.reason}")
+                if attempt == attempts - 1:
+                    raise last_exc from exc
+            time.sleep(self.config.retry_backoff * (attempt + 1))
+
         try:
             return data["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:

@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from memrot.cli import main
+from memrot.cli import EXIT_ERROR, main
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CATALOG_ROOT = os.path.join(ROOT, "memrot", "catalog", "prompts")
@@ -189,6 +189,74 @@ def test_run_with_judge_flags_drops_incompatible_literal_detector_options(http_s
     with open(os.path.join(out_dir, "run.json"), encoding="utf-8") as fh:
         report = json.load(fh)
     assert len(report["results"]) == 3
+
+
+def test_run_aborts_before_attacking_when_target_is_unreachable(monkeypatch, tmp_path, write_json):
+    """Non-fancy mode (what every test in this file and every CI run uses --
+    fancy auto-disables under pytest's captured, non-tty stdout) never
+    printed a Run Configuration panel, but it must still fail fast on an
+    unreachable target rather than silently proceeding into run_matrix and
+    producing a pile of per-variant ERROR verdicts one at a time."""
+    monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
+    config_path = write_json("cli_unreachable.config.json", {
+        "schema_version": "1.0",
+        "target": {"kind": "openai_compat",
+                  "binding": {"base_url": "http://127.0.0.1:1", "model": "test-model", "timeout": 2.0}},
+        "channels": [{"role": "attacker", "principal": {"principal_id": "1001", "credential_ref": "CUS_TEST"}}],
+        "catalog_paths": [BENIGN],
+    })
+    out_dir = str(tmp_path / "out")
+    rc = main(["run", "--config", config_path, "--out", out_dir])
+    assert rc == EXIT_ERROR
+    assert not os.path.isfile(os.path.join(out_dir, "run.json"))
+
+
+def test_run_with_mutate_never_calls_mutation_llm_when_target_is_unreachable(monkeypatch, tmp_path, write_json):
+    """The costly (real, sequential, paid) mutation step must not run at all
+    once the target has already failed its reachability check -- confirmed
+    live wasting ~90s/44 real LLM calls on a target that turned out to have
+    an invalid API key before this fix."""
+    mutation_calls = []
+
+    class _CountingHandler(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_POST(self):
+            mutation_calls.append(1)
+            length = int(self.headers.get("Content-Length", 0))
+            self.rfile.read(length)
+            reply = {"choices": [{"message": {"role": "assistant", "content": "should never be called"}}]}
+            payload = json.dumps(reply).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+    mutation_server = ThreadingHTTPServer(("127.0.0.1", 0), _CountingHandler)
+    mutation_thread = threading.Thread(target=mutation_server.serve_forever, daemon=True)
+    mutation_thread.start()
+    try:
+        mutation_port = mutation_server.server_address[1]
+        monkeypatch.setenv("MEMROT_CRED_CUS_TEST", "sk-test-cli")
+        config_path = write_json("cli_unreachable_mutate.config.json", {
+            "schema_version": "1.0",
+            "target": {"kind": "openai_compat",
+                      "binding": {"base_url": "http://127.0.0.1:1", "model": "test-model", "timeout": 2.0}},
+            "channels": [{"role": "attacker", "principal": {"principal_id": "1001", "credential_ref": "CUS_TEST"}}],
+            "catalog_paths": [GENERIC_MPI],
+        })
+        out_dir = str(tmp_path / "out")
+        rc = main(["run", "--config", config_path, "--out", out_dir,
+                  "--mutate", "paraphrase",
+                  "--mutation-base-url", f"http://127.0.0.1:{mutation_port}",
+                  "--mutation-model", "test-model"])
+        assert rc == EXIT_ERROR
+        assert mutation_calls == []   # the mutation endpoint was never contacted
+    finally:
+        mutation_server.shutdown()
+        mutation_thread.join(timeout=2)
 
 
 def test_run_with_taxonomy_filter_restricts_to_one_category(http_server, monkeypatch, tmp_path, write_json):

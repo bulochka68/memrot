@@ -53,6 +53,49 @@ def http_server():
     thread.join(timeout=2)
 
 
+class _FlakyHandler(BaseHTTPRequestHandler):
+    """Fails with ``fail_status`` for its first ``fail_times`` requests, then
+    serves a normal 200 -- simulates a transient upstream issue (a rate
+    limit, a momentary 5xx) that a bare retry resolves. Class-level state,
+    reset per test via ``_flaky_server``."""
+    fail_times = 0
+    fail_status = 500
+    call_count = 0
+
+    def log_message(self, *a):
+        pass
+
+    def do_POST(self):
+        type(self).call_count += 1
+        length = int(self.headers.get("Content-Length", 0))
+        self.rfile.read(length)
+        if type(self).fail_times > 0:
+            type(self).fail_times -= 1
+            self.send_response(type(self).fail_status)
+            self.end_headers()
+            return
+        reply = {"choices": [{"message": {"role": "assistant", "content": "ok"}}]}
+        payload = json.dumps(reply).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+
+@pytest.fixture()
+def flaky_server():
+    _FlakyHandler.fail_times = 0
+    _FlakyHandler.fail_status = 500
+    _FlakyHandler.call_count = 0
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _FlakyHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield server
+    server.shutdown()
+    thread.join(timeout=2)
+
+
 def _seed(**overrides) -> AttackVariant:
     base = dict(
         id="seed-1", title="t", framing="explicit_rule", payload="formatting_marker",
@@ -85,7 +128,10 @@ def test_llm_client_sends_bearer_header_when_api_key_present(http_server, monkey
     assert "auth=Bearer sk-abc" in reply
 
 
-def test_llm_client_wraps_http_error(http_server):
+def test_llm_client_wraps_http_error_and_does_not_retry_4xx(http_server):
+    """401 is a client error (bad key) -- retrying won't fix it, so this
+    must fail on the very first attempt, not after burning through
+    max_retries' worth of backoff delay."""
     port = http_server.server_address[1]
     client = LLMClient(LLMClientConfig(base_url=f"http://127.0.0.1:{port}", model="m"))
     with pytest.raises(LLMClientError, match="HTTP 401"):
@@ -93,9 +139,49 @@ def test_llm_client_wraps_http_error(http_server):
 
 
 def test_llm_client_wraps_transport_error():
-    client = LLMClient(LLMClientConfig(base_url="http://127.0.0.1:1", model="m", timeout=2.0))
+    client = LLMClient(LLMClientConfig(base_url="http://127.0.0.1:1", model="m", timeout=2.0,
+                                       max_retries=0))
     with pytest.raises(LLMClientError, match="transport error"):
         client.complete(system="sys", user="hello")
+
+
+# --------------------------------------------------------------------------- #
+# Retry on transient failures (429 / 5xx / transport) -- see llm_client.py's
+# own docstring: a real, live-observed OpenRouter transient failure
+# (mid-handshake TLS drop) that a bare retry resolved.
+# --------------------------------------------------------------------------- #
+
+def test_llm_client_retries_on_429_then_succeeds(flaky_server):
+    _FlakyHandler.fail_times = 1
+    _FlakyHandler.fail_status = 429
+    port = flaky_server.server_address[1]
+    client = LLMClient(LLMClientConfig(base_url=f"http://127.0.0.1:{port}", model="m",
+                                       max_retries=2, retry_backoff=0.01))
+    reply = client.complete(system="sys", user="hello")
+    assert reply == "ok"
+    assert _FlakyHandler.call_count == 2   # 1 failure + 1 retry that succeeded
+
+
+def test_llm_client_retries_on_5xx_then_succeeds(flaky_server):
+    _FlakyHandler.fail_times = 2
+    _FlakyHandler.fail_status = 503
+    port = flaky_server.server_address[1]
+    client = LLMClient(LLMClientConfig(base_url=f"http://127.0.0.1:{port}", model="m",
+                                       max_retries=2, retry_backoff=0.01))
+    reply = client.complete(system="sys", user="hello")
+    assert reply == "ok"
+    assert _FlakyHandler.call_count == 3   # 2 failures + 1 retry that succeeded
+
+
+def test_llm_client_exhausts_retries_and_raises(flaky_server):
+    _FlakyHandler.fail_times = 100   # always fails -- more than max_retries could ever cover
+    _FlakyHandler.fail_status = 500
+    port = flaky_server.server_address[1]
+    client = LLMClient(LLMClientConfig(base_url=f"http://127.0.0.1:{port}", model="m",
+                                       max_retries=1, retry_backoff=0.01))
+    with pytest.raises(LLMClientError, match="HTTP 500"):
+        client.complete(system="sys", user="hello")
+    assert _FlakyHandler.call_count == 2   # the first attempt + exactly 1 retry, then gave up
 
 
 # --------------------------------------------------------------------------- #

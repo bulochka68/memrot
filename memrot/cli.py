@@ -139,26 +139,9 @@ def cmd_run(args: argparse.Namespace) -> int:
                 args.catalog_bank, bank_source,
                 sample_size=args.catalog_bank_sample_size, seed=args.catalog_bank_seed,
             ).generate()
-        mutation_failures: List[str] = []
-        if generator_kind == "llm_mutation":
-            gen_options = dict(config.generator.options)
-            if args.mutate:
-                gen_options["techniques"] = [t.strip() for t in args.mutate.split(",") if t.strip()]
-            if args.mutation_base_url:
-                gen_options["base_url"] = args.mutation_base_url
-            if args.mutation_model:
-                gen_options["model"] = args.mutation_model
-            if args.mutation_api_key_env:
-                gen_options["api_key_env"] = args.mutation_api_key_env
-            mutation_generator = LLMMutationGenerator(seed_variants, **gen_options)
-            variants = mutation_generator.generate()
-            mutation_failures = mutation_generator.failures
-        else:
-            variants = seed_variants
 
-        if args.taxonomy_filter:
-            variants = [v for v in variants if v.owasp_amg_category == args.taxonomy_filter]
-
+        # Adapter/detector construction is pure object setup, no network I/O --
+        # safe to do before the (real, costly) mutation step below.
         adapter = build_adapter(config.target)
 
         detector_kind = config.detector.kind
@@ -193,9 +176,9 @@ def cmd_run(args: argparse.Namespace) -> int:
             config_lines.append(f"Attacker LLM: {args.attacker_model} via {args.attacker_base_url}")
         if args.judge_base_url and args.judge_model:
             config_lines.append(f"Judge LLM:    {args.judge_model} via {args.judge_base_url}")
-        catalog_desc = f"{len(variants)} variant(s) from {len(catalog_paths)} path(s)"
+        catalog_desc = f"{len(seed_variants)} seed variant(s) from {len(catalog_paths)} path(s)"
         if generator_kind == "llm_mutation":
-            catalog_desc += f", mutation techniques: {args.mutate or ','.join(config.generator.options.get('techniques', []))}"
+            catalog_desc += f", will expand via mutation: {args.mutate or ','.join(config.generator.options.get('techniques', []))}"
         config_lines.append(f"Catalog:      {catalog_desc}")
         config_lines.append(f"Detector:     {detector_kind}")
         if audit_path := (args.audit or config.audit_path):
@@ -204,6 +187,10 @@ def cmd_run(args: argparse.Namespace) -> int:
         ui.print_panel("Run Configuration", config_lines)
         print()
 
+        # Deliberately validated BEFORE the mutation step below: a broken target or
+        # mutation/attacker/judge LLM used to only surface *after* burning through every
+        # real (paid, sequential) mutation call -- confirmed live wasting ~90s on a
+        # target that turned out to have an invalid API key. Fail fast instead.
         checks = [ui.ModelCheck(f"Target ({config.target.kind})", lambda: _check_target_adapter(adapter, config.channels))]
         if args.mutation_base_url and args.mutation_model:
             checks.append(ui.ModelCheck(f"Mutation LLM ({args.mutation_model})",
@@ -219,6 +206,38 @@ def cmd_run(args: argparse.Namespace) -> int:
             print("error: target validation failed -- aborting before spending any attack turns", file=sys.stderr)
             return EXIT_ERROR
         print()
+    else:
+        # Non-fancy/CI mode never printed a panel, but it must still fail fast on an
+        # unreachable target rather than silently burning the whole mutation budget
+        # first and then producing 65 ERROR verdicts one at a time.
+        ok, detail = _check_target_adapter(adapter, config.channels)
+        if not ok:
+            print(f"error: target unreachable, aborting before spending any attack turns: {detail}", file=sys.stderr)
+            return EXIT_ERROR
+
+    try:
+        mutation_failures: List[str] = []
+        if generator_kind == "llm_mutation":
+            gen_options = dict(config.generator.options)
+            if args.mutate:
+                gen_options["techniques"] = [t.strip() for t in args.mutate.split(",") if t.strip()]
+            if args.mutation_base_url:
+                gen_options["base_url"] = args.mutation_base_url
+            if args.mutation_model:
+                gen_options["model"] = args.mutation_model
+            if args.mutation_api_key_env:
+                gen_options["api_key_env"] = args.mutation_api_key_env
+            mutation_generator = LLMMutationGenerator(seed_variants, **gen_options)
+            variants = mutation_generator.generate()
+            mutation_failures = mutation_generator.failures
+        else:
+            variants = seed_variants
+
+        if args.taxonomy_filter:
+            variants = [v for v in variants if v.owasp_amg_category == args.taxonomy_filter]
+    except (ValueError, FileNotFoundError, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ERROR
 
     limitations: List[str] = list(mutation_failures)
     audit_path = args.audit or config.audit_path
