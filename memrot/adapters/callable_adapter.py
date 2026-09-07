@@ -22,6 +22,7 @@ InspectFn = Callable[[str], Optional[str]]
 GroundTruthFn = Callable[..., Optional[bool]]
 ResetFn = Callable[[], bool]
 StageToolFn = Callable[..., None]
+UnstageToolFn = Callable[[str], None]
 IngestFn = Callable[[str, str, str], str]
 
 
@@ -35,6 +36,7 @@ class CallableAdapter(TargetAdapter):
                  ground_truth_fn: Optional[GroundTruthFn] = None,
                  reset_fn: Optional[ResetFn] = None,
                  stage_tool_fn: Optional[StageToolFn] = None,
+                 unstage_tool_fn: Optional[UnstageToolFn] = None,
                  ingest_fn: Optional[IngestFn] = None,
                  access_profile: str = "black_box",
                  supported_tool_vectors: Optional[List[str]] = None) -> None:
@@ -45,6 +47,7 @@ class CallableAdapter(TargetAdapter):
         self._ground_truth_fn = ground_truth_fn
         self._reset_fn = reset_fn
         self._stage_tool_fn = stage_tool_fn
+        self._unstage_tool_fn = unstage_tool_fn
         self._ingest_fn = ingest_fn
         self._access_profile = access_profile
         self._supported_tool_vectors = list(supported_tool_vectors) if supported_tool_vectors is not None else (
@@ -80,13 +83,23 @@ class CallableAdapter(TargetAdapter):
             return bool(self._reset_fn())
         return False
 
-    def stage_tool_response(self, tool_name: str, content: str, *, vector: str = "web_search") -> None:
+    def stage_tool_response(self, tool_name: str, content: str, *, vector: str = "web_search",
+                            persist: bool = False) -> None:
         if self._stage_tool_fn is None:
             return
+        # graceful fallback chain: a wired callable may predate the persist/vector
+        # kwargs (e.g. this project's own test fixtures) -- never break those.
         try:
-            self._stage_tool_fn(tool_name, content, vector=vector)
+            self._stage_tool_fn(tool_name, content, vector=vector, persist=persist)
         except TypeError:
-            self._stage_tool_fn(tool_name, content)
+            try:
+                self._stage_tool_fn(tool_name, content, vector=vector)
+            except TypeError:
+                self._stage_tool_fn(tool_name, content)
+
+    def unstage_tool_response(self, tool_name: str) -> None:
+        if self._unstage_tool_fn is not None:
+            self._unstage_tool_fn(tool_name)
 
     def ingest_document(self, principal: Principal, session_id: str, document_text: str) -> str:
         if self._ingest_fn is not None:

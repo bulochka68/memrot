@@ -289,9 +289,10 @@ def _run_tool_injection_flow(variant: AttackVariant, channels: List[Channel], ad
     # -- 1. stage the tool result, then let the victim trigger it naturally -- #
     tool_name = variant.tool_stage["tool_name"]
     staged_content = _safe_format(variant.tool_stage["content_template"], canary=canary)
+    persist = bool(variant.tool_stage.get("persist", False))
     tracer.log(run_id=run_id, trace_id=variant.id, phase="stage_tool", direction="request",
-              text=f"tool={tool_name}", canary=canary, tool={"tool_name": tool_name})
-    adapter.stage_tool_response(tool_name, staged_content, vector=_tool_vector(variant))
+              text=f"tool={tool_name}", canary=canary, tool={"tool_name": tool_name, "persist": persist})
+    adapter.stage_tool_response(tool_name, staged_content, vector=_tool_vector(variant), persist=persist)
 
     trigger_session = adapter.new_session(victim.principal)
     tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
@@ -302,6 +303,10 @@ def _run_tool_injection_flow(variant: AttackVariant, channels: List[Channel], ad
     tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
               phase="trigger", channel_id=victim.channel_id, session_id=trigger_session,
               direction="response", text=trigger_reply, canary=canary, canary_present=laundering_detected)
+    # A persist=True stage must never leak into a later phase (consolidate re-triggers
+    # nothing here, but the probe phase below issues its own turn that could otherwise
+    # still see it) -- unconditional and harmless for adapters that already auto-clear.
+    adapter.unstage_tool_response(tool_name)
 
     # -- 2. consolidate ------------------------------------------------------- #
     tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,

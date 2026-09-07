@@ -71,18 +71,39 @@ class TargetAdapter(abc.ABC):
         cross-run contamination safety net)."""
         return False
 
-    def stage_tool_response(self, tool_name: str, content: str, *, vector: str = "web_search") -> None:
-        """Make the target's *next* matching tool call return ``content``
-        instead of its real result (one-shot: consumed then reverts to real
-        behavior). Models indirect prompt injection delivered via a tool
-        result (e.g. a poisoned web-search snippet) rather than a direct
-        chat turn. ``vector`` is a semantic label of the delivery channel
-        (``web_search`` / ``email`` / ``document`` / ``calendar`` / ``crm`` /
-        ``custom``); the adapter decides which of its tools should return
-        ``content``. No-op default: an adapter that can't stage a tool result
-        should not silently do nothing and claim success -- pair this with
-        ``AdapterCapabilities.supports_tool_staging = False`` so the runner
-        reports ``NOT_EVALUATED`` instead of a false ``CLEAN``."""
+    def stage_tool_response(self, tool_name: str, content: str, *, vector: str = "web_search",
+                            persist: bool = False) -> None:
+        """Make the target's matching tool call(s) return ``content`` instead
+        of the real result. Default (``persist=False``): one-shot, consumed
+        by the first matching call then reverts to real behavior -- this is
+        the realistic condition for a tool that can issue several concurrent
+        sub-queries per turn (e.g. a multi-query web search): only one of
+        them gets poisoned, diluted among genuine results, exactly like a
+        not-yet-top-ranked real page would be. ``persist=True`` instead keeps
+        returning ``content`` for every matching call until
+        :meth:`unstage_tool_response` is called -- simulates the poisoned
+        source being the dominant/only hit (e.g. a well-indexed or
+        SEO-ranked page), isolating the payload's own potency from that
+        dilution effect. Models indirect prompt injection delivered via a
+        tool result (e.g. a poisoned web-search snippet) rather than a
+        direct chat turn. ``vector`` is a semantic label of the delivery
+        channel (``web_search`` / ``email`` / ``document`` / ``calendar`` /
+        ``crm`` / ``custom``); the adapter decides which of its tools should
+        return ``content``. No-op default: an adapter that can't stage a
+        tool result should not silently do nothing and claim success --
+        pair this with ``AdapterCapabilities.supports_tool_staging = False``
+        so the runner reports ``NOT_EVALUATED`` instead of a false
+        ``CLEAN``."""
+        return None
+
+    def unstage_tool_response(self, tool_name: str) -> None:
+        """Clear any staged response for ``tool_name`` regardless of how it
+        was staged (one-shot or ``persist=True``). The engine calls this
+        unconditionally right after the trigger turn of a tool-injection
+        flow, so a ``persist=True`` stage never leaks into a later phase
+        (consolidate, probe) of the same variant run. No-op default -- safe
+        for adapters that already auto-clear (the one-shot default) or that
+        don't support staging at all."""
         return None
 
     def ingest_document(self, principal: Principal, session_id: str, document_text: str) -> str:

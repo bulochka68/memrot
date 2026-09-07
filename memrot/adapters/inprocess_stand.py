@@ -10,8 +10,15 @@ the stand's only web tool, ``duckduckgo_search`` (``app/agent/tools.py``),
 hits real DuckDuckGo -- not deterministically controllable from outside the
 process for a red-team test. This adapter's ``stage_tool_response()``
 monkeypatches the module-level ``DDGS`` name that tool resolves at call
-time, so a test can inject content into "the next search result" exactly
-once, then let the target's own real code decide what happens to it.
+time, so a test can inject content into "the next search result" (default:
+exactly once; ``persist=True``: every call, until ``unstage_tool_response()``
+-- see ``stage_tool_response``'s own docstring for why both modes matter),
+then let the target's own real code decide what happens to it. Confirmed
+live (2026-09-07): the stand's ``duckduckgo_search(queries: List[str])``
+fires several concurrent sub-queries per turn, and one-shot staging only
+poisons one of them -- a real, previously-undocumented dilution effect that
+can read CLEAN for reasons unrelated to whether the payload itself works;
+``persist=True`` isolates the payload's own potency from that effect.
 
 Heavy dependencies (langchain/langgraph/pymongo/redis, the whole ``app``
 package) are imported lazily inside methods, not at module import time --
@@ -84,12 +91,25 @@ def _ensure_mcp_adapters_importable() -> None:
 
 class _StagingDDGS:
     """Drop-in replacement for ``ddgs.DDGS``. If content has been staged for
-    ``duckduckgo_search``, returns it as the sole (fake) result once (then
-    reverts to nothing staged); otherwise delegates to the real ``DDGS``."""
+    ``duckduckgo_search``, returns it as the sole (fake) result; otherwise
+    delegates to the real ``DDGS``.
 
-    def __init__(self, staged: Dict[str, str], real_cls: type) -> None:
+    Default behavior (``"duckduckgo_search" not in persist``): one-shot --
+    consumed by the first matching call, then reverts to real search. This
+    is the realistic condition when the tool issues several concurrent
+    sub-queries per turn (this stand's own ``duckduckgo_search(queries:
+    List[str])`` does exactly that): only one of them gets poisoned, diluted
+    among genuine results -- confirmed live (2026-09-07) to make an
+    otherwise-working payload read CLEAN purely from dilution, not real
+    resistance. When ``"duckduckgo_search" in persist``, every call keeps
+    returning the staged content (peek, not pop) until
+    ``InProcessStandAdapter.unstage_tool_response`` removes it -- simulates
+    the poisoned source being the dominant/only hit."""
+
+    def __init__(self, staged: Dict[str, str], real_cls: type, persist: Optional[set] = None) -> None:
         self._staged = staged
         self._real_cls = real_cls
+        self._persist = persist if persist is not None else set()
         self._real_instance: Any = None
 
     def __enter__(self) -> "_StagingDDGS":
@@ -101,7 +121,10 @@ class _StagingDDGS:
         return False
 
     def text(self, query: str, max_results: int = 5, **kwargs: Any):
-        content = self._staged.pop("duckduckgo_search", None)
+        if "duckduckgo_search" in self._persist:
+            content = self._staged.get("duckduckgo_search")
+        else:
+            content = self._staged.pop("duckduckgo_search", None)
         if content is not None:
             return [{"title": "Staged result", "href": "https://staged.invalid/result", "body": content}]
         self._real_instance = self._real_cls()
@@ -129,11 +152,13 @@ class InProcessStandAdapter(TargetAdapter):
         self._tools_module = tools_module
         self._real_ddgs = tools_module.DDGS
         self._staged: Dict[str, str] = {}
+        self._staged_persist: set = set()
         # app/agent/tools.py does `with DDGS() as ddgs: ...` -- DDGS must stay callable
         # (a class/factory), so substitute a factory that builds a fresh _StagingDDGS
         # context manager per call, not a bare _StagingDDGS instance.
         import functools
-        tools_module.DDGS = functools.partial(_StagingDDGS, self._staged, self._real_ddgs)   # type: ignore[assignment]
+        tools_module.DDGS = functools.partial(_StagingDDGS, self._staged, self._real_ddgs,
+                                              self._staged_persist)   # type: ignore[assignment]
 
     def new_session(self, principal: Principal) -> str:
         import uuid
@@ -164,8 +189,17 @@ class InProcessStandAdapter(TargetAdapter):
         }
         return json.dumps(blob, ensure_ascii=False)
 
-    def stage_tool_response(self, tool_name: str, content: str, *, vector: str = "web_search") -> None:
+    def stage_tool_response(self, tool_name: str, content: str, *, vector: str = "web_search",
+                            persist: bool = False) -> None:
         self._staged[tool_name] = content
+        if persist:
+            self._staged_persist.add(tool_name)
+        else:
+            self._staged_persist.discard(tool_name)
+
+    def unstage_tool_response(self, tool_name: str) -> None:
+        self._staged.pop(tool_name, None)
+        self._staged_persist.discard(tool_name)
 
     def reset(self) -> bool:
         # Same known limitation as GenAIInvestAdapter: no destructive

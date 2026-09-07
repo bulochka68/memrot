@@ -76,6 +76,8 @@ def validate_variant_dict(d: Dict[str, Any], where: str = "", *,
             vector = tool_stage.get("vector", "web_search")
             if vector not in ALLOWED_TOOL_VECTOR:
                 errors.append(f"{tag}tool_stage.vector={vector!r} not in {sorted(ALLOWED_TOOL_VECTOR)}")
+            if "persist" in tool_stage and not isinstance(tool_stage["persist"], bool):
+                errors.append(f"{tag}tool_stage.persist must be a bool if present, got {tool_stage['persist']!r}")
         if not d.get("trigger_message"):
             errors.append(f"{tag}delivery_channel='tool_result' requires a non-empty trigger_message")
 

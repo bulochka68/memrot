@@ -87,6 +87,45 @@ def test_staging_only_affects_the_named_tool_key():
 
 
 # --------------------------------------------------------------------------- #
+# persist=True: simulates the poisoned source being the dominant/only hit,
+# isolating a payload's own potency from the one-shot-staging dilution effect
+# confirmed live 2026-09-07 (see inprocess_stand.py's module docstring and
+# stage_tool_response's docstring) -- a multi-query tool that issues several
+# concurrent sub-queries per turn only gets ONE of them poisoned under the
+# default one-shot behavior, which can read CLEAN for reasons unrelated to
+# whether the payload itself works.
+# --------------------------------------------------------------------------- #
+
+def test_persisted_content_survives_multiple_calls_until_unstaged():
+    staged = {"duckduckgo_search": "poisoned snippet"}
+    persist = {"duckduckgo_search"}
+    for _ in range(3):
+        with _StagingDDGS(staged, _FakeRealDDGS, persist) as ddgs:
+            result = ddgs.text("some query")
+        assert result[0]["body"] == "poisoned snippet"
+    assert staged.get("duckduckgo_search") == "poisoned snippet"   # never popped
+    assert _FakeRealDDGS.instances_created == 0
+
+    # simulates InProcessStandAdapter.unstage_tool_response
+    staged.pop("duckduckgo_search", None)
+    persist.discard("duckduckgo_search")
+    with _StagingDDGS(staged, _FakeRealDDGS, persist) as ddgs:
+        after_unstage = ddgs.text("query after unstage")
+    assert "real answer for query after unstage" in after_unstage[0]["body"]
+
+
+def test_persist_defaults_to_one_shot_when_no_persist_set_given():
+    """Backward compatibility: the two-positional-arg call shape used by
+    every pre-existing test/consumer above must keep its exact old
+    behavior (pop-once) when no third argument is passed at all."""
+    staged = {"duckduckgo_search": "poisoned snippet"}
+    with _StagingDDGS(staged, _FakeRealDDGS) as ddgs:
+        first = ddgs.text("query one")
+    assert first[0]["body"] == "poisoned snippet"
+    assert "duckduckgo_search" not in staged
+
+
+# --------------------------------------------------------------------------- #
 # Full adapter -- only meaningful on Python 3.10+ with the target's heavy deps
 # installed (langchain/langgraph/etc are not part of this project's own core
 # dependencies, and app/config.py's `str | None` class-level annotations are
@@ -120,3 +159,24 @@ def test_stage_tool_response_populates_staged_dict():
     adapter = InProcessStandAdapter()
     adapter.stage_tool_response("duckduckgo_search", "test content")
     assert adapter._staged.get("duckduckgo_search") == "test content"
+
+
+@pytest.mark.skipif(not _app_importable(), reason="requires Python 3.10+ and the vendored app/'s heavy deps installed")
+def test_stage_tool_response_persist_flag_is_tracked_and_cleared():
+    from memrot.adapters.inprocess_stand import InProcessStandAdapter
+    adapter = InProcessStandAdapter()
+    adapter.stage_tool_response("duckduckgo_search", "test content", persist=True)
+    assert adapter._staged.get("duckduckgo_search") == "test content"
+    assert "duckduckgo_search" in adapter._staged_persist
+
+    adapter.unstage_tool_response("duckduckgo_search")
+    assert "duckduckgo_search" not in adapter._staged
+    assert "duckduckgo_search" not in adapter._staged_persist
+
+
+@pytest.mark.skipif(not _app_importable(), reason="requires Python 3.10+ and the vendored app/'s heavy deps installed")
+def test_stage_tool_response_without_persist_does_not_mark_persist_set():
+    from memrot.adapters.inprocess_stand import InProcessStandAdapter
+    adapter = InProcessStandAdapter()
+    adapter.stage_tool_response("duckduckgo_search", "test content")
+    assert "duckduckgo_search" not in adapter._staged_persist

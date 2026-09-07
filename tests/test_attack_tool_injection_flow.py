@@ -94,6 +94,52 @@ def test_error_adapter_raises_is_not_propagated():
     assert "simulated transport failure" in result.error
 
 
+def test_persist_flag_from_tool_stage_reaches_adapter_and_is_unstaged_after_trigger():
+    """tool_stage.persist (see inprocess_stand.py's real 2026-09-07 dilution
+    finding) must reach adapter.stage_tool_response(persist=...), and
+    unstage_tool_response must be called right after the trigger turn
+    regardless of persist -- a persist=True stage must never leak into a
+    later phase of the same variant run."""
+    from memrot.adapters.callable_adapter import CallableAdapter
+
+    calls = []
+
+    def stage_tool_fn(tool_name, content, *, vector="web_search", persist=False):
+        calls.append(("stage", tool_name, persist))
+
+    def unstage_tool_fn(tool_name):
+        calls.append(("unstage", tool_name))
+
+    adapter = CallableAdapter(
+        send_fn=lambda principal_id, session_id, message: "ack",
+        new_session_fn=lambda principal_id: f"session-{principal_id}",
+        stage_tool_fn=stage_tool_fn, unstage_tool_fn=unstage_tool_fn,
+        supported_tool_vectors=["web_search"],
+    )
+    variant = _tool_injection_variant(tool_stage={
+        "tool_name": "duckduckgo_search", "content_template": "Bulletin [{canary}]", "persist": True,
+    })
+    run_variant(variant, CHANNELS, adapter, LiteralDetector(), JSONLTracer(), "run1")
+
+    assert ("stage", "duckduckgo_search", True) in calls
+    assert ("unstage", "duckduckgo_search") in calls
+    assert calls.index(("unstage", "duckduckgo_search")) > calls.index(("stage", "duckduckgo_search", True))
+
+
+def test_persist_defaults_to_false_when_tool_stage_omits_it():
+    from memrot.adapters.callable_adapter import CallableAdapter
+
+    calls = []
+    adapter = CallableAdapter(
+        send_fn=lambda principal_id, session_id, message: "ack",
+        new_session_fn=lambda principal_id: f"session-{principal_id}",
+        stage_tool_fn=lambda tool_name, content, *, vector="web_search", persist=False: calls.append(persist),
+        supported_tool_vectors=["web_search"],
+    )
+    run_variant(_tool_injection_variant(), CHANNELS, adapter, LiteralDetector(), JSONLTracer(), "run1")
+    assert calls == [False]
+
+
 def test_not_evaluated_when_tool_vector_is_unsupported():
     app = FakeToolPoisonableApp()
     adapter = build_adapter(app, with_tool_staging=True, supported_tool_vectors=["web_search"])
