@@ -314,6 +314,7 @@ profiles/      -- mcp_audit profiles (which rules apply to which system)
 schemas/       -- JSON schema for the audit report format
 examples/      -- configs, manifests, and pre-generated audit reports for
                   the two worked examples above
-docs/          -- deep-dive docs (attacker.md, auditor.md, rules_catalog.md, ...)
+docs/          -- deep-dive docs (attacker.md, auditor.md, rules_catalog.md,
+                  audit_how_it_works.md, ...)
 tests/         -- pytest suite for both memrot and mcp_audit
 ```

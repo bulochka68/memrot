@@ -1,8 +1,12 @@
 # Agent security audit subsystem (pipeline phase P1) — v2.0
 
 Implementation of [`docs/audit_subsystem_architecture.md`](audit_subsystem_architecture.md)
-(document v2.0). The package keeps its historical name `mcp_audit`, but the object
-of the audit is the **life cycle of an agentic system**: inventory and
+(document v2.0). A code-level walkthrough of the same pipeline — inputs,
+layer order, evidence → claim → finding → verdict, and the hand-off to the
+attack phase — is in [`docs/audit_how_it_works.md`](audit_how_it_works.md).
+
+The package keeps its historical name `mcp_audit`, but the object of the
+audit is the **life cycle of an agentic system**: inventory and
 capabilities, definitions and context, identity and authorization, memory,
 observed behaviour and infrastructure. MCP is one supported interface among
 REST, native functions, background jobs, memory stores and traces.
