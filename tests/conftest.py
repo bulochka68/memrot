@@ -25,3 +25,9 @@ def write_json(tmp_path):
         p.write_text(json.dumps(obj, ensure_ascii=False, indent=1), encoding="utf-8")
         return str(p)
     return _w
+
+
+@pytest.fixture(autouse=True)
+def _tier_strict_off(monkeypatch):
+    """Verdict tests assume the default (non-strict) gate unless they set it."""
+    monkeypatch.delenv("MEMROT_TIER_STRICT", raising=False)

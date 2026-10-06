@@ -29,10 +29,10 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Any, Coroutine, Dict, Optional, TypeVar
+from typing import Any, Coroutine, Dict, List, Optional, TypeVar
 
-from ..models import Principal
-from .base import AdapterCapabilities, TargetAdapter
+from ..models import ConsolidationReport, Principal
+from .base import AdapterCapabilities, TargetAdapter, parse_consolidation_report
 
 _T = TypeVar("_T")
 
@@ -152,6 +152,7 @@ class InProcessStandAdapter(TargetAdapter):
         self._tools_module = tools_module
         self._real_ddgs = tools_module.DDGS
         self._staged: Dict[str, str] = {}
+        self._consolidation_reports: Dict[str, Optional[ConsolidationReport]] = {}
         self._staged_persist: set = set()
         # app/agent/tools.py does `with DDGS() as ddgs: ...` -- DDGS must stay callable
         # (a class/factory), so substitute a factory that builds a fresh _StagingDDGS
@@ -173,7 +174,21 @@ class InProcessStandAdapter(TargetAdapter):
 
     def consolidate(self, principal: Principal, session_id: str) -> None:
         from app.orchestrator.graph import finalize_session
-        _run_async(finalize_session(principal.principal_id, session_id))
+        result = _run_async(finalize_session(principal.principal_id, session_id))
+        self._consolidation_reports[session_id] = parse_consolidation_report(result)
+
+    def consolidation_report(self, principal: Principal, session_id: str) -> Optional[ConsolidationReport]:
+        return self._consolidation_reports.get(session_id)
+
+    def inspect_memory_layers(self, principal: Principal) -> Optional[Dict[str, List[str]]]:
+        from app.memory.store import MemoryStore
+        store = MemoryStore()
+        cus = principal.principal_id
+        return {
+            "policy_global": [p.statement for p in store.mongo.agent_policy.list_all(limit=50)],
+            "semantic": [s.fact for s in store.mongo.semantic.list_for_context(cus, limit=50) if s.scope != "global"],
+            "episodic": [e.summary for e in store.mongo.episodic.list_for_user(cus, limit=50)],
+        }
 
     def inspect_memory(self, principal: Principal) -> Optional[str]:
         from app.memory.store import MemoryStore
@@ -212,6 +227,7 @@ class InProcessStandAdapter(TargetAdapter):
             access_profile="white_box",
             supports_consolidate=True,
             supports_inspect_memory=True,
+            supports_memory_layers=True,
             supports_tool_staging=True,
             supports_reset=False,
             supported_tool_vectors=["web_search"],

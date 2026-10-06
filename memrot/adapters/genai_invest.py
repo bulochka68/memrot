@@ -23,10 +23,10 @@ import re
 import subprocess
 import urllib.error
 import urllib.request
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from ..models import Principal
-from .base import AdapterCapabilities
+from ..models import ConsolidationReport, Principal
+from .base import AdapterCapabilities, parse_consolidation_report
 from .openai_compat import OpenAICompatAdapter, credential_for
 
 
@@ -46,6 +46,7 @@ class GenAIInvestAdapter(OpenAICompatAdapter):
         self.redis_url = redis_url
         self.compose_dir = compose_dir
         self.invest_server_container = invest_server_container
+        self._consolidation_reports: Dict[str, Optional[ConsolidationReport]] = {}
 
     # -- chat -------------------------------------------------------------- #
     def _extra_body(self, session_id: str) -> Dict[str, Any]:
@@ -60,13 +61,21 @@ class GenAIInvestAdapter(OpenAICompatAdapter):
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout):
-                pass
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                body = resp.read()
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace") if exc.fp else ""
             raise RuntimeError(f"finalize HTTP {exc.code}: {detail[:500]}") from exc
         except urllib.error.URLError as exc:
             raise RuntimeError(f"finalize transport error: {exc.reason}") from exc
+        try:
+            payload = json.loads(body.decode("utf-8")) if body else None
+        except ValueError:
+            payload = None
+        self._consolidation_reports[session_id] = parse_consolidation_report(payload)
+
+    def consolidation_report(self, principal: Principal, session_id: str) -> Optional[ConsolidationReport]:
+        return self._consolidation_reports.get(session_id)
 
     # -- white-box memory inspection ---------------------------------------- #
     def _mongo_collection(self, name: str):
@@ -103,6 +112,16 @@ class GenAIInvestAdapter(OpenAICompatAdapter):
         }
         return json.dumps(blob, ensure_ascii=False)
 
+    def inspect_memory_layers(self, principal: Principal) -> Optional[Dict[str, List[str]]]:
+        if not self.mongo_url:
+            return None
+        cus = principal.principal_id
+        return {
+            "policy_global": [str(d.get("statement") or "") for d in self._mongo_collection("agent_policy_memories").find({}, {"_id": 0})],
+            "semantic": [str(d.get("fact") or "") for d in self._mongo_collection("semantic_memories").find({"user_id": cus}, {"_id": 0})],
+            "episodic": [str(d.get("summary") or "") for d in self._mongo_collection("episodic_memories").find({"user_id": cus}, {"_id": 0})],
+        }
+
     # -- ground truth -------------------------------------------------------- #
     def ground_truth_check(self, marker: str, **kwargs: Any) -> Optional[bool]:
         target_ref = kwargs.get("target_ref")
@@ -132,6 +151,7 @@ class GenAIInvestAdapter(OpenAICompatAdapter):
             access_profile="white_box" if white_box else "black_box",
             supports_consolidate=True,
             supports_inspect_memory=white_box,
+            supports_memory_layers=white_box,
             supports_ground_truth=bool(self.compose_dir),
             supports_reset=False,
             notes=notes,

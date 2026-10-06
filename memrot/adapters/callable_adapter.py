@@ -10,9 +10,9 @@ directly in code instead.
 """
 from __future__ import annotations
 
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
-from ..models import Principal
+from ..models import ConsolidationReport, Principal
 from .base import AdapterCapabilities, TargetAdapter
 
 SendFn = Callable[[str, str, str], str]
@@ -24,6 +24,8 @@ ResetFn = Callable[[], bool]
 StageToolFn = Callable[..., None]
 UnstageToolFn = Callable[[str], None]
 IngestFn = Callable[[str, str, str], str]
+InspectLayersFn = Callable[[str], Optional[Dict[str, List[str]]]]
+ConsolidationReportFn = Callable[[str, str], Optional[ConsolidationReport]]
 
 
 class CallableAdapter(TargetAdapter):
@@ -38,6 +40,8 @@ class CallableAdapter(TargetAdapter):
                  stage_tool_fn: Optional[StageToolFn] = None,
                  unstage_tool_fn: Optional[UnstageToolFn] = None,
                  ingest_fn: Optional[IngestFn] = None,
+                 inspect_layers_fn: Optional[InspectLayersFn] = None,
+                 consolidation_report_fn: Optional[ConsolidationReportFn] = None,
                  access_profile: str = "black_box",
                  supported_tool_vectors: Optional[List[str]] = None) -> None:
         self._send_fn = send_fn
@@ -49,6 +53,8 @@ class CallableAdapter(TargetAdapter):
         self._stage_tool_fn = stage_tool_fn
         self._unstage_tool_fn = unstage_tool_fn
         self._ingest_fn = ingest_fn
+        self._inspect_layers_fn = inspect_layers_fn
+        self._consolidation_report_fn = consolidation_report_fn
         self._access_profile = access_profile
         self._supported_tool_vectors = list(supported_tool_vectors) if supported_tool_vectors is not None else (
             ["web_search"] if stage_tool_fn is not None else []
@@ -71,6 +77,16 @@ class CallableAdapter(TargetAdapter):
     def inspect_memory(self, principal: Principal) -> Optional[str]:
         if self._inspect_fn is not None:
             return self._inspect_fn(principal.principal_id)
+        return None
+
+    def inspect_memory_layers(self, principal: Principal) -> Optional[Dict[str, List[str]]]:
+        if self._inspect_layers_fn is not None:
+            return self._inspect_layers_fn(principal.principal_id)
+        return None
+
+    def consolidation_report(self, principal: Principal, session_id: str) -> Optional[ConsolidationReport]:
+        if self._consolidation_report_fn is not None:
+            return self._consolidation_report_fn(principal.principal_id, session_id)
         return None
 
     def ground_truth_check(self, marker: str, **kwargs: Any) -> Optional[bool]:
@@ -115,5 +131,6 @@ class CallableAdapter(TargetAdapter):
             supports_reset=self._reset_fn is not None,
             supports_tool_staging=self._stage_tool_fn is not None,
             supports_document_ingestion=self._ingest_fn is not None,
+            supports_memory_layers=self._inspect_layers_fn is not None,
             supported_tool_vectors=list(self._supported_tool_vectors),
         )

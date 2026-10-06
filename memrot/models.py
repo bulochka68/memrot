@@ -20,7 +20,7 @@ import hashlib
 import json
 import time
 from dataclasses import dataclass, field, fields, is_dataclass
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Literal, Optional
 
 
 # --------------------------------------------------------------------------- #
@@ -96,6 +96,21 @@ def path_state_for(verdict: Verdict, propagation: str = "") -> str:
     if verdict is Verdict.CLEAN:
         return PATH_STATE_STATIC_SUPPORTED
     return PATH_STATE_UNKNOWN
+
+
+# Strength of the evidence behind a verdict, weakest to strongest. "none": no
+# channel saw the canary (or the variant never reached the probe phase).
+EvidenceTier = Literal["none", "text", "state", "ground_truth"]
+EVIDENCE_TIER_ORDER = ("none", "text", "state", "ground_truth")
+
+# Why a persistent-memory attack ended CLEAN (spike H1, docs1/spikes/spike_h1_report.md).
+CHAIN_BREAK_SCOPE_MISMATCH = "scope_mismatch"   # canary stored in a per-user layer, policy_global expected
+CHAIN_BREAK_PERSIST_MISS = "persist_miss"       # consolidation reported a global fact, the store has none
+CHAIN_BREAK_PARAPHRASE = "paraphrase"           # no literal canary in memory, payload stored reworded
+CHAIN_BREAK_VALUES = (CHAIN_BREAK_SCOPE_MISMATCH, CHAIN_BREAK_PERSIST_MISS, CHAIN_BREAK_PARAPHRASE)
+
+# Layer keys of AdapterCapabilities / TargetAdapter.inspect_memory_layers().
+MEMORY_LAYER_KEYS = ("policy_global", "semantic", "episodic", "working")
 
 
 class DetectionChannel(str, enum.Enum):
@@ -219,6 +234,24 @@ class DetectionResult:
 
 
 @dataclass
+class ConsolidatedFact:
+    """One fact a consolidation (e.g. a stand's ``finalize``) said it extracted."""
+    scope: str        # as the target reports it, e.g. "global" | "user"
+    text: str
+
+
+@dataclass
+class ConsolidationReport:
+    """What the target *claimed* to write during consolidation -- self-reported,
+    so it is only ever compared against the store, never used as evidence."""
+    facts: List[ConsolidatedFact] = field(default_factory=list)
+
+    @property
+    def scopes(self) -> List[str]:
+        return [f.scope for f in self.facts]
+
+
+@dataclass
 class AttackResult:
     variant_id: str
     verdict: Verdict
@@ -246,6 +279,8 @@ class AttackResult:
     limitations: List[str] = field(default_factory=list)
     trace_event_ids: List[str] = field(default_factory=list)
     path_state: str = ""  # mcp_audit PathState string; set by the engine from verdict + propagation
+    evidence_tier: EvidenceTier = "none"          # strongest channel that saw the canary, see EVIDENCE_TIER_ORDER
+    chain_break_reason: Optional[str] = None      # CLEAN only: one of CHAIN_BREAK_VALUES, None = not diagnosed
 
     def to_dict(self) -> Dict[str, Any]:
         return plain({f.name: getattr(self, f.name) for f in fields(self)})

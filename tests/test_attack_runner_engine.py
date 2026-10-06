@@ -31,6 +31,8 @@ def test_confirmed_flow_cross_user_policy_poisoning():
     assert result.verdict == Verdict.CONFIRMED
     assert result.rule_ids == ["MEM-02"]
     assert result.path_state == "control_violation_observed"
+    assert result.evidence_tier == "text"        # black-box adapter: reply text is the only channel
+    assert result.chain_break_reason is None
 
 
 def test_clean_flow_no_leak():
@@ -39,6 +41,8 @@ def test_clean_flow_no_leak():
     result = run_variant(_mem02_style_variant(), CHANNELS, adapter, LiteralDetector(), JSONLTracer(), "run1")
     assert result.verdict == Verdict.CLEAN
     assert result.path_state == "static_path_supported"
+    assert result.evidence_tier == "none"
+    assert result.chain_break_reason is None     # no memory-layer channel: never a guessed diagnosis
 
 
 def test_invalid_stale_contamination():
@@ -49,6 +53,7 @@ def test_invalid_stale_contamination():
     result = run_variant(variant, CHANNELS, adapter, LiteralDetector(), JSONLTracer(), "run1")
     assert result.verdict == Verdict.INVALID
     assert result.limitations
+    assert result.evidence_tier == "none"
 
 
 def test_error_adapter_raises_is_not_propagated():
@@ -93,6 +98,7 @@ def test_ground_truth_channel_confirms_when_text_channel_would_say_clean():
     assert result.ground_truth_detection is not None
     assert result.ground_truth_detection.canary_present is True
     assert result.verdict == Verdict.CONFIRMED
+    assert result.evidence_tier == "ground_truth"
 
 
 def test_single_turn_control_never_produces_invalid():

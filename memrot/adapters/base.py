@@ -17,9 +17,26 @@ from __future__ import annotations
 
 import abc
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from ..models import Principal
+from ..models import ConsolidatedFact, ConsolidationReport, Principal
+
+
+def parse_consolidation_report(payload: Any) -> Optional[ConsolidationReport]:
+    """Best-effort read of a consolidation response shaped like
+    ``{"facts": [{"scope": "global", "fact": "..."}, ...]}`` (text under
+    ``fact``, ``statement`` or ``text``). Anything else -> ``None``: an
+    unrecognised shape means "not reported", never "reported nothing"."""
+    facts = payload.get("facts") if isinstance(payload, dict) else None
+    if not isinstance(facts, list):
+        return None
+    out = []
+    for item in facts:
+        if not isinstance(item, dict) or not isinstance(item.get("scope"), str):
+            continue
+        text = item.get("fact") or item.get("statement") or item.get("text") or ""
+        out.append(ConsolidatedFact(scope=item["scope"], text=str(text)))
+    return ConsolidationReport(facts=out)
 
 
 @dataclass
@@ -31,6 +48,7 @@ class AdapterCapabilities:
     supports_reset: bool = False
     supports_tool_staging: bool = False
     supports_document_ingestion: bool = False
+    supports_memory_layers: bool = False     # inspect_memory_layers() is implemented
     supported_tool_vectors: List[str] = field(default_factory=list)
     notes: List[str] = field(default_factory=list)
 
@@ -57,6 +75,20 @@ class TargetAdapter(abc.ABC):
     def inspect_memory(self, principal: Principal) -> Optional[str]:
         """Direct, white-box read of the principal's memory state as text.
         Returns ``None`` when this channel is not available (black-box)."""
+        return None
+
+    def inspect_memory_layers(self, principal: Principal) -> Optional[Dict[str, List[str]]]:
+        """White-box read of memory records visible to ``principal``, split by
+        layer: keys from ``models.MEMORY_LAYER_KEYS`` (``policy_global``,
+        ``semantic``, ``episodic``, ``working``), values are the record texts.
+        Returns ``None`` when the layers are not observable; the engine then
+        never diagnoses a chain break from memory state."""
+        return None
+
+    def consolidation_report(self, principal: Principal, session_id: str) -> Optional[ConsolidationReport]:
+        """What the last :meth:`consolidate` of ``session_id`` reported it
+        extracted (e.g. the facts and scopes in a ``finalize`` response).
+        ``None`` when the target does not report it."""
         return None
 
     def ground_truth_check(self, marker: str, **kwargs: Any) -> Optional[bool]:
