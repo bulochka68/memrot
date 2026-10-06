@@ -20,6 +20,59 @@ from ..models import (AttackResult, AttackVariant, Channel, ChannelRole, Detecti
 from ..tracer import JSONLTracer
 from .verdict import decide_verdict
 
+_MEMORY_LAYERS = {"policy_global", "semantic", "episodic", "shared"}   # memory-trace memory_layer enum
+
+
+class _Lifecycle:
+    """Passive memory-lifecycle events (schema memory-trace 0.1) for one variant.
+
+    The engine is black-box, so only ``candidate`` -- content the harness
+    itself delivered -- is observed directly. ``saved`` stands for the
+    consolidate the harness asked for (``observed=False``: the store write is
+    not seen). ``retrieved`` and ``in_prompt`` are inferred from the canary in
+    the probe reply (``evidence_tier=text``, soft). A probe without the canary
+    emits nothing: an absent event is unknown, not proof the chain broke.
+    """
+
+    def __init__(self, tracer: JSONLTracer, run_id: str, variant: AttackVariant,
+                 adapter: TargetAdapter, canary: str) -> None:
+        self.tracer = tracer
+        self.run_id = run_id
+        self.variant = variant
+        self.agent_id = adapter.kind
+        self.canary = canary
+        self.candidates: list = []
+        self.candidate_texts: List[str] = []
+        self.saved = None
+
+    def _emit(self, stage: str, **kwargs):
+        return self.tracer.lifecycle(run_id=self.run_id, trace_id=self.variant.id, agent_id=self.agent_id,
+                                     stage=stage, canary=self.canary, **kwargs)
+
+    def candidate(self, principal: str, text: str, session_id: Optional[str] = None,
+                  channel_id: Optional[str] = None) -> None:
+        event = self._emit("candidate", principal=principal, text=text, session_id=session_id,
+                           channel_id=channel_id, observed=True, source="auditor")
+        self.candidates.append(event)
+        self.candidate_texts.append(text)
+
+    def saved_after_consolidate(self, channel: Channel, session_id: Optional[str]) -> None:
+        layer = self.variant.layer if self.variant.layer in _MEMORY_LAYERS else None
+        self.saved = self._emit("saved", principal=channel.role.value, text="\n\n".join(self.candidate_texts),
+                                session_id=session_id, channel_id=channel.channel_id,
+                                writer_id=channel.principal.principal_id, operation="write",
+                                memory_layer=layer, parents=self.candidates,
+                                observed=False, source="stand")
+
+    def probe_payoff(self, channel: Channel, session_id: Optional[str], canary_present: bool) -> None:
+        if not canary_present:
+            return
+        inferred = dict(principal=channel.role.value, session_id=session_id, channel_id=channel.channel_id,
+                        observed=False, source="agent", evidence_tier="text", evidence_kind="soft")
+        retrieved = self._emit("retrieved", text=self.canary, parents=[self.saved], **inferred)
+        self._emit("in_prompt", included_in_context=True, context_role="memory",
+                   parents=[retrieved], **inferred)
+
 
 def _tagged(variant: AttackVariant, **kwargs) -> AttackResult:
     """Copy axis/taxonomy tags off the variant onto a result so a new field
@@ -76,6 +129,14 @@ def _or_present(*detections: Optional[DetectionResult]) -> bool:
 
 def run_variant(variant: AttackVariant, channels: List[Channel], adapter: TargetAdapter,
                 detector: Detector, tracer: JSONLTracer, run_id: str) -> AttackResult:
+    try:
+        return _run_variant(variant, channels, adapter, detector, tracer, run_id)
+    finally:
+        tracer.flush()
+
+
+def _run_variant(variant: AttackVariant, channels: List[Channel], adapter: TargetAdapter,
+                 detector: Detector, tracer: JSONLTracer, run_id: str) -> AttackResult:
     caps = adapter.capabilities()
     if variant.access_profile_required == "white_box" and caps.access_profile != "white_box":
         tracer.log(run_id=run_id, trace_id=variant.id, phase="skip",
@@ -188,6 +249,7 @@ def _run_canary_flow(variant: AttackVariant, channels: List[Channel], adapter: T
                                     "stale contamination from a previous run"])
 
     # -- 1. inject ---------------------------------------------------------- #
+    lifecycle = _Lifecycle(tracer, run_id, variant, adapter, canary)
     attack_session = adapter.new_session(attacker.principal)
     for turn in variant.inject_turns:
         rendered = _safe_format(turn, canary=canary)
@@ -195,6 +257,7 @@ def _run_canary_flow(variant: AttackVariant, channels: List[Channel], adapter: T
                   phase="inject", channel_id=attacker.channel_id, session_id=attack_session,
                   direction="request", text=rendered, canary=canary)
         reply = adapter.send(attacker.principal, attack_session, rendered)
+        lifecycle.candidate(attacker.role.value, rendered, attack_session, attacker.channel_id)
         tracer.log(run_id=run_id, trace_id=variant.id, principal=attacker.principal.principal_id,
                   phase="inject", channel_id=attacker.channel_id, session_id=attack_session,
                   direction="response", text=reply, canary=canary)
@@ -203,6 +266,7 @@ def _run_canary_flow(variant: AttackVariant, channels: List[Channel], adapter: T
     tracer.log(run_id=run_id, trace_id=variant.id, principal=attacker.principal.principal_id,
               phase="consolidate", channel_id=attacker.channel_id, session_id=attack_session)
     adapter.consolidate(attacker.principal, attack_session)
+    lifecycle.saved_after_consolidate(attacker, attack_session)
 
     # -- 3. probe: fresh victim session --------------------------------------- #
     probe_session = adapter.new_session(victim.principal)
@@ -211,6 +275,7 @@ def _run_canary_flow(variant: AttackVariant, channels: List[Channel], adapter: T
               direction="request", text=variant.probe, canary=canary)
     probe_response = adapter.send(victim.principal, probe_session, variant.probe)
     post_text_det = detector.detect(probe_response, canary, DetectionChannel.RESPONSE_TEXT)
+    lifecycle.probe_payoff(victim, probe_session, post_text_det.canary_present)
     tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
               phase="probe", channel_id=victim.channel_id, session_id=probe_session,
               direction="response", text=probe_response, canary=canary,
@@ -293,6 +358,8 @@ def _run_tool_injection_flow(variant: AttackVariant, channels: List[Channel], ad
     tracer.log(run_id=run_id, trace_id=variant.id, phase="stage_tool", direction="request",
               text=f"tool={tool_name}", canary=canary, tool={"tool_name": tool_name, "persist": persist})
     adapter.stage_tool_response(tool_name, staged_content, vector=_tool_vector(variant), persist=persist)
+    lifecycle = _Lifecycle(tracer, run_id, variant, adapter, canary)
+    lifecycle.candidate("tool", staged_content)
 
     trigger_session = adapter.new_session(victim.principal)
     tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
@@ -312,6 +379,7 @@ def _run_tool_injection_flow(variant: AttackVariant, channels: List[Channel], ad
     tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
               phase="consolidate", channel_id=victim.channel_id, session_id=trigger_session)
     adapter.consolidate(victim.principal, trigger_session)
+    lifecycle.saved_after_consolidate(victim, trigger_session)
 
     # -- 3. probe: fresh session, possibly a second client -------------------- #
     probe_session = adapter.new_session(probe_channel.principal)
@@ -320,6 +388,7 @@ def _run_tool_injection_flow(variant: AttackVariant, channels: List[Channel], ad
               direction="request", text=variant.probe, canary=canary)
     probe_response = adapter.send(probe_channel.principal, probe_session, variant.probe)
     post_text_det = detector.detect(probe_response, canary, DetectionChannel.RESPONSE_TEXT)
+    lifecycle.probe_payoff(probe_channel, probe_session, post_text_det.canary_present)
     tracer.log(run_id=run_id, trace_id=variant.id, principal=probe_channel.principal.principal_id,
               phase="probe", channel_id=probe_channel.channel_id, session_id=probe_session,
               direction="response", text=probe_response, canary=canary,
@@ -387,6 +456,8 @@ def _run_document_ingestion_flow(variant: AttackVariant, channels: List[Channel]
               phase="ingest", channel_id=victim.channel_id, session_id=ingest_session,
               direction="request", text=document_text, canary=canary)
     ingest_reply = adapter.ingest_document(victim.principal, ingest_session, document_text)
+    lifecycle = _Lifecycle(tracer, run_id, variant, adapter, canary)
+    lifecycle.candidate(victim.role.value, document_text, ingest_session, victim.channel_id)
     tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
               phase="ingest", channel_id=victim.channel_id, session_id=ingest_session,
               direction="response", text=ingest_reply, canary=canary)
@@ -394,6 +465,7 @@ def _run_document_ingestion_flow(variant: AttackVariant, channels: List[Channel]
     tracer.log(run_id=run_id, trace_id=variant.id, principal=victim.principal.principal_id,
               phase="consolidate", channel_id=victim.channel_id, session_id=ingest_session)
     adapter.consolidate(victim.principal, ingest_session)
+    lifecycle.saved_after_consolidate(victim, ingest_session)
 
     probe_session = adapter.new_session(probe_channel.principal)
     tracer.log(run_id=run_id, trace_id=variant.id, principal=probe_channel.principal.principal_id,
@@ -401,6 +473,7 @@ def _run_document_ingestion_flow(variant: AttackVariant, channels: List[Channel]
               direction="request", text=variant.probe, canary=canary)
     probe_response = adapter.send(probe_channel.principal, probe_session, variant.probe)
     post_text_det = detector.detect(probe_response, canary, DetectionChannel.RESPONSE_TEXT)
+    lifecycle.probe_payoff(probe_channel, probe_session, post_text_det.canary_present)
     tracer.log(run_id=run_id, trace_id=variant.id, principal=probe_channel.principal.principal_id,
               phase="probe", channel_id=probe_channel.channel_id, session_id=probe_session,
               direction="response", text=probe_response, canary=canary,

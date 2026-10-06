@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/bulochka68/memrot/schemas/memory-trace-0.1.schema.json",
+  "title": "Memory Trace Event v0.1",
+  "description": "Одно событие жизненного цикла памяти. Контракт между memory_trace, mcp_audit и memrot.",
+  "type": "object",
+  "required": [
+    "schema_version", "event_id", "run_id", "trace_id", "agent_id",
+    "principal", "component", "ts", "stage", "parent_event_refs", "_coverage"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^0\\.1\\.[0-9]+$" },
+    "event_id": { "type": "string", "format": "uuid" },
+    "run_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "trace_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "agent_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "principal": {
+      "type": "string",
+      "enum": ["attacker", "victim", "tool", "business", "system", "auditor"]
+    },
+    "component": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "ts": { "type": "string", "format": "date-time" },
+    "config_version": { "type": "string" },
+    "session_id": { "type": ["string", "null"], "minLength": 1, "maxLength": 128 },
+    "parent_event_refs": {
+      "type": "array",
+      "items": { "type": "string", "format": "uuid" },
+      "uniqueItems": true
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "candidate", "saved", "retrieved", "in_prompt",
+        "used_in_reasoning", "influenced_action", "caused_harm"
+      ]
+    },
+    "_coverage": {
+      "type": "object",
+      "required": ["observed", "source", "partial"],
+      "additionalProperties": false,
+      "properties": {
+        "observed": { "type": "boolean" },
+        "source": {
+          "type": "string",
+          "enum": ["agent", "stand", "memory_store", "tool", "business", "auditor"]
+        },
+        "partial": { "type": "boolean" }
+      }
+    },
+
+    "content_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "content_preview": { "type": "string", "maxLength": 256 },
+    "content_full": { "type": ["string", "null"] },
+    "content_redacted": { "type": "boolean" },
+    "content_length": { "type": "integer", "minimum": 0 },
+    "redaction_mode": { "type": ["string", "null"] },
+
+    "writer_id": { "type": ["string", "null"] },
+    "channel_id": { "type": ["string", "null"] },
+    "operation": {
+      "type": ["string", "null"],
+      "enum": ["write", "update", "delete", null]
+    },
+    "memory_layer": {
+      "type": ["string", "null"],
+      "enum": ["policy_global", "semantic", "episodic", "shared", null]
+    },
+
+    "finalize_scopes": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "requested_scopes": { "type": "array", "items": { "type": "string" } },
+        "actual_scopes": { "type": "array", "items": { "type": "string" } },
+        "facts_digest": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "included_in_context": { "type": ["boolean", "null"] },
+    "context_role": {
+      "type": ["string", "null"],
+      "enum": ["system", "user", "tool", "memory", "policy", null]
+    },
+    "rank_position": { "type": ["integer", "null"], "minimum": 0 },
+    "prompt_block_id": { "type": ["string", "null"] },
+
+    "embedding_score": { "type": ["number", "null"] },
+    "retrieval_score": { "type": ["number", "null"] },
+    "reranking_score": { "type": ["number", "null"] },
+    "top_k": { "type": ["integer", "null"], "minimum": 1 },
+    "cutoff_used": { "type": ["number", "null"] },
+    "retrieval_method": {
+      "type": ["string", "null"],
+      "enum": ["dense", "sparse", "hybrid", null]
+    },
+    "query_used": { "type": ["string", "null"] },
+
+    "tool_call": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "qualified_id": { "type": "string" },
+        "args_digest": { "type": "string" },
+        "access_decision": { "type": "string", "enum": ["allow", "deny", "unknown"] },
+        "result_ref": { "type": ["string", "null"] }
+      }
+    },
+
+    "defense_decision": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "component": { "type": "string" },
+        "verdict": {
+          "type": "string",
+          "enum": ["allow", "deny", "redact", "quarantine", "unknown"]
+        },
+        "reason": { "type": "string" }
+      }
+    },
+
+    "business_observation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "metric": { "type": "string" },
+        "value": { "type": ["number", "string", "boolean"] },
+        "source": { "type": "string" },
+        "evidence_kind": { "type": "string", "enum": ["hard", "soft"] }
+      }
+    },
+
+    "chain_break_reason": {
+      "type": ["string", "null"],
+      "enum": ["scope_mismatch", "persist_miss", "paraphrase", "missing_in_prompt", null]
+    },
+    "evidence_tier": {
+      "type": ["string", "null"],
+      "enum": ["text", "state", "ground_truth", null]
+    },
+    "evidence_kind": { "type": ["string", "null"], "enum": ["hard", "soft", null] },
+
+    "experimental": { "type": "boolean", "default": false }
+  },
+
+  "allOf": [
+    {
+      "if": { "properties": { "stage": { "const": "saved" } }, "required": ["stage"] },
+      "then": { "required": ["content_digest", "operation", "memory_layer"] }
+    },
+    {
+      "if": { "properties": { "stage": { "const": "retrieved" } }, "required": ["stage"] },
+      "then": { "required": ["content_digest"] }
+    },
+    {
+      "if": { "properties": { "stage": { "const": "in_prompt" } }, "required": ["stage"] },
+      "then": { "required": ["included_in_context", "context_role"] }
+    },
+    {
+      "if": {
+        "properties": { "retrieval_score": { "type": "number" } },
+        "required": ["retrieval_score"]
+      },
+      "then": {
+        "required": ["retrieval_method", "rank_position"],
+        "properties": {
+          "retrieval_method": { "type": "string" },
+          "rank_position": { "type": "integer" }
+        }
+      }
+    },
+    {
+      "if": {
+        "anyOf": [
+          { "properties": { "embedding_score": { "type": "number" } }, "required": ["embedding_score"] },
+          { "properties": { "retrieval_score": { "type": "number" } }, "required": ["retrieval_score"] },
+          { "properties": { "reranking_score": { "type": "number" } }, "required": ["reranking_score"] }
+        ]
+      },
+      "then": { "properties": { "experimental": { "const": true } } }
+    }
+  ]
+}
